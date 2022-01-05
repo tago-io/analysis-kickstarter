@@ -1,0 +1,30 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "import"],
+  "extends": ["plugin:prettier/recommended", "plugin:@typescript-eslint/eslint-recommended", "plugin:import/errors", "plugin:import/warnings", "plugin:import/typescript"],
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": false
+    },
+    "project": ["./tsconfig.json"]
+  },
+  "rules": {
+    "import/order": 1,
+    "import/no-commonjs": 1,
+    "curly": ["error", "all"],
+    "semi": 2
+  },
+  "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts"]
+    },
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true
+      }
+    }
+  }
+}
