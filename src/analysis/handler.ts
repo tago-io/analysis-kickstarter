@@ -123,7 +123,6 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   router.register(reportEdit).whenVariableLike("report_").whenWidgetExec("edit");
 
   await router.exec();
-  console.log("Analysis Finished!");
 }
 
 export { startAnalysis };
