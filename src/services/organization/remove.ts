@@ -17,7 +17,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   await config_dev.deleteData({ series: org_id, qty: 99999 });
 
   //deleting users (organization's user)
-  const user_accounts = await account.run.listUsers({ filter: { tags: [{ key: "user_org_id", value: org_id }] } });
+  const user_accounts = await account.run.listUsers({ filter: { tags: [{ key: "organization_id", value: org_id }] } });
   if (user_accounts) {
     user_accounts.forEach((user) => account.run.userDelete(user.id));
   }
