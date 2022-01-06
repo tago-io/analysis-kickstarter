@@ -1,22 +1,25 @@
 import { Account } from "@tago-io/sdk";
 import { findAnalysisByExportID } from "../../lib/findResource";
+import { ReportActionStructure } from "./create";
 
-async function actionModel(account: Account, org_id: string, action_serie: string, cron: string, active: boolean, tags?: [{ key: string; value: string }]): Promise<any> {
+async function actionModel(account: Account, action_object: ReportActionStructure): Promise<any> {
   const script_id = await findAnalysisByExportID(account, "sendReport");
 
-  return {
-    name: `SENSOR REPORT ACTION / SERIE: ${action_serie}`,
-    active,
+  const action_model = {
+    name: `SENSOR REPORT ACTION / SERIE: ${action_object.serie}`,
+    active: action_object.active,
     type: "schedule",
-    tags: [{ key: "organization_id", value: org_id }, ...tags],
+    tags: [{ key: "organization_id", value: action_object.org_id }, ...action_object?.tags],
     trigger: [
       {
-        cron, //"00 08 */1 * Fri,Mon,Sat,Sun,Thu,Tue,Wed"
+        cron: action_object.cron, //"00 08 */1 * Fri,Mon,Sat,Sun,Thu,Tue,Wed"
         timezone: "UTC", //UTC -> +0GMT
       },
     ],
     action: { script: [script_id], type: "script" },
   };
+
+  return action_model;
 }
 
 export { actionModel };

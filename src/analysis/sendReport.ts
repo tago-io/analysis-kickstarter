@@ -31,7 +31,6 @@ interface SensorData {
 }
 
 async function resolveReport(account: Account, context: TagoContext, action_info: ActionInfo, org_id: string, via?: string) {
-  // const org_id = org.id;
   const org_dev = await Utils.getDevice(account, org_id);
   const { name: org_name } = await org_dev.info();
 
