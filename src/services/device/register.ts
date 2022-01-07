@@ -104,10 +104,14 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const group_id = new_dev_group?.value as string;
 
   const connector_id = new_dev_type.value as string;
-  const { id: dash_id } = await findDashboardByConnectorID(account, connector_id);
-  if (!dash_id) {
+
+  let dash_id = "";
+  try {
+    ({ id: dash_id } = await findDashboardByConnectorID(account, connector_id));
+  } catch (error) {
     return validate("#VAL.ERROR__NO_DASHBOARD_FOUND#", "danger");
   }
+
   const dash_info = await account.dashboards.info(dash_id);
   const type = dash_info.blueprint_devices.find((bp) => bp.conditions[0].key === "sensor");
   if (!type) {

@@ -40,6 +40,7 @@ import userEdit from "../services/user/edit";
 
 import report from "../services/reports/create";
 import reportDel from "../services/reports/remove";
+import reportEdit from "../services/reports/edit";
 
 import planAdd from "../services/plan/register";
 import planDel from "../services/plan/remove";
@@ -108,8 +109,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   //Plan routing
   router.register(planAdd).whenInputFormID("create-plan");
-  router.register(planEdit).whenVariableLike("plan_").whenWidgetExec("edit");
   router.register(planDel).whenVariableLike("plan_").whenWidgetExec("delete");
+  router.register(planEdit).whenVariableLike("plan_").whenWidgetExec("edit");
 
   // //Alert routing
   // router.register(createAlert).whenInputFormID("create-alert");
@@ -118,8 +119,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   // Report routing
   router.register(report).whenInputFormID("create-report");
-  router.register(report).whenVariableLike("report_").whenWidgetExec("edit");
   router.register(reportDel).whenVariableLike("report_").whenWidgetExec("delete");
+  router.register(reportEdit).whenVariableLike("report_").whenWidgetExec("edit");
 
   await router.exec();
 }
