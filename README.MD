@@ -31,10 +31,12 @@ The application contains the following features:
 The documentation on how to use the application is avaiable to download in the following link []().
 
 ### How to learn from this code
-You will three folders in the `src/` folder.
+You will notice three folders in the `src/` folder.
 * **analysis**: contains each analysis that must be present in your account.
 * **lib**: useful list of functions commonly used between the scripts.
 * **services**: services folders that are used in the analysis. Each service is related 
+
+For additional informations on how to setup TagoIO with this code, and all the TagoIO resources used, check the Kickstarter Guide documentation at [analysis-kickstarter/docs/Kickstarter-Guide](https://github.com/tago-io/analysis-kickstarter/blob/master/docs/Kickstarter%20-%20Guide.pdf).
 ### Support
 You can open an issue or question at [https://github.com/tago-io/analysis-ekit/issues](https://github.com/tago-io/analysis-ekit/issues).
 
