@@ -1,20 +1,17 @@
 /*
  * KickStarter Analysis
- * Handler
+ * User Signup
  *
- * This analysis handles most of buttons clickable by dashboard input form widgets such as dynamic table and input form widgets.
+ * This analysis handles new users that register themselves in the application. It requires the RUN to have user auto-signup enabled.
  *
- * Handles the following actions:
- * - Add, edit and delete an Organization.
- * - Add, edit and delete a Group.
- * - Add, edit and delete a Sensor.
- * - Add, edit and delete a User.
- * - Add, edit and delete scheduled reports.
  *
  * How to setup this analysis
  * Make sure you have the following enviroment variables:
  * - config_token: the value must be a token from a HTTPs device, that stores general information of the application.
  * - account_token: the value must be a token from your profile. generated at My Settings of your developer's account.
+ *
+ * In the RUN Settings, enable user to auto-signup.
+ * Create an Action of type Resource whenever an user is registered in the application to run this analysis.
  */
 
 import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
