@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import { Account } from "@tago-io/sdk";
 
 (async () => {
-  const account = new Account({ token: "19c43a65-dd50-49a7-9535-09038c2934d8" });
+  const account = new Account({ token: "Your-Account-Profile-Token" });
   const analysis_list = await account.analysis.list({ amount: 99, fields: ["id", "tags"], filter: { tags: [{ key: "export_id" }] } });
 
   for (const { id, tags } of analysis_list) {
