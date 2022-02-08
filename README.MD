@@ -1,4 +1,4 @@
-# Starter Kit Application for TagoIO
+# Kickstarter Application for TagoIO
 This is a starter application to be used at TagoIO. It has main required features for an regular application to run, with a functionality to facilitate setting up new sensors within the application. You can use the scripts provided here to learn or to develop your own solution with it's foundations.
 
 # Components
