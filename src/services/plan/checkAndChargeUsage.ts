@@ -16,16 +16,23 @@ const checkTagoPlan = async (account: Account, type: CommunicationMean) => {
 
   if (type === "email") {
     const email_tago_statistic = tago_usage_statistic[tago_usage_statistic.length - 1].email;
-    const email_tago_limit = tago_usage_limit.limits.email;
+    const email_tago_limit = (tago_usage_limit as any).allocation.email;
 
     if (email_tago_limit === email_tago_statistic) {
       return false;
     }
   } else if (type === "sms") {
     const sms_tago_statistic = tago_usage_statistic[tago_usage_statistic.length - 1].sms;
-    const sms_tago_limit = tago_usage_limit.limits.sms;
+    const sms_tago_limit = (tago_usage_limit as any).allocation.sms;
 
     if (sms_tago_limit === sms_tago_statistic) {
+      return false;
+    }
+  } else if (type === "notification_run") {
+    const notification_tago_statistic = (tago_usage_statistic[tago_usage_statistic.length - 1] as any).push_notification;
+    const notification_tago_limit = (tago_usage_limit as any).allocation.push_notification;
+
+    if (notification_tago_limit === notification_tago_statistic) {
       return false;
     }
   }
