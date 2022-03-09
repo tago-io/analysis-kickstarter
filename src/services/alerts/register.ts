@@ -1,17 +1,18 @@
-import { Account } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/out/common/common.types";
+import { Account, Utils } from "@tago-io/sdk";
 import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 import { parseTagoObject } from "../../lib/data.logic";
 import { findAnalysisByExportID } from "../../lib/findResource";
 import { RouterConstructorData } from "../../types";
+import { checkinAlertSet } from "./checkinAlerts";
+import { geofenceAlertCreate } from "./geofenceAlert";
 
-async function getGroupDevices(account: Account, group_id: string) {
+async function getGroupDevices(account: Account, group_id: string, groupKey: string = "group_id") {
   const list = await account.devices.list({
     amount: 999,
     filter: {
       tags: [
-        { key: "group_id", value: group_id },
-        { key: "device_type", value: "device" },
+        { key: groupKey, value: group_id },
+        { key: "device_type", value: "sensor" },
       ],
     },
   });
@@ -47,6 +48,8 @@ interface ActionStructureParams {
   condition: string;
 
   script: string;
+  origin: string;
+  name?: string;
 }
 
 function generateActionStructure(structure: ActionStructureParams, device_ids: string[]) {
@@ -56,6 +59,8 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
     tags: [
       { key: "group_id", value: structure.group_id || "N/A" },
       { key: "organization_id", value: structure.org_id },
+      { key: "origin", value: structure.origin },
+      { key: "name", value: structure.name || "" },
       { key: "send_to", value: structure.send_to.replace(/ /g, "") },
       { key: "action_type", value: structure.type.replace(/ /g, "") },
     ],
@@ -137,8 +142,9 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
 }
 
 async function createAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
-  // Get the fields from the Input widget.
+  const devToStoreAlert = await Utils.getDevice(account, scope[0].origin);
 
+  // Get the fields from the Input widget.
   const action_group = scope.find((x) => x.variable === "action_group_list");
   const action_dev_list = scope.find((x) => x.variable === "action_device_list" && x.metadata?.sentValues);
 
@@ -152,6 +158,13 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
 
   const action_type = scope.find((x) => x.variable === "action_type");
   const action_message = scope.find((x) => x.variable === "action_message");
+
+  const action_name = scope.find((x) => x.variable === "action_name")?.value as string;
+
+  let groupKey = scope.find((x) => x.variable === "action_groupkey")?.value as string;
+  if (!groupKey) {
+    groupKey = "group_id";
+  }
 
   // const action_unlock_variable = scope.find((x) => x.variable === "action_unlock_variable");
   // const action_unlock_condition = scope.find((x) => x.variable === "action_unlock_condition");
@@ -176,12 +189,12 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     throw 'Missing "action_variable" in the data scope.';
   } else if (!action_condition || !action_condition.value) {
     throw 'Missing "action_condition" in the data scope.';
-  } else if (!action_value || !action_value.value) {
-    throw 'Missing "action_value" in the data scope.';
   } else if (!action_type || !action_type.value) {
     throw 'Missing "action_type" in the data scope.';
   } else if (!action_message || !action_message.value) {
     throw 'Missing "action_message" in the data scope.';
+  } else if (!action_value || !action_value.value) {
+    throw 'Missing "action_value" in the data scope.';
   }
 
   const organization_id = scope[0].origin;
@@ -195,10 +208,10 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     if (!group_exist) {
       throw `Group ${action_group.metadata.label} couldn't be found.`;
     }
-    device_list = await getGroupDevices(account, group_id);
+    device_list = await getGroupDevices(account, group_id, groupKey);
   }
 
-  org_dev.sendData({ variable: "action_validation", value: "Creating alert, please wait. This operation can take a few minutes...", metadata: { type: "warning" } });
+  devToStoreAlert.sendData({ variable: "action_validation", value: "Criando alerta, aguarde...", metadata: { type: "warning" } });
 
   const script_id = await findAnalysisByExportID(account, "alertTrigger");
 
@@ -215,11 +228,13 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     condition: action_condition.value as string,
     type: action_type?.value as string,
     variable: action_variable.value as string,
+    origin: scope[0].origin,
+    name: action_name,
   };
   const action_structure = generateActionStructure(structure, device_list);
 
   const { action: action_id } = await account.actions.create(action_structure).catch((e) => {
-    org_dev.sendData({ variable: "action_validation", value: e, metadata: { type: "danger" } });
+    devToStoreAlert.sendData({ variable: "action_validation", value: e, metadata: { type: "danger" } });
     throw e;
   });
   // Store the data in the device, so we can see and edit it in the Dynamic Table.
@@ -245,8 +260,13 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     data_to_tago = data_to_tago.map((x) => ({ ...x, variable: x.variable.replace("action_list", "action_group") }));
   }
 
-  org_dev.sendData(data_to_tago);
-  org_dev.sendData({ variable: "action_validation", value: "#ALC.CREATE_SUCCESS#", metadata: { type: "success" } });
+  devToStoreAlert.sendData(data_to_tago);
+  devToStoreAlert.sendData({ variable: "action_validation", value: "#ALC.CREATE_SUCCESS#", metadata: { type: "success" } });
+  if (structure.variable === "geofence") {
+    await geofenceAlertCreate(account, devToStoreAlert, action_id, structure);
+  } else if (structure.variable === "checkin") {
+    await checkinAlertSet(account, action_id, structure.trigger_value as number, device_list);
+  }
 }
 
 export { createAlert, getGroupDevices, generateActionStructure, ActionStructureParams };

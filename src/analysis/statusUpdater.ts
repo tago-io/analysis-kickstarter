@@ -4,6 +4,7 @@ import { ConfigurationParams, DeviceListItem } from "@tago-io/sdk/out/modules/Ac
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import moment from "moment-timezone";
 import { parseTagoObject } from "../lib/data.logic";
+import { checkinTrigger } from "../services/alerts/checkinAlerts";
 
 const resolveOrg = async (account: Account, org: DeviceListItem) => {
   let total_qty = 0;
@@ -131,9 +132,7 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
   const dev_lastcheckin_param = device_params.find((param) => param.key === "dev_lastcheckin") || { key: "dev_lastcheckin", value: String(diff_hours), sent: false };
   const dev_battery_param = device_params.find((param) => param.key === "dev_battery") || { key: "dev_battery", value: "-", sent: false };
 
-  if (diff_hours >= 24 && !dev_lastcheckin_param.sent) {
-    dispatchEmailAlert(account, context, org_id, String(diff_hours), device_info.name);
-  }
+  await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
 
   await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: diff_hours >= 24 ? true : false });
 
