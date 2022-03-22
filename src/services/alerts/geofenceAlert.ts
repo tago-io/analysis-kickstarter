@@ -205,7 +205,7 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
   }
 
   for (const alert of alerts) {
-    const mockData = {
+    const mockData: any = {
       variable: "location",
       value: `${coordinates.lat},${coordinates.lng}`,
       origin: device_id,

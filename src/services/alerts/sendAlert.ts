@@ -2,6 +2,7 @@ import { Account, Services, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 import checkAndChargeUsage from "../plan/checkAndChargeUsage";
 
 interface IMessageDetail {

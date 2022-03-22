@@ -49,7 +49,7 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
         origin,
         send_to,
         type,
-        data: mockData,
+        data: mockData as any,
       };
 
       await sendAlert(account, context, org_id, alert);

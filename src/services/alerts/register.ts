@@ -1,4 +1,5 @@
 import { Account, Utils } from "@tago-io/sdk";
+import { Data } from "@tago-io/sdk/out/common/common.types";
 import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 import { parseTagoObject } from "../../lib/data.logic";
 import { findAnalysisByExportID } from "../../lib/findResource";
@@ -142,7 +143,8 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
 }
 
 async function createAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
-  const devToStoreAlert = await Utils.getDevice(account, scope[0].origin);
+  const devToStoreAlert = await Utils.getDevice(account, scope[0].device);
+  devToStoreAlert.sendData({ variable: "action_validation", value: "#VAL.CREATING_ALERT#", metadata: { type: "warning" } });
 
   // Get the fields from the Input widget.
   const action_group = scope.find((x) => x.variable === "action_group_list");
@@ -152,7 +154,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   const action_sendto = scope.find((x) => x.variable === "action_sendto");
 
   const action_variable = scope.find((x) => x.variable === "action_variable");
-  let action_condition = scope.find((x) => x.variable === "action_condition");
+  let action_condition: Data | DataToSend = scope.find((x) => x.variable === "action_condition");
   let action_value = scope.find((x) => x.variable === "action_value");
   const action_value2 = scope.find((x) => x.variable === "action_value2");
 
@@ -210,8 +212,6 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     }
     device_list = await getGroupDevices(account, group_id, groupKey);
   }
-
-  devToStoreAlert.sendData({ variable: "action_validation", value: "Criando alerta, aguarde...", metadata: { type: "warning" } });
 
   const script_id = await findAnalysisByExportID(account, "alertTrigger");
 

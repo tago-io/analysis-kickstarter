@@ -15,6 +15,8 @@ async function installDevice({ account, new_org_name }: installDeviceParam) {
   //structuring data
   const device_data: DeviceCreateInfo = {
     name: new_org_name,
+    network: "5bbd0d144051a50034cd19fb",
+    connector: "5f5a8f3351d4db99c40dece5",
   };
 
   //creating new device
