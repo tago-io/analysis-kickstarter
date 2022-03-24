@@ -1,9 +1,26 @@
+/*
+ * KickStarter Analysis
+ * Status Updater
+ *
+ * This analysis is responsible to update organization's plan usage (displayed at Info Dashboard),
+ * update the indicators from the organization (total, active and inactive),
+ * update sensor's params (last checkin and battery) and update sensors location.
+ *
+ * Status Updater will run when:
+ * - When the scheduled action (Status Updater Trigger) triggers this script. (Default 1 minute)
+ *
+ * How to setup this analysis
+ * Make sure you have the following enviroment variables:
+ * - account_token: the value must be a token from your profile. generated at My Settings of your developer's account.
+ */
+
 import { Utils, Services, Account, Device, Types, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { ConfigurationParams, DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import moment from "moment-timezone";
 import { parseTagoObject } from "../lib/data.logic";
+import { checkinTrigger } from "../services/alerts/checkinAlerts";
 
 const resolveOrg = async (account: Account, org: DeviceListItem) => {
   let total_qty = 0;
@@ -61,23 +78,6 @@ const resolveOrg = async (account: Account, org: DeviceListItem) => {
   await org_dev.sendData(parseTagoObject(to_tago));
 };
 
-const dispatchEmailAlert = async (account: Account, context: TagoContext, org_id: string, time: string, device_name: string) => {
-  const emailService = new Services({ token: context.token }).email;
-
-  const users = await account.run.listUsers({
-    page: 1,
-    fields: ["id", "name", "phone", "email", "tags"],
-    filter: {
-      tags: [{ key: "organization_id", value: org_id }],
-    },
-    amount: 10000,
-  });
-
-  users.forEach((user) => {
-    emailService.send({ to: user.email, template: { name: "checkin_alert", params: { name: user.name, device_name, time, time_unit: "h" } } });
-  });
-};
-
 const checkLocation = async (account: Account, device: Device) => {
   const [location_data] = await device.getData({ variables: "location", qty: 1 });
 
@@ -109,7 +109,6 @@ const checkLocation = async (account: Account, device: Device) => {
 
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
   const device = await Utils.getDevice(account, device_id);
-  const org_dev = await Utils.getDevice(account, org_id);
 
   checkLocation(account, device);
 
@@ -131,9 +130,7 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
   const dev_lastcheckin_param = device_params.find((param) => param.key === "dev_lastcheckin") || { key: "dev_lastcheckin", value: String(diff_hours), sent: false };
   const dev_battery_param = device_params.find((param) => param.key === "dev_battery") || { key: "dev_battery", value: "-", sent: false };
 
-  if (diff_hours >= 24 && !dev_lastcheckin_param.sent) {
-    dispatchEmailAlert(account, context, org_id, String(diff_hours), device_info.name);
-  }
+  await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
 
   await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: diff_hours >= 24 ? true : false });
 

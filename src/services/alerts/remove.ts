@@ -1,4 +1,4 @@
-import { Account } from "@tago-io/sdk";
+import { Account, Utils } from "@tago-io/sdk";
 import { ActionInfo } from "@tago-io/sdk/out/modules/Account/actions.types";
 import { RouterConstructorData } from "../../types";
 
@@ -39,18 +39,28 @@ async function removeDeviceFromAlert(account: Account, action_id: string, device
  */
 async function deleteAlert({ account, environment, scope, config_dev, context }: RouterConstructorData) {
   const { serie } = scope[0];
-  await account.actions.delete(serie);
-  // const action_list = await account.actions.list({
-  //   amount: 99,
-  //   fields: ["id", "tags"],
-  //   filter: {
-  //     tags: [{ key: "action_id", value: serie }],
-  //   },
-  // });
+  if (!serie) {
+    return;
+  }
 
-  // for (const action of action_list) {
-  //   await account.actions.delete(action.id).catch(console.log);
-  // }
+  const device = await Utils.getDevice(account, scope[0].origin);
+  device.deleteData({ series: serie });
+
+  const action_info = await account.actions.info(serie);
+  if (!action_info) {
+    return;
+  }
+
+  await account.actions.delete(serie);
+  const devices = [...new Set(action_info.trigger.map((x: any) => x.device).filter((x) => x))];
+  for (const device_id of devices) {
+    const params = await account.devices.paramList(device_id);
+
+    const paramToDelete = params.find((x) => x.key.includes(serie));
+    if (paramToDelete) {
+      await account.devices.paramRemove(device_id, paramToDelete.id);
+    }
+  }
 }
 
 export { deleteAlert, removeDeviceFromAlert };

@@ -45,13 +45,22 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const new_org_address = scope.find((x) => x.variable === "new_org_address");
   const new_org_plan = scope.find((x) => x.variable === "new_org_plan");
 
+  const new_org_plan_serie = scope.find((x) => x.variable === "new_org_plan_serie");
+
   const new_user_name = scope.find((x) => x.variable === "new_orgadmin_name");
 
-  const [plan_data] = await config_dev.getData({ variables: "plan_data", values: new_org_plan.value, qty: 1 });
-
-  if (!plan_data) {
-    throw validate("Plan not found, internally problem.", "danger");
+  if (!new_org_plan && !new_org_plan_serie) {
+    throw validate("Plan error, internal problem.", "danger");
   }
+
+  let [plan_data] = await config_dev.getData({ variables: "plan_data", values: new_org_plan?.value, qty: 1 });
+
+  //sign up route ~ place an environment variable "plan_serie" on analysis [TagoIO] - User Signup
+  if (new_org_plan_serie) {
+    [plan_data] = await config_dev.getData({ variables: "plan_data", series: new_org_plan_serie?.value as string, qty: 1 });
+  }
+
+  const plan_name = plan_data.value as string;
 
   if ((new_org_name.value as string).length < 3) {
     throw validate("Name field is smaller than 3 character", "danger");
@@ -79,10 +88,14 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   await account.devices.paramSet(device_id, { key: "org_address", value: (new_org_address?.value as string) || "N/A", sent: false });
   await account.devices.paramSet(device_id, { key: "org_auth_token", value: user_auth_token.token, sent: false });
   await account.devices.paramSet(device_id, { key: "_param", value: "", sent: false });
-  await account.devices.paramSet(device_id, { key: "plan_name", value: new_org_plan.value as string, sent: false });
+  await account.devices.paramSet(device_id, { key: "plan_name", value: plan_name, sent: false });
   await account.devices.paramSet(device_id, { key: "plan_email_limit", value: String(plan_data.metadata.email_limit), sent: false });
   await account.devices.paramSet(device_id, { key: "plan_sms_limit", value: String(plan_data.metadata.sms_limit), sent: false });
+  await account.devices.paramSet(device_id, { key: "plan_notif_limit", value: String(plan_data.metadata.notif_limit), sent: false });
   await account.devices.paramSet(device_id, { key: "plan_data_retention", value: String(plan_data.metadata.data_retention), sent: false });
+  await account.devices.paramSet(device_id, { key: "plan_email_limit_usage", value: "0", sent: false });
+  await account.devices.paramSet(device_id, { key: "plan_sms_limit_usage", value: "0", sent: false });
+  await account.devices.paramSet(device_id, { key: "plan_notif_limit_usage", value: "0", sent: false });
 
   const org_data = {
     org_id: { value: device_id, metadata: { label: new_org_name.value }, location: new_org_address?.location },

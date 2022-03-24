@@ -26,6 +26,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     });
   }
 
+  //to comment ~ should not delete the sensors but remove the sensor's group name
   //deleting site's device
   const devices = await account.devices.list({
     amount: 9999,

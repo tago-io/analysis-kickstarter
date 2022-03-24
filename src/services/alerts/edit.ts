@@ -3,6 +3,7 @@ import { Data, TagsObj } from "@tago-io/sdk/out/common/common.types";
 import { ActionQuery } from "@tago-io/sdk/out/modules/Account/actions.types";
 import sendNotificationError from "../../lib/notificationError";
 import { RouterConstructorData } from "../../types";
+import { checkinAlertSet } from "./checkinAlerts";
 import { ActionStructureParams, generateActionStructure, getGroupDevices } from "./register";
 
 interface ActionListParams {
@@ -85,6 +86,12 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
     return sendNotificationError(account, environment, "An error ocurred, please try again", "Error when editing alert");
   }
 
+  // if (action_variable.value === "geofence" && (action_value || action_condition)) {
+  //   console.log("[Error] Updating geofence value or condition is not allowed");
+  //   undoChanges(org_dev, scope);
+  //   return sendNotificationError(account, environment, "Erro ao editar alerta", "Não é possível editar valor e condição de alertas de geofence. Delete e crie um novo alerta.");
+  // }
+
   let device_list: string[] = [];
   if (action_devices) {
     device_list = (action_devices.value as string).split(";");
@@ -126,6 +133,10 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   }
 
   const action_structure = generateActionStructure(structure, device_list);
+
+  if (structure.variable === "checkin") {
+    checkinAlertSet(account, action_id, structure.trigger_value as number, device_list);
+  }
 
   await account.actions.edit(action_id, action_structure).catch(async (e) => {
     console.log("[Error] ", e);

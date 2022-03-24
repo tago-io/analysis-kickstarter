@@ -51,10 +51,17 @@ async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<v
   const organization_scope: Data[] = parseTagoObject({
     new_org_name: scope[0].name,
     new_org_address: "N/A",
-    new_org_plan: environment.plan,
+    new_org_plan_serie: environment.plan_serie,
   }).map((x) => ({ ...x, origin: " ", time: new Date() }));
 
-  const org_id = await orgAdd({ config_dev, context, scope: organization_scope, account, environment });
+  let org_id = "";
+
+  try {
+    org_id = await orgAdd({ config_dev, context, scope: organization_scope, account, environment });
+  } catch (error) {
+    await account.run.userDelete(scope[0].id);
+    return console.log(error);
+  }
 
   await account.run.userEdit(scope[0].id, {
     tags: [

@@ -41,7 +41,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   if (!new_user_access.value) {
     throw validate("Access field is empty", "danger");
   }
-  // if (!new_user_phone.value) throw validate("Phone field is empty", "danger");
+  if (new_user_phone?.value) {
+    new_user_phone.value = (new_user_phone.value as string).includes("+") ? new_user_phone.value : `+1${new_user_phone.value}`;
+  }
 
   const [user_exists] = await account.run.listUsers({
     page: 1,
