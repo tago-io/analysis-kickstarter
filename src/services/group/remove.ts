@@ -1,4 +1,5 @@
 import { Utils } from "@tago-io/sdk";
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
 import { RouterConstructorDevice } from "../../types";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorDevice) => {
@@ -12,35 +13,30 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const org_dev = await Utils.getDevice(account, org_id);
 
   //delete from settings_device
-  await config_dev.deleteData({ series: group_id, qty: 9999 });
+  await config_dev.deleteData({ groups: group_id, qty: 9999 });
   //delete from org_dev
-  await org_dev.deleteData({ series: group_id, qty: 9999 });
+  await org_dev.deleteData({ groups: group_id, qty: 9999 });
 
   //deleting users (site's user)
   const user_accounts = await account.run.listUsers({ filter: { tags: [{ key: "group_id", value: group_id }] } });
   if (user_accounts) {
     user_accounts.forEach(async (user) => {
       await account.run.userDelete(user.id);
-      await org_dev.deleteData({ series: user.id, qty: 9999 }).then((msg) => console.log(msg));
-      await config_dev.deleteData({ series: user.id, qty: 9999 });
+      await org_dev.deleteData({ groups: user.id, qty: 9999 }).then((msg) => console.log(msg));
+      await config_dev.deleteData({ groups: user.id, qty: 9999 });
     });
   }
 
   //to comment ~ should not delete the sensors but remove the sensor's group name
   //deleting site's device
-  const devices = await account.devices.list({
-    amount: 9999,
-    page: 1,
-    filter: { tags: [{ key: "group_id", value: group_id }] },
-    fields: ["id", "bucket", "tags", "name"],
-  });
+
+  const devices = await fetchDeviceList(account, [{ key: "group_id", value: group_id }]);
 
   if (devices) {
     devices.forEach(async (x) => {
       account.devices.delete(x.id); /*passing the device id*/
-      account.buckets.delete(x.bucket); /*passing the bucket id*/
-      await org_dev.deleteData({ series: x.id, qty: 9999 }).then((msg) => msg); //deleting org_dev and config_dev data
-      await config_dev.deleteData({ series: x.id, qty: 9999 });
+      await org_dev.deleteData({ groups: x.id, qty: 9999 }).then((msg) => msg); //deleting org_dev and config_dev data
+      await config_dev.deleteData({ groups: x.id, qty: 9999 });
     });
   }
 };

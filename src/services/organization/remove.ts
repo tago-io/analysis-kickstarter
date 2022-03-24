@@ -1,4 +1,5 @@
 import { RouterConstructor } from "@tago-io/sdk/out/modules/Utils/router/router";
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructor) => {
   //id of the org device
@@ -8,13 +9,13 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const org_auth_token = params.find((x) => x.key === "org_auth_token");
   //deleting token
-  // const [org_auth_token] = await config_dev.getData({ variables: "org_auth_token", qty: 1, series: org_id });
+  // const [org_auth_token] = await config_dev.getData({ variables: "org_auth_token", qty: 1, groups: org_id });
   if (org_auth_token?.value) {
     await account.ServiceAuthorization.tokenDelete(org_auth_token.value as string);
   }
 
   //delete from settings_device
-  await config_dev.deleteData({ series: org_id, qty: 99999 });
+  await config_dev.deleteData({ groups: org_id, qty: 99999 });
 
   //deleting users (organization's user)
   const user_accounts = await account.run.listUsers({ filter: { tags: [{ key: "organization_id", value: org_id }] } });
@@ -23,17 +24,12 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
 
   //deleting organization's device
-  const devices = await account.devices.list({
-    amount: 9999,
-    page: 1,
-    filter: { tags: [{ key: "organization_id", value: org_id }] },
-    fields: ["id", "bucket", "tags", "name"],
-  });
+
+  const devices = await fetchDeviceList(account, [{ key: "organization_id", value: org_id }]);
 
   if (devices) {
     devices.forEach((x) => {
       account.devices.delete(x.id); /*passing the device id*/
-      account.buckets.delete(x.bucket); /*passing the bucket id*/
     });
   }
 

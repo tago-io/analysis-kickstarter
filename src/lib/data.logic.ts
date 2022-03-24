@@ -8,16 +8,16 @@ interface GenericBody {
   [index: string]: any;
 }
 
-function parseTagoObject(body: GenericBody, serie?: string): DataToSend[] {
-  if (!serie) {
-    serie = String(new Date().getTime());
+function parseTagoObject(body: GenericBody, group?: string): DataToSend[] {
+  if (!group) {
+    group = String(new Date().getTime());
   }
   return Object.keys(body)
     .map((item) => {
       return {
         variable: item,
         value: body[item] instanceof Object ? body[item].value : body[item],
-        serie,
+        group,
         time: body[item] instanceof Object ? body[item].time : null,
         location: body[item] instanceof Object ? body[item].location : null,
         metadata: body[item] instanceof Object ? body[item].metadata : null,

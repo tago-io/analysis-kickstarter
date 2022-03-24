@@ -6,7 +6,7 @@ async function actionModel(account: Account, action_object: ReportActionStructur
   const script_id = await findAnalysisByExportID(account, "sendReport");
 
   const action_model = {
-    name: `SENSOR REPORT ACTION / SERIE: ${action_object.serie}`,
+    name: `SENSOR REPORT ACTION / VAR. GROUP: ${action_object.group}`,
     active: action_object.active,
     type: "schedule",
     tags: [{ key: "organization_id", value: action_object.org_id }, ...action_object?.tags],

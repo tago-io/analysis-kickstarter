@@ -7,7 +7,7 @@ import { actionModel } from "./action.model";
 
 interface ReportActionStructure {
   org_id: string;
-  serie: string;
+  group: string;
   cron: string; //chronological string in the TagoIO structure e.g. "00 08 */1 * Fri,Mon,Sat,Sun,Thu,Tue,Wed" -> 8am once each day
   active: boolean;
   tags?: TagsObj[];
@@ -23,10 +23,10 @@ function getCronString(report_time: string, report_days: string): string {
 }
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const org_id = scope[0].origin as string;
+  const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
-  const action_serie = scope[0].serie;
+  const action_group = scope[0].group;
 
   const validate = validation("report_validation", org_dev);
   validate("Registering...", "warning");
@@ -39,7 +39,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const report_group = scope.find((x) => x.variable === "new_report_group");
 
   const action_tags: TagsObj[] = [
-    { key: "action_serie", value: action_serie },
+    { key: "action_group", value: action_group },
     { key: "report_contact", value: report_contact.value as string },
   ];
 
@@ -65,13 +65,13 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const action_object: ReportActionStructure = {
     org_id,
-    serie: action_serie,
+    group: action_group,
     cron,
     active: report_active?.value === "true" ? true : false,
     tags: action_tags,
   };
 
-  // action_tags.push({ key: "action_serie", value: action_serie }, { key: "report_contact", value: report_contact.value as string });
+  // action_tags.push({ key: "action_group", value: action_group }, { key: "report_contact", value: report_contact.value as string });
   const action_model = await actionModel(account, action_object);
   console.log(action_model);
   const { action: action_id } = await account.actions.create(action_model).catch((e) => {

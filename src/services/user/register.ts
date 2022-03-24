@@ -14,10 +14,27 @@ interface UserData {
   id?: string;
 }
 
+function phoneNumberHandler(phone_number: string) {
+  //US as default
+  let country_code = "+1";
+  let resulted_phone_number: string;
+
+  if (phone_number.slice(0, 1).includes("+")) {
+    country_code = phone_number.slice(0, 3);
+    phone_number = phone_number.slice(3);
+  }
+  //removing special characters
+  resulted_phone_number = phone_number.replace(/[^\w\s]/gi, "");
+
+  resulted_phone_number = `${country_code}${resulted_phone_number}`;
+
+  return resulted_phone_number;
+}
+
 //registered by admin account.
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const org_id = scope[0].origin;
+  const org_id = scope[0].device;
   const org_dev = await Utils.getDevice(account, org_id);
 
   //Collecting data
@@ -42,7 +59,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     throw validate("Access field is empty", "danger");
   }
   if (new_user_phone?.value) {
-    new_user_phone.value = (new_user_phone.value as string).includes("+") ? new_user_phone.value : `+1${new_user_phone.value}`;
+    new_user_phone.value = phoneNumberHandler(new_user_phone.value as string);
   }
 
   const [user_exists] = await account.run.listUsers({
@@ -106,7 +123,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   );
 
   if (new_user_access.value === "admin") {
-    user_data = user_data.concat([{ variable: "user_admin", value: new_user_id as string, serie: new_user_id, metadata: { label: new_user_name.value as string } }]);
+    user_data = user_data.concat([{ variable: "user_admin", value: new_user_id as string, group: new_user_id, metadata: { label: new_user_name.value as string } }]);
   }
 
   //sending to org device

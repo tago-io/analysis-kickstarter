@@ -206,13 +206,13 @@ async function startAnalysis(context: TagoContext, scope: any) {
     resolveReport(account, context, action_info, org_id, "Squeduled Action");
   } else if (scope) {
     //THROUGH BUTTON SEND NOW
-    const action_serie = scope[0]?.serie;
+    const action_group = scope[0]?.group;
 
     const [action_registered] = await account.actions.list({
       page: 1,
       fields: ["id", "name", "tags"],
       filter: {
-        tags: [{ key: "action_serie", value: action_serie }],
+        tags: [{ key: "action_group", value: action_group }],
       },
       amount: 1,
     });

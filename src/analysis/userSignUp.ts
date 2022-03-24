@@ -52,8 +52,8 @@ async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<v
   const organization_scope: any = parseTagoObject({
     new_org_name: scope[0].name,
     new_org_address: "N/A",
-    new_org_plan_serie: environment.plan_serie,
-  }).map((x) => ({ ...x, origin: " ", time: new Date() }));
+    new_org_plan_group: environment.plan_group,
+  }).map((x) => ({ ...x, device: " ", time: new Date() }));
 
   let org_id = "";
 

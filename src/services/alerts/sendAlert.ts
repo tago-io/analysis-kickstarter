@@ -32,18 +32,18 @@ interface IAlertTrigger {
   data: Data;
   send_to: string[];
   type: string[];
-  origin: string;
+  device: string;
 }
 
 async function sendAlert(account: Account, context: TagoContext, org_id: string, alert: IAlertTrigger) {
   const { data, action_id: alert_id, send_to, type } = alert;
-  const groupWithAlert = await Utils.getDevice(account, alert.origin);
+  const groupWithAlert = await Utils.getDevice(account, alert.device);
   const org_dev = await Utils.getDevice(account, org_id);
 
   // Get action message
-  const [message_var] = await groupWithAlert.getData({ variables: ["action_list_message", "action_group_message"], series: alert_id, qty: 1 });
+  const [message_var] = await groupWithAlert.getData({ variables: ["action_list_message", "action_group_message"], groups: alert_id, qty: 1 });
 
-  const device_id = data.origin;
+  const device_id = data.device;
   const device_info = await account.devices.info(device_id);
 
   const replace_details: IMessageDetail = {

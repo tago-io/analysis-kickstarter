@@ -11,24 +11,20 @@
  */
 
 import { Utils, Services, Account, Device, Analysis, Types } from "@tago-io/sdk";
+import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { fetchDeviceList } from "../lib/fetchDeviceList";
 
 async function resolveDataRetentionByOrg(account: Account, org_id: string, plan_data_retention: string) {
-  const device_list = await account.devices.list({
-    page: 1,
-    fields: ["id", "bucket", "tags"],
-    filter: {
-      tags: [
-        { key: "device_type", value: "device" },
-        { key: "organization_id", value: org_id },
-      ],
-    },
-    amount: 10000,
-  });
+  const device_list: DeviceListItem[] = await fetchDeviceList(account, [
+    { key: "device_type", value: "device" },
+    { key: "organization_id", value: org_id },
+  ]);
 
   device_list.forEach(async (device_obj) => {
     // @ts-ignore: Unreachable code error
     await account.buckets.edit(device_obj.bucket, { data_retention: plan_data_retention === "0" ? "forever" : `${plan_data_retention} months` });
+
     const bucket_variables = await account.buckets.listVariables(device_obj.bucket);
     if (!bucket_variables[0]) {
       return;
@@ -60,14 +56,7 @@ async function updateDataRetention(context: TagoContext) {
 
   const account = new Account({ token: env_vars.account_token });
 
-  const organization_list = await account.devices.list({
-    page: 1,
-    fields: ["id", "bucket", "tags"],
-    filter: {
-      tags: [{ key: "device_type", value: "organization" }],
-    },
-    amount: 10000,
-  });
+  const organization_list: DeviceListItem[] = await fetchDeviceList(account, [{ key: "device_type", value: "organization" }]);
 
   for (const org of organization_list) {
     const org_id = org.id;

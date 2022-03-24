@@ -4,7 +4,7 @@ import validation from "../../lib/validation";
 import { RouterConstructorData } from "../../types";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const { origin: group_id } = scope[0];
+  const { device: group_id } = scope[0];
 
   const sensor_id = scope.find((x) => x.variable === "set_dev_pin_id");
   const sensor_location = scope.find((x) => x.variable === "set_dev_pin_location");
@@ -13,7 +13,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const validate = validation("placepin_validation", group_dev);
   validate("#VAL.PLACING_THE_PIN#", "warning");
 
-  const [dev_id] = await group_dev.getData({ variables: "dev_id", series: sensor_id.value as string, qty: 1 });
+  const [dev_id] = await group_dev.getData({ variables: "dev_id", groups: sensor_id.value as string, qty: 1 });
 
   delete dev_id.time;
   await group_dev.sendData({ ...dev_id, location: sensor_location.location });

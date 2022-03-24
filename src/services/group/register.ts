@@ -4,6 +4,7 @@ import validation from "../../lib/validation";
 import { DeviceCreated, RouterConstructorData } from "../../types";
 import { parseTagoObject } from "../../lib/data.logic";
 import { findDashboardByExportID } from "../../lib/findResource";
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
 
 interface installDeviceParam {
   account: Account;
@@ -17,6 +18,7 @@ async function installDevice({ account, new_group_name, org_id }: installDeviceP
     name: new_group_name,
     network: "5bbd0d144051a50034cd19fb",
     connector: "5f5a8f3351d4db99c40dece5",
+    type: "mutable",
   };
 
   //creating new device
@@ -39,24 +41,16 @@ async function installDevice({ account, new_group_name, org_id }: installDeviceP
 }
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const org_id = scope[0].origin as string;
+  const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
   const validate = validation("group_validation", org_dev);
   validate("#VAL.REGISTERING#", "warning");
 
-  const group_qty = await account.devices.list({
-    page: 1,
-    fields: ["id", "name"],
-    filter: {
-      tags: [
-        { key: "device_type", value: "group" },
-        { key: "organization_id", value: org_id },
-      ],
-    },
-    amount: 10,
-    resolveBucketName: false,
-  });
+  const group_qty = await fetchDeviceList(account, [
+    { key: "device_type", value: "group" },
+    { key: "organization_id", value: org_id },
+  ]);
 
   if (group_qty.length >= 2) {
     return validate("#VAL.LIMIT_OF_2_GROUPS_REACHED#", "danger");

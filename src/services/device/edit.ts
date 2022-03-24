@@ -24,9 +24,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   //updating only the group's dev_id data
   if (new_dev_name && current_group_id) {
     const group_dev = await Utils.getDevice(account, current_group_id);
-    const [old_dev_id] = await group_dev.getData({ variables: "dev_id", series: dev_id, qty: 1 });
-    await group_dev.deleteData({ variables: "dev_id", series: dev_id });
-    await org_dev.deleteData({ variables: "dev_id", series: dev_id });
+    const [old_dev_id] = await group_dev.getData({ variables: "dev_id", groups: dev_id, qty: 1 });
+    await group_dev.deleteData({ variables: "dev_id", groups: dev_id });
+    await org_dev.deleteData({ variables: "dev_id", groups: dev_id });
 
     old_dev_id.metadata.label = new_dev_name;
     await group_dev.sendData(old_dev_id);
@@ -39,7 +39,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     //removing data from the last group
     if (current_group_id && current_group_id !== "") {
       const old_group_dev = await Utils.getDevice(account, current_group_id);
-      await old_group_dev.deleteData({ variables: "dev_id", series: dev_id });
+      await old_group_dev.deleteData({ variables: "dev_id", groups: dev_id });
     }
 
     const new_device_tags = current_device_tags.filter((x) => x.key !== "group_id");
@@ -51,7 +51,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
     const { id: dash_id } = await findDashboardByConnectorID(account, connector);
 
-    const new_url = `https://admin.tago.io/dashboards/info/${dash_id}?org_dev=${org_id}&${type}_dev=${dev_id}`;
+    const new_url = `https://admin.tago.io/dashboards/info/${dash_id}?org_dev=${org_id}&sensor=${dev_id}`;
 
     await account.devices.paramSet(dev_id, { ...go_to_param, value: new_url });
 

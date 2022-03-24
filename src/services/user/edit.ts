@@ -3,7 +3,7 @@ import { RouterConstructorData } from "../../types";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
   console.log("Editting User.");
-  const user_id = scope[0].serie;
+  const user_id = scope[0].device;
 
   const user_name = scope.find((x) => x.variable === "user_name");
   const user_phone = scope.find((x) => x.variable === "user_phone");
@@ -17,10 +17,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   if (user_name) {
     //fetching prev data
-    const [user_name_config_dev] = await config_dev.getData({ variables: "user_name", qty: 1, series: user_id });
+    const [user_name_config_dev] = await config_dev.getData({ variables: "user_name", qty: 1, groups: user_id });
 
     //deleting prev data
-    await config_dev.deleteData({ variables: "user_name", qty: 1, series: user_id });
+    await config_dev.deleteData({ variables: "user_name", qty: 1, groups: user_id });
 
     //modifying json object
     delete user_name_config_dev.time;
@@ -34,10 +34,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
   if (user_phone) {
     //fetching prev data
-    const [user_phone_config_dev] = await config_dev.getData({ variables: "user_phone", qty: 1, series: user_id });
+    const [user_phone_config_dev] = await config_dev.getData({ variables: "user_phone", qty: 1, groups: user_id });
 
     //deleting prev data
-    await config_dev.deleteData({ variables: "user_phone", qty: 1, series: user_id });
+    await config_dev.deleteData({ variables: "user_phone", qty: 1, groups: user_id });
 
     //modifying json object
     delete user_phone_config_dev.time;
