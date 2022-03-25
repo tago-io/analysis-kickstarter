@@ -7,9 +7,9 @@ import { actionModel } from "./action.model";
 import { getCronString, ReportActionStructure } from "./create";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const org_id = scope[0].origin as string;
+  const org_id = scope[0].device as string;
 
-  const action_serie = scope[0].serie;
+  const action_group = scope[0].group;
 
   const report_active = scope.find((x) => x.variable === "report_active" || x.variable === "bysite_report_active");
   const report_time = scope.find((x) => x.variable === "report_time" || x.variable === "bysite_report_time");
@@ -22,7 +22,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     page: 1,
     fields: ["id", "name", "tags", "active"],
     filter: {
-      tags: [{ key: "action_serie", value: action_serie }],
+      tags: [{ key: "action_group", value: action_group }],
     },
     amount: 1,
   });
@@ -36,10 +36,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const action_object: ReportActionStructure = {
     org_id, //ok
-    serie: action_serie, //ok
+    group: action_group, //ok
     cron: "", //ok
     active: false, //ok
-    tags: [{ key: "action_serie", value: action_serie }], //sensor/group, contact, org_id
+    tags: [{ key: "action_group", value: action_group }], //sensor/group, contact, org_id
   };
 
   //if new sensor or new group

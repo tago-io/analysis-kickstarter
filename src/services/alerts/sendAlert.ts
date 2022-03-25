@@ -2,6 +2,7 @@ import { Account, Services, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 import checkAndChargeUsage from "../plan/checkAndChargeUsage";
 
 interface IMessageDetail {
@@ -31,18 +32,18 @@ interface IAlertTrigger {
   data: Data;
   send_to: string[];
   type: string[];
-  origin: string;
+  device: string;
 }
 
 async function sendAlert(account: Account, context: TagoContext, org_id: string, alert: IAlertTrigger) {
   const { data, action_id: alert_id, send_to, type } = alert;
-  const groupWithAlert = await Utils.getDevice(account, alert.origin);
+  const groupWithAlert = await Utils.getDevice(account, alert.device);
   const org_dev = await Utils.getDevice(account, org_id);
 
   // Get action message
-  const [message_var] = await groupWithAlert.getData({ variables: ["action_list_message", "action_group_message"], series: alert_id, qty: 1 });
+  const [message_var] = await groupWithAlert.getData({ variables: ["action_list_message", "action_group_message"], groups: alert_id, qty: 1 });
 
-  const device_id = data.origin;
+  const device_id = data.device;
   const device_info = await account.devices.info(device_id);
 
   const replace_details: IMessageDetail = {

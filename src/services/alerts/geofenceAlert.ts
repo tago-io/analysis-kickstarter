@@ -114,10 +114,10 @@ async function getAlertList(account: Account, outsideZones: IGeofenceMetadata[],
       .find((x) => x.key === "action_type")
       ?.value?.replace(/;/g, ",")
       .split(",");
-    const action_origin = action_info.tags.find((x) => x.key === "origin")?.value as string;
+    const action_device = action_info.tags.find((x) => x.key === "device")?.value as string;
 
     await account.devices.paramSet(device_id, { ...alertParam, key: item.event, value: "geofence", sent: true });
-    alerts.push({ action_id: item.event, send_to, type: action_type, origin: action_origin });
+    alerts.push({ action_id: item.event, send_to, type: action_type, device: action_device });
   }
 
   return alerts;
@@ -152,7 +152,7 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
   if (org_id) {
     org_dev = await Utils.getDevice(account, org_id as string);
     let geofence_list = await org_dev.getData({ variables: "geofence_alerts", qty: 100 });
-    geofence_list = geofence_list.map((x) => ({ ...x, metadata: { ...x.metadata, origin: org_id } }));
+    geofence_list = geofence_list.map((x) => ({ ...x, metadata: { ...x.metadata, device: org_id } }));
     geofences = geofences.concat(geofence_list);
   }
 
@@ -160,7 +160,7 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
   if (group_id) {
     const group_dev = await Utils.getDevice(account, group_id as string);
     let geofence_list = await group_dev.getData({ variables: "geofence_alerts", qty: 100 });
-    geofence_list = geofence_list.map((x) => ({ ...x, metadata: { ...x.metadata, origin: group_id } }));
+    geofence_list = geofence_list.map((x) => ({ ...x, metadata: { ...x.metadata, device: group_id } }));
     geofences = geofences.concat(geofence_list);
   }
 
@@ -168,7 +168,7 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
   if (subgroup_id) {
     const subgroup_dev = await Utils.getDevice(account, subgroup_id as string);
     let geofence_list = await subgroup_dev.getData({ variables: "geofence_alerts", qty: 100 });
-    geofence_list = geofence_list.map((x) => ({ ...x, metadata: { ...x.metadata, origin: subgroup_id } }));
+    geofence_list = geofence_list.map((x) => ({ ...x, metadata: { ...x.metadata, device: subgroup_id } }));
     geofences = geofences.concat(geofence_list);
   }
 
@@ -205,10 +205,10 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
   }
 
   for (const alert of alerts) {
-    const mockData = {
+    const mockData: any = {
       variable: "location",
       value: `${coordinates.lat},${coordinates.lng}`,
-      origin: device_id,
+      device: device_id,
       time: new Date(),
     };
 
@@ -229,7 +229,7 @@ async function geofenceAlertCreate(account: Account, devToStoreAlert: Device, ac
     variable: "action_geofence",
     value: structure.name,
     metadata: { color: condition.includes("Sair") || condition.includes("Outside") ? "green" : "red" },
-    serie: action_id,
+    group: action_id,
   });
 }
 
@@ -241,7 +241,7 @@ async function geofenceAlertCreate(account: Account, devToStoreAlert: Device, ac
  * @param structure structure of the action
  */
 async function geofenceAlertEdit(account: Account, devToStoreAlert: Device, action_id: string, structure: ActionStructureParams) {
-  await devToStoreAlert.deleteData({ variables: "action_geofence", series: action_id });
+  await devToStoreAlert.deleteData({ variables: "action_geofence", groups: action_id });
 
   geofenceAlertCreate(account, devToStoreAlert, action_id, structure);
 }

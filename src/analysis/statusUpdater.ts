@@ -20,6 +20,7 @@ import { ConfigurationParams, DeviceListItem } from "@tago-io/sdk/out/modules/Ac
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import moment from "moment-timezone";
 import { parseTagoObject } from "../lib/data.logic";
+import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
 
 const resolveOrg = async (account: Account, org: DeviceListItem) => {
@@ -28,17 +29,10 @@ const resolveOrg = async (account: Account, org: DeviceListItem) => {
   let inactivy_qty = 0;
   const org_id = org.id;
 
-  const sensorList = await account.devices.list({
-    page: 1,
-    fields: ["id", "name", "tags", "last_input"],
-    filter: {
-      tags: [
-        { key: "organization_id", value: org.id },
-        { key: "device_type", value: "device" },
-      ],
-    },
-    amount: 10000,
-  });
+  const sensorList = await fetchDeviceList(account, [
+    { key: "organization_id", value: org.id },
+    { key: "device_type", value: "device" },
+  ]);
 
   sensorList.forEach((sensor) => {
     const last_input = moment(sensor.last_input);
@@ -93,14 +87,14 @@ const checkLocation = async (account: Account, device: Device) => {
   }
 
   const site_dev = await Utils.getDevice(account, site_id);
-  const [dev_id] = await site_dev.getData({ variables: "dev_id", series: device_info.id, qty: 1 });
+  const [dev_id] = await site_dev.getData({ variables: "dev_id", groups: device_info.id, qty: 1 });
   if (
     (dev_id?.location as any).coordinates[0] === (location_data.location as any).coordinates[0] &&
     (dev_id?.location as any).coordinates[1] === (location_data.location as any).coordinates[1]
   ) {
     return "Same position";
   }
-  await site_dev.deleteData({ variables: "dev_id", series: device_info.id, qty: 1 });
+  await site_dev.deleteData({ variables: "dev_id", groups: device_info.id, qty: 1 });
   dev_id.location = location_data.location;
   delete dev_id.time;
 
@@ -156,21 +150,11 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
   const config_dev = new Device({ token: environment.config_token });
   const account = new Account({ token: environment.account_token });
 
-  const orgList = await account.devices.list({
-    page: 1,
-    fields: ["id", "name", "tags", "last_input"],
-    filter: { tags: [{ key: "device_type", value: "organization" }] },
-    amount: 10000,
-  });
+  const orgList = await fetchDeviceList(account, [{ key: "device_type", value: "organization" }]);
 
   orgList.map((org) => resolveOrg(account, org));
 
-  const sensorList = await account.devices.list({
-    page: 1,
-    fields: ["id", "name", "tags", "last_input"],
-    filter: { tags: [{ key: "device_type", value: "device" }] },
-    amount: 10000,
-  });
+  const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
 
   sensorList.map((device) =>
     resolveDevice(context, account, device.tags.find((tag) => tag.key === "organization_id")?.value as string, device.tags.find((tag) => tag.key === "device_id")?.value as string)

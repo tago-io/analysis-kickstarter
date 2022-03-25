@@ -1,21 +1,19 @@
 import { Account, Utils } from "@tago-io/sdk";
+import { Data } from "@tago-io/sdk/out/common/common.types";
+import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 import { parseTagoObject } from "../../lib/data.logic";
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
 import { findAnalysisByExportID } from "../../lib/findResource";
 import { RouterConstructorData } from "../../types";
 import { checkinAlertSet } from "./checkinAlerts";
 import { geofenceAlertCreate } from "./geofenceAlert";
 
 async function getGroupDevices(account: Account, group_id: string, groupKey: string = "group_id") {
-  const list = await account.devices.list({
-    amount: 999,
-    filter: {
-      tags: [
-        { key: groupKey, value: group_id },
-        { key: "device_type", value: "sensor" },
-      ],
-    },
-  });
+  const list: DeviceListItem[] = await fetchDeviceList(account, [
+    { key: groupKey, value: group_id },
+    { key: "device_type", value: "device" }, //?
+  ]);
 
   return list.map((x) => x.id);
 }
@@ -48,7 +46,7 @@ interface ActionStructureParams {
   condition: string;
 
   script: string;
-  origin: string;
+  device: string;
   name?: string;
 }
 
@@ -59,7 +57,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
     tags: [
       { key: "group_id", value: structure.group_id || "N/A" },
       { key: "organization_id", value: structure.org_id },
-      { key: "origin", value: structure.origin },
+      { key: "device", value: structure.device },
       { key: "name", value: structure.name || "" },
       { key: "send_to", value: structure.send_to.replace(/ /g, "") },
       { key: "action_type", value: structure.type.replace(/ /g, "") },
@@ -142,7 +140,8 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
 }
 
 async function createAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
-  const devToStoreAlert = await Utils.getDevice(account, scope[0].origin);
+  const devToStoreAlert = await Utils.getDevice(account, scope[0].device);
+  devToStoreAlert.sendData({ variable: "action_validation", value: "#VAL.CREATING_ALERT#", metadata: { type: "warning" } });
 
   // Get the fields from the Input widget.
   const action_group = scope.find((x) => x.variable === "action_group_list");
@@ -152,7 +151,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   const action_sendto = scope.find((x) => x.variable === "action_sendto");
 
   const action_variable = scope.find((x) => x.variable === "action_variable");
-  let action_condition = scope.find((x) => x.variable === "action_condition");
+  let action_condition: Data | DataToSend = scope.find((x) => x.variable === "action_condition");
   let action_value = scope.find((x) => x.variable === "action_value");
   const action_value2 = scope.find((x) => x.variable === "action_value2");
 
@@ -181,7 +180,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
 
   if (!action_condition?.value) {
     action_value = scope.find((x) => x.variable === "action_binary_value");
-    action_condition = { origin: scope[0].origin, time: new Date(), variable: "action_condition", value: "=" };
+    action_condition = { device: scope[0].device, time: new Date(), variable: "action_condition", value: "=" };
   }
 
   // Validate all the fields. This is just a double check so we don't run in unexpected behaviour.
@@ -197,7 +196,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     throw 'Missing "action_value" in the data scope.';
   }
 
-  const organization_id = scope[0].origin;
+  const organization_id = scope[0].device;
   let device_list: string[] = [];
 
   if (action_dev_list) {
@@ -210,8 +209,6 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     }
     device_list = await getGroupDevices(account, group_id, groupKey);
   }
-
-  devToStoreAlert.sendData({ variable: "action_validation", value: "Criando alerta, aguarde...", metadata: { type: "warning" } });
 
   const script_id = await findAnalysisByExportID(account, "alertTrigger");
 
@@ -228,7 +225,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     condition: action_condition.value as string,
     type: action_type?.value as string,
     variable: action_variable.value as string,
-    origin: scope[0].origin,
+    device: scope[0].device,
     name: action_name,
   };
   const action_structure = generateActionStructure(structure, device_list);
@@ -238,7 +235,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     throw e;
   });
   // Store the data in the device, so we can see and edit it in the Dynamic Table.
-  // It's very important that the serie is the action ID, so we can use it to edit/delete later.
+  // It's very important that the group is the action ID, so we can use it to edit/delete later.
   let data_to_tago: DataToSend[] = parseTagoObject(
     {
       action_list_variable: { value: action_variable.value, metadata: structure },
@@ -252,9 +249,9 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   );
 
   if (action_dev_list) {
-    data_to_tago.push({ variable: "action_list_devices", value: action_dev_list.value, metadata: action_dev_list.metadata, serie: action_id });
+    data_to_tago.push({ variable: "action_list_devices", value: action_dev_list.value, metadata: action_dev_list.metadata, group: action_id });
   } else if (action_group) {
-    data_to_tago.push({ variable: "action_group_group", value: action_group.value, metadata: action_group.metadata, serie: action_id });
+    data_to_tago.push({ variable: "action_group_group", value: action_group.value, metadata: action_group.metadata, group: action_id });
 
     // change action_list to action_group, in order to show up on alert group list.
     data_to_tago = data_to_tago.map((x) => ({ ...x, variable: x.variable.replace("action_list", "action_group") }));

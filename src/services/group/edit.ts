@@ -14,9 +14,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const org_dev = await Utils.getDevice(account, org_id);
 
-  const [group_id_data] = await org_dev.getData({ variables: "group_id", series: group_id, qty: 1 });
+  const [group_id_data] = await org_dev.getData({ variables: "group_id", groups: group_id, qty: 1 });
   if (group_id_data) {
-    await org_dev.deleteData({ variables: "group_id", series: group_id });
+    await org_dev.deleteData({ variables: "group_id", groups: group_id });
     await org_dev.sendData({ ...group_id_data, metadata: { ...group_id_data.metadata, label: new_group_name } });
   }
 

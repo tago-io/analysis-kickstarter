@@ -18,6 +18,7 @@ import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 import { parseTagoObject } from "../lib/data.logic";
 
 import orgAdd from "../services/organization/register";
@@ -48,11 +49,11 @@ async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<v
   const config_dev = new Device({ token: environment.config_token });
   const account = new Account({ token: environment.account_token });
 
-  const organization_scope: Data[] = parseTagoObject({
+  const organization_scope: any = parseTagoObject({
     new_org_name: scope[0].name,
     new_org_address: "N/A",
-    new_org_plan_serie: environment.plan_serie,
-  }).map((x) => ({ ...x, origin: " ", time: new Date() }));
+    new_org_plan_group: environment.plan_group,
+  }).map((x) => ({ ...x, device: " ", time: new Date() }));
 
   let org_id = "";
 

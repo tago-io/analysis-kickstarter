@@ -38,25 +38,25 @@ async function removeDeviceFromAlert(account: Account, action_id: string, device
  * Main delete alert function.
  */
 async function deleteAlert({ account, environment, scope, config_dev, context }: RouterConstructorData) {
-  const { serie } = scope[0];
-  if (!serie) {
+  const { group } = scope[0];
+  if (!group) {
     return;
   }
 
-  const device = await Utils.getDevice(account, scope[0].origin);
-  device.deleteData({ series: serie });
+  const device = await Utils.getDevice(account, scope[0].device);
+  device.deleteData({ groups: group });
 
-  const action_info = await account.actions.info(serie);
+  const action_info = await account.actions.info(group);
   if (!action_info) {
     return;
   }
 
-  await account.actions.delete(serie);
+  await account.actions.delete(group);
   const devices = [...new Set(action_info.trigger.map((x: any) => x.device).filter((x) => x))];
   for (const device_id of devices) {
     const params = await account.devices.paramList(device_id);
 
-    const paramToDelete = params.find((x) => x.key.includes(serie));
+    const paramToDelete = params.find((x) => x.key.includes(group));
     if (paramToDelete) {
       await account.devices.paramRemove(device_id, paramToDelete.id);
     }

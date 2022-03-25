@@ -1,9 +1,10 @@
 import { Device, Account, Types, Utils } from "@tago-io/sdk";
-import { DeviceCreateInfo } from "@tago-io/sdk/out/modules/Account/devices.types";
+import { DeviceCreateInfo, DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import validation from "../../lib/validation";
 import { DeviceCreated, RouterConstructorData } from "../../types";
 import { parseTagoObject } from "../../lib/data.logic";
 import { findDashboardByExportID, findDashboardByConnectorID } from "../../lib/findResource";
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
 
 interface installDeviceParam {
   account: Account;
@@ -22,9 +23,10 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
     network: network_id,
     serie_number: new_device_eui,
     connector,
+    type: "immutable",
+    data_retention: "1 year",
   };
 
-  console.log(device_data);
   //creating new device
   const new_dev = await account.devices.create(device_data);
 
@@ -49,24 +51,16 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
 }
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const org_id = scope[0].origin as string;
+  const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
   const validate = validation("dev_validation", org_dev);
   validate("#VAL.REGISTERING#", "warning");
 
-  const sensor_qty = await account.devices.list({
-    page: 1,
-    fields: ["id", "name"],
-    filter: {
-      tags: [
-        { key: "device_type", value: "device" },
-        { key: "organization_id", value: org_id },
-      ],
-    },
-    amount: 10,
-    resolveBucketName: false,
-  });
+  const sensor_qty = await fetchDeviceList(account, [
+    { key: "device_type", value: "device" },
+    { key: "organization_id", value: org_id },
+  ]);
 
   if (sensor_qty.length >= 5) {
     return validate("#VAL.LIMIT_OF_5_DEVICES_REACHED#", "danger");
@@ -89,13 +83,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   //If choosing for the simulator, we generate a random EUI
   const dev_eui = (new_dev_eui?.value as string)?.toUpperCase() || String(Math.ceil(Math.random() * 10000000));
 
-  const dev_exists = await account.devices.list({
-    page: 1,
-    fields: ["id", "name"],
-    filter: { id: dev_eui },
-    amount: 20,
-    resolveBucketName: false,
-  });
+  const dev_exists: DeviceListItem[] = await fetchDeviceList(account, [], dev_eui);
 
   if (dev_exists.length > 0) {
     throw validate("#VAL.DEVICE_ALREADY_EXISTS#", "danger");

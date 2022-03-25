@@ -39,9 +39,9 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   // Instance the Account class
   const account = new Account({ token: environment.account_token });
 
-  // Instance the device class using the origin from scope variables.
-  // Origin is always the device used in the widget to trigger the analysis.
-  const device_id = scope[0].origin;
+  // Instance the device class using the device from scope variables.
+  // device is always the device used in the widget to trigger the analysis.
+  const device_id = scope[0].device;
   const device_token = await Utils.getTokenByName(account, device_id);
   const org_dev = new Device({ token: device_token });
 

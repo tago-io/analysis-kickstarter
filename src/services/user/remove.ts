@@ -2,7 +2,7 @@ import { Utils } from "@tago-io/sdk";
 import { RouterConstructorData } from "../../types";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const user_id = scope[0].serie;
+  const user_id = scope[0].device;
   //checking if user exists
   const user_exists = await account.run.userInfo(user_id);
   if (!user_exists) {
@@ -27,10 +27,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   if (group_id) {
     const group_dev = await Utils.getDevice(account, group_id);
-    await group_dev.deleteData({ series: user_id, qty: 9999 });
+    await group_dev.deleteData({ groups: user_id, qty: 9999 });
   }
-  await config_dev.deleteData({ series: user_id, qty: 9999 });
-  await org_dev.deleteData({ series: user_id, qty: 9999 });
+  await config_dev.deleteData({ groups: user_id, qty: 9999 });
+  await org_dev.deleteData({ groups: user_id, qty: 9999 });
   //deleting user
   await account.run.userDelete(user_id).then((msg) => console.log(msg));
   return;

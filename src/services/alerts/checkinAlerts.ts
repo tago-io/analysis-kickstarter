@@ -35,21 +35,21 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
         .find((x) => x.key === "action_type")
         ?.value?.replace(/;/g, ",")
         .split(",");
-      const origin = action_info.tags.find((x) => x.key === "origin")?.value as string;
+      const device = action_info.tags.find((x) => x.key === "device")?.value as string;
 
       const mockData = {
         variable: "Inactivity",
         value: diff_hours,
-        origin: device_id,
+        device: device_id,
         time: new Date(),
       };
 
       const alert: IAlertTrigger = {
         action_id,
-        origin,
+        device,
         send_to,
         type,
-        data: mockData,
+        data: mockData as any,
       };
 
       await sendAlert(account, context, org_id, alert);

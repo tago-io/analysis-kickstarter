@@ -1,6 +1,7 @@
 import { Device, Account, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
 import { RouterConstructorData } from "../../types";
 
 const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data) => {
@@ -9,7 +10,7 @@ const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data
   const org_dev = await Utils.getDevice(account, org_id);
 
   await org_dev.deleteData({ variables: "plan_data", qty: 9999 });
-  delete plan_data.origin;
+  delete plan_data.device;
   delete plan_data.time;
   await org_dev.sendData(plan_data);
 
@@ -35,25 +36,18 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const plan_notif_limit = scope.find((x) => x.variable === "plan_notif_limit");
   const plan_data_retention = scope.find((x) => x.variable === "plan_data_retention");
 
-  const plan_serie = scope[0].serie;
-  const [plan_data] = await config_dev.getData({ variables: "plan_data", series: plan_serie, qty: 1 });
+  const plan_group = scope[0].group;
+  console.log(plan_group);
+  const [plan_data] = await config_dev.getData({ variables: "plan_data", groups: plan_group, qty: 1 });
 
   if (!plan_data) {
     return console.log("No plan found!");
   }
 
-  const org_dev_list = await account.devices.list({
-    page: 1,
-    fields: ["id", "name"],
-    filter: {
-      tags: [
-        { key: "device_type", value: "organization" },
-        { key: "plan_serie", value: plan_data.serie as string },
-      ],
-    },
-    amount: 9999,
-    resolveBucketName: false,
-  });
+  const org_dev_list = await fetchDeviceList(account, [
+    { key: "device_type", value: "organization" },
+    { key: "plan_group", value: plan_data.group as string },
+  ]);
 
   //change plan_data
   if (plan_name) {
@@ -77,7 +71,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
 
   //this line must always work synchroniously
-  await config_dev.deleteData({ variables: "plan_data", series: plan_serie, qty: 1 });
+  await config_dev.deleteData({ variables: "plan_data", groups: plan_group, qty: 1 });
 
   await config_dev.sendData(plan_data);
 

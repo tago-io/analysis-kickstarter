@@ -15,7 +15,9 @@
 
 import { Account, Device, Analysis, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
+import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { fetchDeviceList } from "../lib/fetchDeviceList";
 
 async function init(context: TagoContext, scope: Data[]): Promise<void> {
   context.log("Monthly usage reset analysis started");
@@ -31,15 +33,7 @@ async function init(context: TagoContext, scope: Data[]): Promise<void> {
   // Instance the Account class
   const account = new Account({ token: environment.account_token });
 
-  const org_list = await account.devices.list({
-    page: 1,
-    fields: ["id", "name"],
-    filter: {
-      tags: [{ key: "device_type", value: "organization" }],
-    },
-    amount: 9999,
-    resolveBucketName: false,
-  });
+  const org_list: DeviceListItem[] = await fetchDeviceList(account, [{ key: "device_type", value: "organization" }]);
 
   for (const org of org_list) {
     const org_params = await account.devices.paramList(org.id);
@@ -56,4 +50,4 @@ async function init(context: TagoContext, scope: Data[]): Promise<void> {
   return context.log("Analysis finished successfuly!");
 }
 
-export default new Analysis(init, { token: "eb1b2ade-dd52-4216-866d-0dbce79d824f" });
+export default new Analysis(init, { token: "6c73d99e-fbc2-43c7-a656-3a446f5c196d" });

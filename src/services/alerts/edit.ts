@@ -17,7 +17,7 @@ interface ActionListParams {
  * Function to be used externally when need to add a device to an alert.
  */
 async function addDeviceToAlert(account: Account, org_dev: Device, action_id: string, device_id: string) {
-  const [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, series: action_id });
+  const [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, groups: action_id });
   if (!action_variable) {
     console.log(`Couldnt find the action_variable for ${action_id}`);
     return;
@@ -55,14 +55,14 @@ async function listDeviceAction(account: Account, { device_id, action_id, group_
 }
 
 async function undoChanges(device: Device, scope: Data[]) {
-  await device.deleteData({ variables: scope.map((data) => data.variable), series: scope[0].serie });
+  await device.deleteData({ variables: scope.map((data) => data.variable), groups: scope[0].device });
   await device.sendData(scope.map((data) => ({ ...data, value: data.metadata.old_value })));
 }
 /**
  * Main edit alert function
  */
 async function editAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
-  const { serie: action_id } = scope[0];
+  const { group: action_id } = scope[0];
 
   // Get the fields from the Dynamic Table widget.
   // If the field was not edited, the value of the variable will be equal to null.
@@ -77,7 +77,7 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   const action_sendto = scope.find((x) => ["action_list_sendto", "action_group_sendto"].includes(x.variable));
 
   if (!action_variable) {
-    [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, series: action_id });
+    [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, groups: action_id });
   }
 
   if (!action_variable) {
@@ -146,7 +146,7 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
     return e;
   });
 
-  await org_dev.deleteData({ variables: ["action_list_variable", "action_group_variable"], series: action_id });
+  await org_dev.deleteData({ variables: ["action_list_variable", "action_group_variable"], groups: action_id });
   org_dev.sendData({ ...action_variable, metadata: structure });
 }
 

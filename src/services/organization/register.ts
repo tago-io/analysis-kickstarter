@@ -9,12 +9,16 @@ import registerUser from "../user/register";
 interface installDeviceParam {
   account: Account;
   new_org_name: string;
+  new_org_plan_group: string;
 }
 
-async function installDevice({ account, new_org_name }: installDeviceParam) {
+async function installDevice({ account, new_org_name, new_org_plan_group }: installDeviceParam) {
   //structuring data
   const device_data: DeviceCreateInfo = {
     name: new_org_name,
+    network: "5bbd0d144051a50034cd19fb",
+    connector: "5f5a8f3351d4db99c40dece5",
+    type: "mutable",
   };
 
   //creating new device
@@ -26,6 +30,7 @@ async function installDevice({ account, new_org_name }: installDeviceParam) {
       { key: "organization_id", value: new_org.device_id },
       { key: "user_org_id", value: new_org.device_id },
       { key: "device_type", value: "organization" },
+      { key: "plan_group", value: new_org_plan_group },
     ],
   });
 
@@ -45,19 +50,19 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const new_org_address = scope.find((x) => x.variable === "new_org_address");
   const new_org_plan = scope.find((x) => x.variable === "new_org_plan");
 
-  const new_org_plan_serie = scope.find((x) => x.variable === "new_org_plan_serie");
+  const new_org_plan_group = scope.find((x) => x.variable === "new_org_plan_group");
 
   const new_user_name = scope.find((x) => x.variable === "new_orgadmin_name");
 
-  if (!new_org_plan && !new_org_plan_serie) {
+  if (!new_org_plan && !new_org_plan_group) {
     throw validate("Plan error, internal problem.", "danger");
   }
 
   let [plan_data] = await config_dev.getData({ variables: "plan_data", values: new_org_plan?.value, qty: 1 });
 
-  //sign up route ~ place an environment variable "plan_serie" on analysis [TagoIO] - User Signup
-  if (new_org_plan_serie) {
-    [plan_data] = await config_dev.getData({ variables: "plan_data", series: new_org_plan_serie?.value as string, qty: 1 });
+  //sign up route ~ place an environment variable "plan_group" on analysis [TagoIO] - User Signup
+  if (new_org_plan_group) {
+    [plan_data] = await config_dev.getData({ variables: "plan_data", groups: new_org_plan_group?.value as string, qty: 1 });
   }
 
   const plan_name = plan_data.value as string;
@@ -75,9 +80,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const user_auth_token = await account.ServiceAuthorization.tokenCreate({ name: `${new_org_name.value}_token`, permission: "full" });
 
-  //need device id to configure serie in parseTagoObject
+  //need device id to configure group in parseTagoObject
   //creating new device
-  const { device_id, device: org_dev } = await installDevice({ account, new_org_name: new_org_name.value as string });
+  const { device_id, device: org_dev } = await installDevice({ account, new_org_name: new_org_name.value as string, new_org_plan_group: plan_data.group as string });
 
   const dash_organization_id = await findDashboardByExportID(account, "dash_sensor_list");
 
@@ -106,7 +111,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   await org_dev.sendData({ ...plan_data });
 
   if (new_user_name?.value) {
-    scope = scope.map((data) => ({ ...data, origin: device_id }));
+    scope = scope.map((data) => ({ ...data, device: device_id }));
     await registerUser({ config_dev, context, scope, account, environment });
   }
 

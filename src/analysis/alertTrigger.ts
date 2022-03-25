@@ -78,10 +78,10 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
   // Get action message
   const org_id = action_info.tags.find((x) => x.key === "organization_id")?.value;
   const org_dev = await Utils.getDevice(account, org_id);
-  const [message_var] = await org_dev.getData({ variables: ["action_list_message", "action_group_message"], series: alert_id, qty: 1 });
+  const [message_var] = await org_dev.getData({ variables: ["action_list_message", "action_group_message"], groups: alert_id, qty: 1 });
 
   const trigger_variable = scope.find((x) => x.variable === (action_info.trigger[0] as any).variable);
-  const device_id = scope[0].origin;
+  const device_id = scope[0].device;
   const device_info = await account.devices.info(device_id);
 
   const replace_details: IMessageDetail = {
