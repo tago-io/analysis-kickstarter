@@ -12,7 +12,7 @@ import { geofenceAlertCreate } from "./geofenceAlert";
 async function getGroupDevices(account: Account, group_id: string, groupKey: string = "group_id") {
   const list: DeviceListItem[] = await fetchDeviceList(account, [
     { key: groupKey, value: group_id },
-    { key: "device_type", value: "sensor" },
+    { key: "device_type", value: "device" }, //?
   ]);
 
   return list.map((x) => x.id);

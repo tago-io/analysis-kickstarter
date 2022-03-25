@@ -33,7 +33,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     await org_dev.sendData(old_dev_id);
   }
 
-  if (new_group_id) {
+  if (new_group_id || new_group_id === "") {
     const { name: current_device_name, tags: current_device_tags, connector } = await account.devices.info(dev_id);
 
     //removing data from the last group
