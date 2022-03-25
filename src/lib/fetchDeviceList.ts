@@ -7,10 +7,10 @@ import { DeviceInfo, DeviceListItem } from "@tago-io/sdk/out/modules/Account/dev
 // ? ====================================================================================
 
 async function fetchDeviceList(account: Account, tags?: TagsObj[], id?: string): Promise<DeviceListItem[]> {
-  let org_list: DeviceListItem[] = [];
+  let device_list: DeviceListItem[] = [];
 
   for (let index = 1; index < 9999; index++) {
-    const org_devices = await account.devices.list({
+    const found_devices = await account.devices.list({
       page: index,
       fields: ["id", "name", "bucket", "tags", "last_input"],
       filter: {
@@ -18,13 +18,13 @@ async function fetchDeviceList(account: Account, tags?: TagsObj[], id?: string):
         tags: tags || undefined,
       },
       resolveBucketName: false,
+      amount: 100,
     });
 
-    if (org_devices.length) {
-      org_list = org_list.concat(org_devices);
-    } else {
-      return org_list;
+    if (!found_devices.length) {
+      return device_list;
     }
+    device_list = device_list.concat(found_devices);
   }
 }
 
