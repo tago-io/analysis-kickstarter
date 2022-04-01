@@ -23,7 +23,7 @@ import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
 
-const resolveOrg = async (account: Account, org: DeviceListItem) => {
+async function resolveOrg(account: Account, org: DeviceListItem) {
   let total_qty = 0;
   let active_qty = 0;
   let inactivy_qty = 0;
@@ -70,7 +70,7 @@ const resolveOrg = async (account: Account, org: DeviceListItem) => {
     qty: 9999,
   });
   await org_dev.sendData(parseTagoObject(to_tago));
-};
+}
 
 const checkLocation = async (account: Account, device: Device) => {
   const [location_data] = await device.getData({ variables: "location", qty: 1 });

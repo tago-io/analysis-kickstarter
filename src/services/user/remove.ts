@@ -2,7 +2,7 @@ import { Utils } from "@tago-io/sdk";
 import { RouterConstructorData } from "../../types";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  const user_id = scope[0].device;
+  const user_id = scope[0].group;
   //checking if user exists
   const user_exists = await account.run.userInfo(user_id);
   if (!user_exists) {
