@@ -18,6 +18,8 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const report_sensors = scope.find((x) => x.variable === "report_sensors" || x.variable === "bysite_report_sensors");
   const report_group = scope.find((x) => x.variable === "report_group" || x.variable === "bysite_report_group");
 
+  console.log(report_days?.value);
+
   const [action_registered] = await account.actions.list({
     page: 1,
     fields: ["id", "name", "tags", "active"],
@@ -35,10 +37,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
 
   const action_object: ReportActionStructure = {
-    org_id, //ok
-    group: action_group, //ok
-    cron: "", //ok
-    active: false, //ok
+    org_id,
+    group: action_group,
+    cron: "",
+    active: false,
     tags: [{ key: "action_group", value: action_group }], //sensor/group, contact, org_id
   };
 
@@ -53,7 +55,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     }
   }
   if (report_group) {
-    action_object.tags.push({ key: "group_list", value: report_group?.value as string });
+    action_object.tags.push({ key: "group_list", value: (report_group?.value as string).replace(/;/g, ", ") });
   } else {
     //if it previously has a sensor_list tag
     const group_list_tag = action_registered.tags.find((x) => x.key === "group_list");
