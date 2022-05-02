@@ -37,13 +37,10 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
   const environment = Utils.envToJson(context.environment);
   if (!environment) {
     return;
-  } else if (!environment.config_token) {
-    throw "Missing config_token environment var";
   } else if (!environment.account_token) {
     throw "Missing account_token environment var";
   }
 
-  const config_dev = new Device({ token: environment.config_token });
   const account = new Account({ token: environment.account_token });
 
   const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
