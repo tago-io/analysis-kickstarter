@@ -64,6 +64,7 @@ You will notice three folders in the `src/` folder.
 For additional informations on how to setup TagoIO with this code, and all the TagoIO resources used, check the Kickstarter Guide documentation at [analysis-kickstarter/docs/Kickstarter-Guide](https://github.com/tago-io/analysis-kickstarter/blob/master/docs/Kickstarter%20-%20Guide.pdf).
 
 ### User Permissions Diagram
+
 ::: mermaid
 graph LR
 subgraph TagoIO KickStarter User Permission Diagram V1.0.0
@@ -144,7 +145,8 @@ subgraph Guilherme Costa - March 2nd, 2022
 end
 test[1* Only those related to the User's Company]
 end
-:::
+::: 
+
 
 ### Support
 You can open an issue or question at [https://github.com/tago-io/analysis-kickstarter/issues](https://github.com/tago-io/analysis-kickstarter/issues).

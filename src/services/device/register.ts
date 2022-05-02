@@ -24,7 +24,7 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
     serie_number: new_device_eui,
     connector,
     type: "immutable",
-    data_retention: "1 year",
+    data_retention: "1 month",
   };
 
   //creating new device

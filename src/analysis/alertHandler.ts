@@ -11,7 +11,7 @@
  * How to setup this analysis
  * Make sure you have the following enviroment variables:
  * - config_token: the value must be a token from a HTTPs device, that stores general information of the application.
- * - account_token: the value must be a token from your profile. generated at My Settings of your developer's account.
+ * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 import { Account, Device, Analysis, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";

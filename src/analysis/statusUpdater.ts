@@ -11,7 +11,7 @@
  *
  * How to setup this analysis
  * Make sure you have the following enviroment variables:
- * - account_token: the value must be a token from your profile. generated at My Settings of your developer's account.
+ * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
 import { Utils, Services, Account, Device, Types, Analysis } from "@tago-io/sdk";
@@ -23,7 +23,7 @@ import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
 
-const resolveOrg = async (account: Account, org: DeviceListItem) => {
+async function resolveOrg(account: Account, org: DeviceListItem) {
   let total_qty = 0;
   let active_qty = 0;
   let inactivy_qty = 0;
@@ -70,7 +70,7 @@ const resolveOrg = async (account: Account, org: DeviceListItem) => {
     qty: 9999,
   });
   await org_dev.sendData(parseTagoObject(to_tago));
-};
+}
 
 const checkLocation = async (account: Account, device: Device) => {
   const [location_data] = await device.getData({ variables: "location", qty: 1 });
@@ -122,17 +122,10 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
 
   const device_params = await account.devices.paramList(device_id);
   const dev_lastcheckin_param = device_params.find((param) => param.key === "dev_lastcheckin") || { key: "dev_lastcheckin", value: String(diff_hours), sent: false };
-  const dev_battery_param = device_params.find((param) => param.key === "dev_battery") || { key: "dev_battery", value: "-", sent: false };
 
   await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
 
   await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: diff_hours >= 24 ? true : false });
-
-  const [dev_battery] = await device.getData({ variables: "battery_capacity", qty: 1 });
-
-  if (dev_battery?.value) {
-    await account.devices.paramSet(device_id, { ...dev_battery_param, value: String(dev_battery.value) });
-  }
 }
 
 async function handler(context: TagoContext, scope: Data[]): Promise<void> {

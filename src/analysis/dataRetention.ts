@@ -8,6 +8,7 @@
  * Make sure you have the following enviroment variables:
  * - config_token: the value must be a token from a HTTPs device, that stores general information of the application.
  * You also must have an action of type Schedule, and set this analysis to run each day (recommended).
+ * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
 import { Utils, Services, Account, Device, Analysis, Types } from "@tago-io/sdk";
