@@ -35,7 +35,7 @@
     "eslint-plugin-jest": "26.1.5",
     "eslint-plugin-prettier": "4.0.0",
     "husky": "4.3.8",
-    "jest": "28.0.3",
+    "jest": "27.0.0",
     "prettier": "2.6.2",
     "ts-jest": "27.1.4",
     "ts-node": "10.7.0",
