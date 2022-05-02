@@ -10,7 +10,7 @@
  *
  * How to setup this analysis
  * Make sure you have the following enviroment variables:
- * - account_token: the value must be a token from your profile. generated at My Settings of your developer's account.
+ * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
 import { Account, Analysis, Device, Utils } from "@tago-io/sdk";

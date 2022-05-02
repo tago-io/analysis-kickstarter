@@ -11,7 +11,7 @@
  *
  * How to setup this analysis
  * Make sure you have the following enviroment variables:
- * - account_token: the value must be a token from your profile. generated at My Settings of your developer's account.
+ * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
 import { Utils, Services, Account, Device, Types, Analysis } from "@tago-io/sdk";
@@ -122,17 +122,10 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
 
   const device_params = await account.devices.paramList(device_id);
   const dev_lastcheckin_param = device_params.find((param) => param.key === "dev_lastcheckin") || { key: "dev_lastcheckin", value: String(diff_hours), sent: false };
-  const dev_battery_param = device_params.find((param) => param.key === "dev_battery") || { key: "dev_battery", value: "-", sent: false };
 
   await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
 
   await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: diff_hours >= 24 ? true : false });
-
-  const [dev_battery] = await device.getData({ variables: "battery_capacity", qty: 1 });
-
-  if (dev_battery?.value) {
-    await account.devices.paramSet(device_id, { ...dev_battery_param, value: String(dev_battery.value) });
-  }
 }
 
 async function handler(context: TagoContext, scope: Data[]): Promise<void> {
