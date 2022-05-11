@@ -10,7 +10,7 @@
     "test:coverage": "jest . --coverage",
     "linter": "eslint .",
     "build": "analysis-builder src/analysis/handler.ts ./build/handler.tago.js && analysis-builder src/analysis/statusUpdater.ts ./build/statusUpdater.tago.js && analysis-builder src/analysis/sendReport.ts ./build/sendReport.tago.js && analysis-builder src/analysis/dataRetention.ts ./build/dataRetention.tago.js  && analysis-builder src/analysis/uplinkHandler.ts ./build/uplinkHandler.tago.js && analysis-builder src/analysis/dataRetention.ts ./build/dataRetention.tago.js && analysis-builder src/analysis/alertHandler.ts ./build/alertHandler.tago.js && analysis-builder src/analysis/alertTrigger.ts ./build/alertTrigger.tago.js && analysis-builder src/analysis/monthlyUsageReset.ts ./build/monthlyUsageReset.tago.js && analysis-builder src/analysis/userSignUp.ts ./build/userSignUp.tago.js",
-    "start": "ts-node-dev src/analysis/handler.ts",
+    "start": "ts-node-dev --inspect --",
     "inspect": "node --inspect ./node_modules/.bin/ts-node --files ./src/start.ts"
   },
   "jest": {
@@ -24,32 +24,32 @@
   },
   "devDependencies": {
     "@tago-io/builder": "3.0.3",
-    "@types/jest": "27.4.1",
-    "@typescript-eslint/eslint-plugin": "5.21.0",
-    "@typescript-eslint/parser": "5.21.0",
+    "@types/jest": "27.5.0",
+    "@typescript-eslint/eslint-plugin": "5.23.0",
+    "@typescript-eslint/parser": "5.23.0",
     "commitlint": "16.2.4",
-    "eslint": "8.14.0",
+    "eslint": "8.15.0",
     "eslint-config-prettier": "8.5.0",
     "eslint-import-resolver-typescript": "2.7.1",
     "eslint-plugin-import": "2.26.0",
     "eslint-plugin-jest": "26.1.5",
     "eslint-plugin-prettier": "4.0.0",
     "husky": "4.3.8",
-    "jest": "27.0.0",
+    "jest": "28.1.0",
     "prettier": "2.6.2",
-    "ts-jest": "27.1.4",
+    "ts-jest": "28.0.2",
     "ts-node": "10.7.0",
     "ts-node-dev": "1.1.8",
     "typescript": "4.6.4"
   },
   "dependencies": {
-    "@tago-io/sdk": "10.7.7",
+    "@tago-io/sdk": "10.7.8",
     "axios": "0.27.2",
     "bson-objectid": "2.0.3",
-    "dayjs": "1.11.1",
+    "dayjs": "1.11.2",
     "geolib": "3.3.3",
     "moment": "2.29.3",
     "moment-timezone": "0.5.34",
-    "puppeteer": "13.7.0"
+    "puppeteer": "14.0.0"
   }
 }
