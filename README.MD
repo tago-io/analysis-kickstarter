@@ -65,7 +65,7 @@ For additional informations on how to setup TagoIO with this code, and all the T
 
 ### User Permissions Diagram
 
-::: mermaid
+```mermaid
 graph LR
 subgraph TagoIO KickStarter User Permission Diagram V1.0.0
 subgraph Guilherme Costa - March 2nd, 2022
@@ -145,7 +145,7 @@ subgraph Guilherme Costa - March 2nd, 2022
 end
 test[1* Only those related to the User's Company]
 end
-::: 
+``` 
 
 
 ### Support
