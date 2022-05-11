@@ -18,13 +18,15 @@ interface installDeviceParam {
 }
 
 async function installDevice({ account, new_dev_name, org_id, network_id, connector, new_device_eui, type, group_id }: installDeviceParam) {
+  //data retention set to 1 month
   const device_data: DeviceCreateInfo = {
     name: new_dev_name,
     network: network_id,
     serie_number: new_device_eui,
     connector,
     type: "immutable",
-    data_retention: "1 month",
+    chunk_period: "month",
+    chunk_retention: 1,
   };
 
   //creating new device

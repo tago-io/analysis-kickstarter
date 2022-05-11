@@ -115,7 +115,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     {
       user_id: { value: new_user_id as string, metadata: { label: `${new_user_name.value} (${new_user_email.value})` } },
       user_name: new_user_name.value as string,
-      user_email: new_user_email.value as string,
+      user_email: (new_user_email.value as string).trim(),
       user_phone: (new_user_phone?.value as string) || "",
       user_access: { value: new_user_access.value as string, metadata: { label: user_access_label } },
     },
