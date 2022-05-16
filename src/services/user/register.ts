@@ -77,7 +77,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const new_user_data: UserData = {
     name: new_user_name.value as string,
-    email: new_user_email.value as string,
+    email: (new_user_email.value as string).trim(),
     phone: (new_user_phone?.value as string) || "",
     timezone: timezone,
     tags: [
