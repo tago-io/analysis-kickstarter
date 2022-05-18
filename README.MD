@@ -1,6 +1,6 @@
 <br/>
 <p align="center">
-  <img src="https://assets.tago.io/tagoio/analyse.png" width="200px" alt="TagoIO"></img>
+  <img src="https://assets.tago.io/tagoio/analysis.png" width="200px" alt="TagoIO"></img>
 </p>
 
 # Kickstarter Application for TagoIO
