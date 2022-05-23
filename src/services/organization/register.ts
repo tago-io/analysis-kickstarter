@@ -53,9 +53,22 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const new_org_plan_group = scope.find((x) => x.variable === "new_org_plan_group");
 
   const new_user_name = scope.find((x) => x.variable === "new_orgadmin_name");
+  const new_user_email = scope.find((x) => x.variable === "new_orgadmin_email");
 
   if (!new_org_plan && !new_org_plan_group) {
     throw validate("Plan error, internal problem.", "danger");
+  }
+
+  if (new_user_email) {
+    const [user_exists] = await account.run.listUsers({
+      page: 1,
+      amount: 1,
+      filter: { email: new_user_email.value as string },
+    });
+
+    if (user_exists) {
+      throw validate("#VAL.USER_ALREADY_EXISTS#", "danger");
+    }
   }
 
   let [plan_data] = await config_dev.getData({ variables: "plan_data", values: new_org_plan?.value, qty: 1 });
@@ -112,7 +125,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   if (new_user_name?.value) {
     scope = scope.map((data) => ({ ...data, device: device_id }));
-    await registerUser({ config_dev, context, scope, account, environment });
+    await registerUser({ config_dev, context, scope, account, environment }).catch((msg) => {
+      return validate(msg, "danger");
+    });
   }
 
   validate("#VAL.ORGANIZATION_SUCCESSFULLY_CREATED#", "success");
