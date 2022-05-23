@@ -55,27 +55,33 @@ const options: PDFOptions = {
 };
 
 export default async function createPDF(context: TagoContext, htmlBody: string, users_info_list: Array<UserInfo>, org_name: string) {
-  options.headerTemplate = headerTemplate.replace("$ORG_NAME$", org_name);
-  const base64 = Buffer.from(htmlBody).toString("base64");
-  const result = await axios.post("https://pdf.tago.io", { base64, options });
-  const pdf = result.data.result;
-
   // Start the email service
   const email = new Services({ token: context.token }).email;
+
+  // Start the PDF service
+  const pdf = new Services({ token: context.token }).PDF;
+
+  options.headerTemplate = headerTemplate.replace("$ORG_NAME$", org_name);
+  const base64 = Buffer.from(htmlBody).toString("base64");
+
+  const report = await pdf.generate({ base64, options }).catch((msg) => console.log(msg));
 
   // Send the email.
   users_info_list.forEach(async (user_info) => {
     if (user_info?.email) {
-      await email.send({
-        to: user_info?.email,
-        subject: "System Report",
-        message: "Find attached your PDF below.",
-        attachment: {
-          archive: pdf,
-          type: "base64",
-          filename: "sensor_report.pdf",
-        } as any,
-      });
+      await email
+        .send({
+          to: user_info?.email,
+          subject: "System Report",
+          message: "Find attached your PDF below.",
+          attachment: {
+            archive: (report as any).result,
+            type: "base64",
+            filename: "sensor_report.pdf",
+          } as any,
+        })
+        .then((msg) => console.log(msg))
+        .catch((msg) => console.log(msg));
     } else {
       console.log("Error - couldnt find user");
     }
