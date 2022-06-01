@@ -9,7 +9,7 @@ The Alert folder contains the following files:
 
 ### Diagram
 
-:::mermaid
+```mermaid
 sequenceDiagram
     participant RUN Application
     participant Handler Analysis
@@ -33,4 +33,4 @@ sequenceDiagram
             Alerts Script Folder -->> TagoIO: Delete TagoIO action
             Alerts Script Folder -->> TagoIO: Delete existing alert on "Alert List" table
         end
-    
+```
