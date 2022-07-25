@@ -154,6 +154,8 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 
   const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
 
+  //creating queue which will resolve the device
+
   const processSensorQueue = async.queue(async (sensorItem: DeviceListItem) => {
     resolveDevice(
       context,
@@ -163,11 +165,17 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
     ).catch((msg) => console.log(`${msg} - ${sensorItem.id}`));
   }, 1);
 
+  //populating the queue
+
   for (const sensorItem of sensorList) {
     processSensorQueue.push(sensorItem);
   }
 
+  //starting the queue
+
   processSensorQueue.drain();
+
+  //throwing possible errors generated while running the queue
 
   processSensorQueue.error((error) => {
     console.log(error);
