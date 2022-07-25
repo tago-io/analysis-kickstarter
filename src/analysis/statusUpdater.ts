@@ -19,6 +19,7 @@ import { Data } from "@tago-io/sdk/out/common/common.types";
 import { ConfigurationParams, DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import moment from "moment-timezone";
+import async, { queue } from "async";
 import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
@@ -153,13 +154,24 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 
   const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
 
-  sensorList.map((device) => {
+  const processSensorQueue = async.queue(async (sensorItem: DeviceListItem) => {
     resolveDevice(
       context,
       account,
-      device.tags.find((tag) => tag.key === "organization_id")?.value as string,
-      device.tags.find((tag) => tag.key === "device_id")?.value as string
-    ).catch((msg) => console.log(`${msg} - ${device.id}`));
+      sensorItem.tags.find((tag) => tag.key === "organization_id")?.value as string,
+      sensorItem.tags.find((tag) => tag.key === "device_id")?.value as string
+    ).catch((msg) => console.log(`${msg} - ${sensorItem.id}`));
+  }, 1);
+
+  for (const sensorItem of sensorList) {
+    processSensorQueue.push(sensorItem);
+  }
+
+  processSensorQueue.drain();
+
+  processSensorQueue.error((error) => {
+    console.log(error);
+    process.exit();
   });
 }
 
@@ -173,4 +185,4 @@ async function startAnalysis(context: TagoContext, scope: any) {
   }
 }
 
-export default new Analysis(startAnalysis, { token: "cab6674c-69b2-412f-b82d-ad2d80a21fb8" });
+export default new Analysis(startAnalysis, { token: "17ded694-4024-4f52-aa77-679b5274b287" });
