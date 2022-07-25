@@ -102,7 +102,11 @@ const checkLocation = async (account: Account, device: Device) => {
 };
 
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
-  const device = await Utils.getDevice(account, device_id);
+  const device = await Utils.getDevice(account, device_id).catch((msg) => console.log(msg));
+
+  if (!device) {
+    throw "Device not found";
+  }
 
   checkLocation(account, device);
 
@@ -149,9 +153,14 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 
   const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
 
-  sensorList.map((device) =>
-    resolveDevice(context, account, device.tags.find((tag) => tag.key === "organization_id")?.value as string, device.tags.find((tag) => tag.key === "device_id")?.value as string)
-  );
+  sensorList.map((device) => {
+    resolveDevice(
+      context,
+      account,
+      device.tags.find((tag) => tag.key === "organization_id")?.value as string,
+      device.tags.find((tag) => tag.key === "device_id")?.value as string
+    ).catch((msg) => console.log(`${msg} - ${device.id}`));
+  });
 }
 
 async function startAnalysis(context: TagoContext, scope: any) {
