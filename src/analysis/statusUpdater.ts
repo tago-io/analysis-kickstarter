@@ -19,6 +19,7 @@ import { Data } from "@tago-io/sdk/out/common/common.types";
 import { ConfigurationParams, DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import moment from "moment-timezone";
+import async, { queue } from "async";
 import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
@@ -102,7 +103,11 @@ const checkLocation = async (account: Account, device: Device) => {
 };
 
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
-  const device = await Utils.getDevice(account, device_id);
+  const device = await Utils.getDevice(account, device_id).catch((msg) => console.log(msg));
+
+  if (!device) {
+    throw "Device not found";
+  }
 
   checkLocation(account, device);
 
@@ -149,9 +154,33 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 
   const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
 
-  sensorList.map((device) =>
-    resolveDevice(context, account, device.tags.find((tag) => tag.key === "organization_id")?.value as string, device.tags.find((tag) => tag.key === "device_id")?.value as string)
-  );
+  //creating queue which will resolve the device
+
+  const processSensorQueue = async.queue(async (sensorItem: DeviceListItem) => {
+    resolveDevice(
+      context,
+      account,
+      sensorItem.tags.find((tag) => tag.key === "organization_id")?.value as string,
+      sensorItem.tags.find((tag) => tag.key === "device_id")?.value as string
+    ).catch((msg) => console.log(`${msg} - ${sensorItem.id}`));
+  }, 1);
+
+  //populating the queue
+
+  for (const sensorItem of sensorList) {
+    processSensorQueue.push(sensorItem);
+  }
+
+  //starting the queue
+
+  processSensorQueue.drain();
+
+  //throwing possible errors generated while running the queue
+
+  processSensorQueue.error((error) => {
+    console.log(error);
+    process.exit();
+  });
 }
 
 async function startAnalysis(context: TagoContext, scope: any) {
@@ -164,4 +193,4 @@ async function startAnalysis(context: TagoContext, scope: any) {
   }
 }
 
-export default new Analysis(startAnalysis, { token: "cab6674c-69b2-412f-b82d-ad2d80a21fb8" });
+export default new Analysis(startAnalysis, { token: "17ded694-4024-4f52-aa77-679b5274b287" });

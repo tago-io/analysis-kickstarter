@@ -10,6 +10,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const org_auth_token_param = org_params.find((x) => x.key === "org_auth_token");
   const new_plan_name = (scope[0] as any)["param.plan_name"];
   const new_org_name = (scope[0] as any)["name"];
+  const new_org_address = (scope[0] as any)["param.org_address"];
 
   const [org_id_data] = await config_dev.getData({ variables: "org_id", groups: org_id, qty: 1 });
 
@@ -46,6 +47,17 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     await account.devices.paramSet(org_id, { ...plan_sms_limit, value: String(plan_data.metadata.sms_limit) });
     await account.devices.paramSet(org_id, { ...plan_notif_limit, value: String(plan_data.metadata.notif_limit) });
     await account.devices.paramSet(org_id, { ...plan_data_retention, value: String(plan_data.metadata.data_retention) });
+  }
+
+  if (new_org_address) {
+    const coordinates = (new_org_address as string).split(";")[0];
+    const [org_id_data] = await config_dev.getData({ variables: "org_id", groups: org_id, qty: 1 });
+    await config_dev.deleteData({ variables: "org_id", groups: org_id });
+    await config_dev.sendData({
+      ...org_id_data,
+      metadata: { ...org_id_data.metadata },
+      location: { lat: Number(coordinates.split(",")[0]), lng: Number(coordinates.split(",")[1]) },
+    });
   }
   return console.log("edited!");
 };

@@ -38,6 +38,7 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
       { key: "organization_id", value: org_id },
       { key: "device_type", value: "device" },
       { key: "sensor", value: type },
+      { key: "dev_eui", value: new_device_eui },
     ],
   };
 
@@ -85,10 +86,11 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   //If choosing for the simulator, we generate a random EUI
   const dev_eui = (new_dev_eui?.value as string)?.toUpperCase() || String(Math.ceil(Math.random() * 10000000));
 
-  const dev_exists: DeviceListItem[] = await fetchDeviceList(account, [], dev_eui);
+  const dev_exists = await fetchDeviceList(account, [{ key: "dev_eui", value: dev_eui }]);
 
   if (dev_exists.length > 0) {
-    throw validate("#VAL.DEVICE_ALREADY_EXISTS#", "danger");
+    console.log("Sensor EUI already in use.");
+    return validate("Sensor EUI already in use.", "danger");
   }
 
   const group_id = new_dev_group?.value as string;

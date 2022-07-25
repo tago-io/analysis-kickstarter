@@ -6,7 +6,7 @@ import { DeviceInfo, DeviceListItem } from "@tago-io/sdk/out/modules/Account/dev
 // * This file to fetch device list through pagination
 // ? ====================================================================================
 
-async function fetchDeviceList(account: Account, tags?: TagsObj[], id?: string): Promise<DeviceListItem[]> {
+async function fetchDeviceList(account: Account, tags?: TagsObj[]): Promise<DeviceListItem[]> {
   let device_list: DeviceListItem[] = [];
 
   for (let index = 1; index < 9999; index++) {
@@ -14,7 +14,6 @@ async function fetchDeviceList(account: Account, tags?: TagsObj[], id?: string):
       page: index,
       fields: ["id", "name", "bucket", "tags", "last_input"],
       filter: {
-        id: id || undefined,
         tags: tags || undefined,
       },
       resolveBucketName: false,

@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@tago-io/builder": "3.0.3",
+    "@types/async": "3.2.15",
     "@types/jest": "27.5.1",
     "@typescript-eslint/eslint-plugin": "5.25.0",
     "@typescript-eslint/parser": "5.25.0",
@@ -44,6 +45,7 @@
   },
   "dependencies": {
     "@tago-io/sdk": "10.8.1",
+    "async": "3.2.4",
     "axios": "0.27.2",
     "bson-objectid": "2.0.3",
     "dayjs": "1.11.2",
