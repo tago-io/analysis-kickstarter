@@ -17,7 +17,7 @@ The application contains the following features:
 
 ### Easy Installation
 You can quickly install the application in your account by using the Import tool.
-* Firstly, make sure your RUN is activated. Visit this [profile settings](https://admin.tago.io/run/) click on "Start now" and then save the change. 
+* Firstly, make sure your RUN is activated. Visit this [link](https://admin.tago.io/run/), click on "Start now" and then save the change. 
 * Go to your [profile settings](https://admin.tago.io/account/).
 * Generate an Token in your profile, make sure to set **expire time** to never.
 * Copy the Token.
