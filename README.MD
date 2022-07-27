@@ -17,6 +17,7 @@ The application contains the following features:
 
 ### Easy Installation
 You can quickly install the application in your account by using the Import tool.
+* Firstly, make sure your RUN is activated. Visit this [link](https://admin.tago.io/run/), click on "Start now" and then save the change. 
 * Go to your [profile settings](https://admin.tago.io/account/).
 * Generate an Token in your profile, make sure to set **expire time** to never.
 * Copy the Token.
@@ -48,13 +49,13 @@ Using this repository, you will be able to change and update the analysis in you
 * Run `npm install`.
 * Generate a account-profile token at TagoIO **My Settings** -> **Your Profile** -> **Tokens**. Make sure to generate a token with `Expire at` set to never.
 * Open the `build.ts` and replace `Your-Account-Profile-Token` by a token of your profile.
-* Go back to your terminal and run the template with `npm start`.
+* Go back to your terminal and run the template with `npm run start build`.
 * It should take a few minutes for the script to build and import all the analysis and dashboards to your account.
 
 ### Code Update
 * Make sure you have the `build.ts` with your account profile token.
 * Update the repository with last version.
-* Go back to your terminal and run the template with `npm start`.
+* Go back to your terminal and run the template with `npm run start build`.
 * It should take a few minutes for the script to build and import all the analysis and dashboards to your account.
 
 ### How to use the application
