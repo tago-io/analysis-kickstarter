@@ -41,7 +41,7 @@ async function inviteUser(context: TagoContext, account: Account, user_data: Use
   user_data.tags = user_data.tags.map((x, i) => ({ ...x, __rowManipulatorKey: i + 1 }));
 
   // Generate a Random Password
-  const password = user_data.password || String(new Date().getTime());
+  const password = user_data.password || `A${Math.random().toString(36).substr(2, 10)}!`;
 
   // Try to create the user.
   const result = await account.run

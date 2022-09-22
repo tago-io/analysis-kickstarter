@@ -9,6 +9,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     { key: "plan_group", value: plan_name.group },
   ]);
 
+  //do not let the user delete the plan if there's an organization assigned to it.
   if (org_dev_list.length > 0) {
     await config_dev.sendData(scope);
   }
