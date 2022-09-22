@@ -10,7 +10,7 @@
     "test:coverage": "jest . --coverage",
     "linter": "eslint .",
     "build": "analysis-builder src/analysis/handler.ts ./build/handler.tago.js && analysis-builder src/analysis/statusUpdater.ts ./build/statusUpdater.tago.js && analysis-builder src/analysis/sendReport.ts ./build/sendReport.tago.js && analysis-builder src/analysis/dataRetention.ts ./build/dataRetention.tago.js  && analysis-builder src/analysis/uplinkHandler.ts ./build/uplinkHandler.tago.js && analysis-builder src/analysis/dataRetention.ts ./build/dataRetention.tago.js && analysis-builder src/analysis/alertHandler.ts ./build/alertHandler.tago.js && analysis-builder src/analysis/alertTrigger.ts ./build/alertTrigger.tago.js && analysis-builder src/analysis/monthlyUsageReset.ts ./build/monthlyUsageReset.tago.js && analysis-builder src/analysis/userSignUp.ts ./build/userSignUp.tago.js",
-    "start": "ts-node-dev --inspect --",
+    "start": "ts-node-dev --inspect -- src/analysis/handler.ts",
     "inspect": "node --inspect ./node_modules/.bin/ts-node --files ./src/start.ts"
   },
   "jest": {
