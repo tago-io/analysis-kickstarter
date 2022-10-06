@@ -24,6 +24,7 @@ You can quickly install the application in your account by using the Import tool
 * Access the Import tool by [clicking here](https://admin.tago.io/public/dashboard/61e6b4e7fdf495001119b88e/7d3e896a-0f81-4fe6-a301-7958e1f237de).
 * Keep all entities selected, paste your token in the account token field.
 * Press Import Application and you should receive notification in your account when it's done.
+* To access the application using TagoRUN. Make sure to create a user using your TagoIO Developer account, adding the tag key **access** with the tag value **admin**.
 
 ### Easy Update
 To easy update your application when new version is out, you can just repeat the previous step.
