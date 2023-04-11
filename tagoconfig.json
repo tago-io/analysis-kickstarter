@@ -1,0 +1,16 @@
+{
+    "analysisPath": "./src/analysis",
+    "buildPath": "./build",
+    "kickstarter": {
+        "analysisList": [
+            {
+                "fileName": "statusUpdater.ts",
+                "name": "[TagoIO] - Status Updater",
+                "id": "61b2f6124edcc00019b44f0b"
+            }
+        ],
+        "id": "61b2f46e561da800197a9c43",
+        "profileName": "Kickstarter Application [TEMPLATE]",
+        "email": "rafael.teles@tago.io"
+    }
+}

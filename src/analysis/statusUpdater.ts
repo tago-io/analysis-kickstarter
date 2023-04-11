@@ -57,17 +57,20 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
   const plan_data_retention = org_params.find((x) => x.key === "plan_data_retention")?.value || "0";
 
   const to_tago = {
-    total_qty,
-    active_qty,
-    inactivy_qty,
-    plan_email_limit_usage,
-    plan_sms_limit_usage,
-    plan_notif_limit_usage,
-    plan_data_retention,
+    device_qty: { value: total_qty, metadata: { total_qty: total_qty, active_qty: active_qty, inactive_qty: inactivy_qty } },
+    plan_usage: {
+      value: plan_email_limit_usage,
+      metadata: {
+        plan_email_limit_usage: plan_email_limit_usage,
+        plan_sms_limit_usage: plan_sms_limit_usage,
+        plan_notif_limit_usage: plan_notif_limit_usage,
+        plan_data_retention: plan_data_retention,
+      },
+    },
   };
   //CONSIDER INSTEAD OF DELETEING VARIABLES, PLACE A DATA RETENTION RULE AND SHOW THEM IN A HISTORIC GRAPIHC ON THE WIDGET HEADER BUTTON
   await org_dev.deleteData({
-    variables: ["total_qty", "active_qty", "inactivy_qty", "plan_email_limit_usage", "plan_sms_limit_usage", "plan_notif_limit_usage", "plan_data_retention"],
+    variables: ["total_qty", "plan_usage"],
     qty: 9999,
   });
   await org_dev.sendData(parseTagoObject(to_tago));
@@ -103,7 +106,7 @@ const checkLocation = async (account: Account, device: Device) => {
 };
 
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
-  const device = await Utils.getDevice(account, device_id).catch((msg) => console.log(msg));
+  const device = await Utils.getDevice(account, device_id).catch((msg) => console.debug(msg));
 
   if (!device) {
     throw "Device not found";
@@ -130,7 +133,7 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
 
   await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
 
-  await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: diff_hours >= 24 ? true : false });
+  await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: (diff_hours as number) >= 24 ? true : false });
 }
 
 async function handler(context: TagoContext, scope: Data[]): Promise<void> {
@@ -162,7 +165,7 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
       account,
       sensorItem.tags.find((tag) => tag.key === "organization_id")?.value as string,
       sensorItem.tags.find((tag) => tag.key === "device_id")?.value as string
-    ).catch((msg) => console.log(`${msg} - ${sensorItem.id}`));
+    ).catch((msg) => console.debug(`${msg} - ${sensorItem.id}`));
   }, 1);
 
   //populating the queue
@@ -178,7 +181,7 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
   //throwing possible errors generated while running the queue
 
   processSensorQueue.error((error) => {
-    console.log(error);
+    console.debug(error);
     process.exit();
   });
 }
@@ -188,9 +191,13 @@ async function startAnalysis(context: TagoContext, scope: any) {
     await handler(context, scope);
     context.log("Analysis finished");
   } catch (error) {
-    console.log(error);
+    console.debug(error);
     context.log(error.message || JSON.stringify(error));
   }
 }
 
-export default new Analysis(startAnalysis, { token: "17ded694-4024-4f52-aa77-679b5274b287" });
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };
