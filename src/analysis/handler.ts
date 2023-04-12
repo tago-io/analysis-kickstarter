@@ -104,7 +104,7 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   // User routing
   router.register(userAdd).whenInputFormID("create-user");
-  router.register(userDel).whenVariableLike("user_").whenWidgetExec("delete");
+  router.register(userDel).whenEnv("_input_id", "delete-user");
   router.register(userEdit).whenVariableLike("user_").whenWidgetExec("edit");
 
   //Plan routing
@@ -125,5 +125,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   await router.exec();
 }
 
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
 export { startAnalysis };
-export default new Analysis(startAnalysis, { token: "2c19cb48-5520-48da-85c1-8f2228be6e5d" });
