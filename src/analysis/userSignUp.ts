@@ -30,9 +30,9 @@ import orgAdd from "../services/organization/register";
  * @returns
  */
 async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<void> {
-  console.log("SCOPE:", JSON.stringify(scope, null, 4));
-  console.log("CONTEXT:", JSON.stringify(context, null, 4));
-  console.log("Running Analysis");
+  console.debug("SCOPE:", JSON.stringify(scope, null, 4));
+  console.debug("CONTEXT:", JSON.stringify(context, null, 4));
+  console.debug("Running Analysis");
 
   // Convert the environment variables from [{ key, value }] to { key: value };
   const environment = Utils.envToJson(context.environment);
@@ -61,7 +61,7 @@ async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<v
     org_id = await orgAdd({ config_dev, context, scope: organization_scope, account, environment });
   } catch (error) {
     await account.run.userDelete(scope[0].id);
-    return console.log(error);
+    return console.debug(error);
   }
 
   await account.run.userEdit(scope[0].id, {

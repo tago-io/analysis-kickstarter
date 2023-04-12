@@ -91,7 +91,7 @@ async function getAlertList(account: Account, outsideZones: IGeofenceMetadata[],
   for (const item of outsideZones) {
     const action_info: ActionInfo = await account.actions.info(item.event).catch(() => null);
     if (!action_info) {
-      console.log(`Action not found ${item.event}`);
+      console.debug(`Action not found ${item.event}`);
       continue;
     }
 
@@ -173,7 +173,7 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
   }
 
   if (!org_dev) {
-    return console.log("Device is not linked to an organization");
+    return console.debug("Device is not linked to an organization");
   }
 
   // Filter the geofences and send the alerts if any

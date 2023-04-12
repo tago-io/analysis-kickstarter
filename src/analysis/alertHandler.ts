@@ -53,8 +53,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   const result = await router.exec();
 
-  console.log("Script end. Functions that run:");
-  console.log(result.services);
+  console.debug("Script end. Functions that run:");
+  console.debug(result.services);
 }
 
 export default new Analysis(startAnalysis, { token: "0604d0ad-fad7-4739-bb9a-a2e90ca2a52b" });

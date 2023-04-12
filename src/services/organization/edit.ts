@@ -59,5 +59,5 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
       location: { lat: Number(coordinates.split(",")[0]), lng: Number(coordinates.split(",")[1]) },
     });
   }
-  return console.log("edited!");
+  return console.debug("edited!");
 };

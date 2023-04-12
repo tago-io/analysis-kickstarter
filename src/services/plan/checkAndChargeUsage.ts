@@ -10,7 +10,7 @@ const checkTagoPlan = async (account: Account, type: CommunicationMean) => {
   const tago_usage_limit = await account.profiles.info(profile_id);
 
   if (!tago_usage_statistic || !tago_usage_limit) {
-    console.log("INTERNAL ERROR - NO PROFILE INFO WAS CATCH");
+    console.debug("INTERNAL ERROR - NO PROFILE INFO WAS CATCH");
     return true;
   }
 
@@ -70,9 +70,9 @@ const sendLimitAlert = async (account: Account, context: TagoContext, org_id: st
     //       },
     //     },
     //   })
-    //   .catch((msg) => console.log(msg));
+    //   .catch((msg) => console.debug(msg));
 
-    await account.run.notificationCreate(user.id, { title: "Service Limit", message: notif_string }).catch((msg) => console.log(msg));
+    await account.run.notificationCreate(user.id, { title: "Service Limit", message: notif_string }).catch((msg) => console.debug(msg));
   });
 };
 

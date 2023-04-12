@@ -2,7 +2,7 @@ import { Utils } from "@tago-io/sdk";
 import { RouterConstructorData } from "../../types";
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  console.log("Editting User.");
+  console.debug("Editting User.");
   const user_id = scope[0].device;
 
   const user_name = scope.find((x) => x.variable === "user_name");
@@ -44,7 +44,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     delete user_phone_config_dev.id;
 
     //sending new data
-    await config_dev.sendData({ ...user_phone_config_dev, value: user_phone.value as string }).then((msg) => console.log(msg));
+    await config_dev.sendData({ ...user_phone_config_dev, value: user_phone.value as string }).then((msg) => console.debug(msg));
 
     new_user_info.phone = user_phone.value;
     await account.run.userEdit(user_id, new_user_info);

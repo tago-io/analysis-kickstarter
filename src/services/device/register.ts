@@ -89,7 +89,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const dev_exists = await fetchDeviceList(account, [{ key: "dev_eui", value: dev_eui }]);
 
   if (dev_exists.length > 0) {
-    console.log("Sensor EUI already in use.");
+    console.debug("Sensor EUI already in use.");
     return validate("Sensor EUI already in use.", "danger");
   }
 

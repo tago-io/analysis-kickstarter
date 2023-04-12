@@ -18,8 +18,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const report_sensors = scope.find((x) => x.variable === "report_sensors" || x.variable === "bysite_report_sensors");
   const report_group = scope.find((x) => x.variable === "report_group" || x.variable === "bysite_report_group");
 
-  console.log(report_days?.value);
-
   const [action_registered] = await account.actions.list({
     page: 1,
     fields: ["id", "name", "tags", "active"],
@@ -32,7 +30,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   let action_info;
 
   if (action_registered) {
-    console.log("Editting report action");
+    console.debug("Editting report action");
     action_info = await account.actions.info(action_registered?.id);
   }
 
@@ -91,8 +89,8 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   await account.actions
     .edit(action_registered.id, action_model)
-    .then((msg) => console.log(msg))
-    .catch((msg) => console.log(msg));
+    .then((msg) => console.debug(msg))
+    .catch((msg) => console.debug(msg));
 
-  return console.log("Successfuly edited!");
+  return console.debug("Successfuly edited!");
 };

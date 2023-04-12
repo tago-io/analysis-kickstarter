@@ -19,7 +19,7 @@ interface ActionListParams {
 async function addDeviceToAlert(account: Account, org_dev: Device, action_id: string, device_id: string) {
   const [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, groups: action_id });
   if (!action_variable) {
-    console.log(`Couldnt find the action_variable for ${action_id}`);
+    console.debug(`Couldnt find the action_variable for ${action_id}`);
     return;
   }
   const action_info = await account.actions.info(action_id);
@@ -81,13 +81,13 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   }
 
   if (!action_variable) {
-    console.log("[Error] Update action: action_variable not found");
+    console.debug("[Error] Update action: action_variable not found");
     undoChanges(org_dev, scope);
     return sendNotificationError(account, environment, "An error ocurred, please try again", "Error when editing alert");
   }
 
   // if (action_variable.value === "geofence" && (action_value || action_condition)) {
-  //   console.log("[Error] Updating geofence value or condition is not allowed");
+  //   console.debug("[Error] Updating geofence value or condition is not allowed");
   //   undoChanges(org_dev, scope);
   //   return sendNotificationError(account, environment, "Erro ao editar alerta", "Não é possível editar valor e condição de alertas de geofence. Delete e crie um novo alerta.");
   // }
@@ -139,7 +139,7 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   }
 
   await account.actions.edit(action_id, action_structure).catch(async (e) => {
-    console.log("[Error] ", e);
+    console.debug("[Error] ", e);
     // Simple way to remove the edited fields and add it back again with the old value;
     undoChanges(org_dev, scope);
     await sendNotificationError(account, environment, e);

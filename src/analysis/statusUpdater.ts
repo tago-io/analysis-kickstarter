@@ -103,7 +103,7 @@ const checkLocation = async (account: Account, device: Device) => {
 };
 
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
-  const device = await Utils.getDevice(account, device_id).catch((msg) => console.log(msg));
+  const device = await Utils.getDevice(account, device_id).catch((msg) => console.debug(msg));
 
   if (!device) {
     throw "Device not found";
@@ -162,7 +162,7 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
       account,
       sensorItem.tags.find((tag) => tag.key === "organization_id")?.value as string,
       sensorItem.tags.find((tag) => tag.key === "device_id")?.value as string
-    ).catch((msg) => console.log(`${msg} - ${sensorItem.id}`));
+    ).catch((msg) => console.debug(`${msg} - ${sensorItem.id}`));
   }, 1);
 
   //populating the queue
@@ -178,7 +178,7 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
   //throwing possible errors generated while running the queue
 
   processSensorQueue.error((error) => {
-    console.log(error);
+    console.debug(error);
     process.exit();
   });
 }
@@ -188,7 +188,7 @@ async function startAnalysis(context: TagoContext, scope: any) {
     await handler(context, scope);
     context.log("Analysis finished");
   } catch (error) {
-    console.log(error);
+    console.debug(error);
     context.log(error.message || JSON.stringify(error));
   }
 }

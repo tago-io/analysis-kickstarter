@@ -55,7 +55,7 @@ async function startAnalysis(context: TagoContext, scope: any) {
     await handler(context, scope);
     context.log("Analysis finished");
   } catch (error) {
-    console.log(error);
+    console.debug(error);
     context.log(error.message || JSON.stringify(error));
   }
 }

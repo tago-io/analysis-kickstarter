@@ -78,7 +78,7 @@ async function startAnalysis(context: TagoContext, scope: any) {
       context.log("Script end.");
     })
     .catch((e) => {
-      console.log(e);
+      console.debug(e);
       context.log(e.message || JSON.stringify(e));
     });
 }

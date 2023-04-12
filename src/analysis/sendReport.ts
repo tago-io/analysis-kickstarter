@@ -56,13 +56,13 @@ async function resolveReport(account: Account, context: TagoContext, action_info
       }
     }
   } else {
-    throw console.log("Error - no sensor on scheduled action");
+    throw console.debug("Error - no sensor on scheduled action");
   }
 
   const report_data: SensorData[] = [];
 
   for (const sensor of sensor_id_list) {
-    const sensor_dev = await Utils.getDevice(account, sensor).catch((msg) => console.log(msg));
+    const sensor_dev = await Utils.getDevice(account, sensor).catch((msg) => console.debug(msg));
     if (!sensor_dev) {
       continue; //sensor has been deleted
     }
@@ -103,7 +103,7 @@ async function resolveReport(account: Account, context: TagoContext, action_info
   let report_table = ``;
 
   report_data.forEach((data) => {
-    let report_row = `                
+    let report_row = `
     <tr>
       <td>$NAME$</td>
       <td>$STATUS$</td>
@@ -141,7 +141,7 @@ async function resolveReport(account: Account, context: TagoContext, action_info
   const all_users_label: string[] = [];
 
   for (const user_id_from_list of users_id_list) {
-    const current_user_info = await account.run.userInfo(user_id_from_list).catch((msg) => console.log(msg));
+    const current_user_info = await account.run.userInfo(user_id_from_list).catch((msg) => console.debug(msg));
     if (!current_user_info) {
       //user has been deleted
       continue;
@@ -218,7 +218,7 @@ async function startAnalysis(context: TagoContext, scope: any) {
     });
 
     if (!action_registered) {
-      return console.log("ERROR - No action found");
+      return console.debug("ERROR - No action found");
     }
 
     org_id = action_registered.tags.find((x) => x.key === "organization_id")?.value;

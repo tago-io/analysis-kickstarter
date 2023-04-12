@@ -64,7 +64,7 @@ export default async function createPDF(context: TagoContext, htmlBody: string, 
   options.headerTemplate = headerTemplate.replace("$ORG_NAME$", org_name);
   const base64 = Buffer.from(htmlBody).toString("base64");
 
-  const report = await pdf.generate({ base64, options }).catch((msg) => console.log(msg));
+  const report = await pdf.generate({ base64, options }).catch((msg) => console.debug(msg));
 
   // Send the email.
   users_info_list.forEach(async (user_info) => {
@@ -80,10 +80,10 @@ export default async function createPDF(context: TagoContext, htmlBody: string, 
             filename: "sensor_report.pdf",
           } as any,
         })
-        .then((msg) => console.log(msg))
-        .catch((msg) => console.log(msg));
+        .then((msg) => console.debug(msg))
+        .catch((msg) => console.debug(msg));
     } else {
-      console.log("Error - couldnt find user");
+      console.debug("Error - couldnt find user");
     }
   });
 

@@ -8,7 +8,7 @@ import { Account } from "@tago-io/sdk";
 
   for (const { id, tags } of analysis_list) {
     const script_name = tags.find((tag) => tag.key === "export_id")?.value;
-    console.log(`\nBuilding ${script_name}.ts`);
+    console.debug(`\nBuilding ${script_name}.ts`);
     execSync(`analysis-builder src/analysis/${script_name}.ts ./build/${script_name}.tago.js`, { stdio: "inherit" });
 
     const script = await fs.readFile(`build//${script_name}.tago.js`, { encoding: "base64" });
@@ -18,6 +18,6 @@ import { Account } from "@tago-io/sdk";
         language: "node",
         name: `${script_name}.tago.js`,
       })
-      .then(() => console.log(`\n> Script ${script_name}.ts successfully uploaded to TagoIO!`), console.log);
+      .then(() => console.debug(`\n> Script ${script_name}.ts successfully uploaded to TagoIO!`), console.debug);
   }
 })();

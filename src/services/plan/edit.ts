@@ -37,11 +37,11 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const plan_data_retention = scope.find((x) => x.variable === "plan_data_retention");
 
   const plan_group = scope[0].group;
-  console.log(plan_group);
+
   const [plan_data] = await config_dev.getData({ variables: "plan_data", groups: plan_group, qty: 1 });
 
   if (!plan_data) {
-    return console.log("No plan found!");
+    return console.debug("No plan found!");
   }
 
   const org_dev_list = await fetchDeviceList(account, [
@@ -75,5 +75,5 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   await config_dev.sendData(plan_data);
 
-  return console.log("Plan edited!");
+  return console.debug("Plan edited!");
 };

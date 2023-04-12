@@ -27,7 +27,7 @@ interface IMessageDetail {
 function replaceMessage(message: string, replace_details: IMessageDetail) {
   for (const key of Object.keys(replace_details)) {
     message = message.replace(new RegExp(`#${key}#`, "g"), (replace_details as any)[key]);
-    console.log((replace_details as any)[key]);
+    console.debug((replace_details as any)[key]);
   }
 
   return message;
@@ -40,7 +40,7 @@ async function getUsers(account: Account, send_to: string[]) {
 }
 
 async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void> {
-  console.log("Running Analysis");
+  console.debug("Running Analysis");
   if (!scope[0]) {
     return context.log("This analysis must be triggered by an action.");
   }
@@ -153,7 +153,7 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
             message,
             to: user.phone,
           })
-          .then((msg) => console.log(msg));
+          .then((msg) => console.debug(msg));
       });
     } else {
       const org_dev = await Utils.getDevice(account, org_id);
@@ -164,7 +164,7 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
     }
   }
 
-  return console.log("Analysis Finished!");
+  return console.debug("Analysis Finished!");
 }
 
 export default new Analysis(analysisAlert, { token: "a7d727c6-2a5a-414a-bc4c-99a6a21bd174" });

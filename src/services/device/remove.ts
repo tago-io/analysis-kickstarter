@@ -21,5 +21,5 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   await config_dev.deleteData({ groups: dev_id, qty: 99999 });
 
   await account.devices.delete(dev_id);
-  return console.log("Device deleted!");
+  return console.debug("Device deleted!");
 };

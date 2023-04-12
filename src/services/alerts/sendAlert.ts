@@ -113,7 +113,7 @@ async function sendAlert(account: Account, context: TagoContext, org_id: string,
             message,
             to: user.phone,
           })
-          .then((msg) => console.log(msg));
+          .then((msg) => console.debug(msg));
       });
     } else {
       await org_dev.sendData({

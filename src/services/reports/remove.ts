@@ -19,10 +19,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   await org_dev.deleteData({ groups: action_group, qty: 9999 });
 
   if (!action_registered) {
-    return console.log("ERROR - No action found.");
+    return console.debug("ERROR - No action found.");
   }
 
   await account.actions.delete(action_registered.id);
 
-  return console.log("Action deleted successfully!");
+  return console.debug("Action deleted successfully!");
 };

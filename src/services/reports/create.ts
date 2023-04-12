@@ -73,7 +73,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   // action_tags.push({ key: "action_group", value: action_group }, { key: "report_contact", value: report_contact.value as string });
   const action_model = await actionModel(account, action_object);
-  console.log(action_model);
+  console.debug(action_model);
   const { action: action_id } = await account.actions.create(action_model).catch((e) => {
     throw validate(e, "danger");
   });

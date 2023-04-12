@@ -57,9 +57,9 @@ import planEdit from "../services/plan/edit";
  * @returns
  */
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
-  console.log("SCOPE:", JSON.stringify(scope, null, 4));
-  console.log("CONTEXT:", JSON.stringify(context, null, 4));
-  console.log("Running Analysis");
+  console.debug("SCOPE:", JSON.stringify(scope, null, 4));
+  console.debug("CONTEXT:", JSON.stringify(context, null, 4));
+  console.debug("Running Analysis");
 
   // Convert the environment variables from [{ key, value }] to { key: value };
   const environment = Utils.envToJson(context.environment);

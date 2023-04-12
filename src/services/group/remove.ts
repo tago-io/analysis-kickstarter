@@ -22,7 +22,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   if (user_accounts) {
     user_accounts.forEach(async (user) => {
       await account.run.userDelete(user.id);
-      await org_dev.deleteData({ groups: user.id, qty: 9999 }).then((msg) => console.log(msg));
+      await org_dev.deleteData({ groups: user.id, qty: 9999 }).then((msg) => console.debug(msg));
       await config_dev.deleteData({ groups: user.id, qty: 9999 });
     });
   }

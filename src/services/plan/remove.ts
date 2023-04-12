@@ -14,5 +14,5 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     await config_dev.sendData(scope);
   }
 
-  return console.log("Plan deleted");
+  return console.debug("Plan deleted");
 };

@@ -20,5 +20,5 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     await org_dev.sendData({ ...group_id_data, metadata: { ...group_id_data.metadata, label: new_group_name } });
   }
 
-  return console.log("Group edited!");
+  return console.debug("Group edited!");
 };
