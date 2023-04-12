@@ -20,7 +20,7 @@ import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 
 async function init(context: TagoContext, scope: Data[]): Promise<void> {
-  context.log("Monthly usage reset analysis started");
+  console.debug("Monthly usage reset analysis started");
   // Convert the environment variables from [{ key, value }] to { key: value };
   const environment = Utils.envToJson(context.environment);
   if (!environment) {
@@ -47,7 +47,7 @@ async function init(context: TagoContext, scope: Data[]): Promise<void> {
     await account.devices.paramSet(org.id, { ...plan_notif_limit_usage, value: "0", sent: false });
   }
 
-  return context.log("Analysis finished successfuly!");
+  return console.debug("Analysis finished successfuly!");
 }
 
 export default new Analysis(init, { token: "6c73d99e-fbc2-43c7-a656-3a446f5c196d" });

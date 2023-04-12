@@ -46,13 +46,13 @@ async function resolveDataRetentionByOrg(account: Account, org_id: string, plan_
 }
 
 async function updateDataRetention(context: TagoContext) {
-  context.log("Running");
+  console.debug("Running");
   const env_vars = Utils.envToJson(context.environment);
   if (!env_vars.account_token) {
-    throw context.log("Missing account_token in the environment variables");
+    throw console.debug("Missing account_token in the environment variables");
   }
   if (!env_vars.config_token) {
-    throw context.log("Missing config_token in the environment variables");
+    throw console.debug("Missing config_token in the environment variables");
   }
 
   const account = new Account({ token: env_vars.account_token });
@@ -69,17 +69,17 @@ async function updateDataRetention(context: TagoContext) {
     }
   }
 
-  context.log("success");
+  console.debug("success");
 }
 
 async function startAnalysis(context: TagoContext, scope: any) {
   await updateDataRetention(context)
     .then(() => {
-      context.log("Script end.");
+      console.debug("Script end.");
     })
     .catch((e) => {
       console.debug(e);
-      context.log(e.message || JSON.stringify(e));
+      console.debug(e.message || JSON.stringify(e));
     });
 }
 export default new Analysis(startAnalysis, { token: "5e190938-6fe1-4f0a-b680-d99a2b94cc47" });

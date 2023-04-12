@@ -22,18 +22,18 @@ import { deleteAlert } from "../services/alerts/remove";
 
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
   if (!scope[0]) {
-    return context.log("This analysis must be triggered by a widget.");
+    return console.debug("This analysis must be triggered by a widget.");
   }
 
-  context.log(JSON.stringify(scope));
-  context.log("Alert analysis started");
+  console.debug(JSON.stringify(scope));
+  console.debug("Alert analysis started");
 
   // Get the environment variables.
   const environment = Utils.envToJson(context.environment);
   if (!environment.account_token) {
-    return context.log('Missing "account_token" environment variable');
+    return console.debug('Missing "account_token" environment variable');
   } else if (environment.account_token.length !== 36) {
-    return context.log('Invalid "account_token" in the environment variable');
+    return console.debug('Invalid "account_token" in the environment variable');
   }
 
   // Instance the Account class

@@ -134,7 +134,7 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
 }
 
 async function handler(context: TagoContext, scope: Data[]): Promise<void> {
-  context.log("Running Analysis");
+  console.debug("Running Analysis");
 
   const environment = Utils.envToJson(context.environment);
   if (!environment) {
@@ -186,10 +186,10 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 async function startAnalysis(context: TagoContext, scope: any) {
   try {
     await handler(context, scope);
-    context.log("Analysis finished");
+    console.debug("Analysis finished");
   } catch (error) {
     console.debug(error);
-    context.log(error.message || JSON.stringify(error));
+    console.debug(error.message || JSON.stringify(error));
   }
 }
 

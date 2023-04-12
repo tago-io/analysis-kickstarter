@@ -42,16 +42,16 @@ async function getUsers(account: Account, send_to: string[]) {
 async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void> {
   console.debug("Running Analysis");
   if (!scope[0]) {
-    return context.log("This analysis must be triggered by an action.");
+    return console.debug("This analysis must be triggered by an action.");
   }
 
-  context.log(JSON.stringify(scope));
+  console.debug(JSON.stringify(scope));
   // Get the environment variables.
   const environment_variables = Utils.envToJson(context.environment);
   if (!environment_variables.account_token) {
-    return context.log('Missing "account_token" environment variable');
+    return console.debug('Missing "account_token" environment variable');
   } else if (environment_variables.account_token.length !== 36) {
-    return context.log('Invalid "account_token" in the environment variable');
+    return console.debug('Invalid "account_token" in the environment variable');
   }
 
   // Instance the Account class
@@ -59,7 +59,7 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
 
   const action_id = environment_variables._action_id;
   if (!action_id) {
-    return context.log("This analysis must be triggered by an action.");
+    return console.debug("This analysis must be triggered by an action.");
   }
 
   // Get action details

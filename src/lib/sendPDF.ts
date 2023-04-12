@@ -87,5 +87,5 @@ export default async function createPDF(context: TagoContext, htmlBody: string, 
     }
   });
 
-  return context.log("PDF Generated!");
+  return console.debug("PDF Generated!");
 }

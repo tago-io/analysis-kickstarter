@@ -177,7 +177,7 @@ async function resolveReport(account: Account, context: TagoContext, action_info
 }
 
 async function startAnalysis(context: TagoContext, scope: any) {
-  context.log("Running Analysis");
+  console.debug("Running Analysis");
 
   const environment = Utils.envToJson(context.environment);
   if (!environment) {
