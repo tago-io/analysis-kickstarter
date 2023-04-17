@@ -53,7 +53,7 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
   return { ...new_dev, device: new_org_dev } as DeviceCreated;
 }
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+async function sensorAdd({ config_dev, context, scope, account, environment }: RouterConstructorData) {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");
   }
@@ -161,4 +161,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
 
   return validate("#VAL.DEVICE_CREATED_SUCCESSFULLY#", "success");
-};
+}
+
+export { sensorAdd };

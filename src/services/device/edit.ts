@@ -5,7 +5,7 @@ import { findDashboardByConnectorID } from "../../lib/findResource";
 import { RouterConstructorDevice } from "../../types";
 import { sensor_status_false } from "./deviceInfo";
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorDevice) => {
+async function sensorEdit({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");
   }
@@ -25,7 +25,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
   const org_dev = await getDevice(account, org_id);
   const type = device_tags.find((x) => x.key === "sensor")?.value;
-  if(!type) {
+  if (!type) {
     throw new Error("Sensor type not found");
   }
   const current_group_id = device_tags.find((x) => x.key === "group_id")?.value;
@@ -37,8 +37,8 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     const old_group_data = await group_dev.getData({ variables: "dev_id", groups: dev_id });
     const old_org_data = await org_dev.getData({ variables: "dev_id", groups: dev_id });
 
-    await org_dev.editData({...old_group_data, ...old_dev_id })
-    await group_dev.editData({...old_org_data, ...old_dev_id })
+    await org_dev.editData({ ...old_group_data, ...old_dev_id });
+    await group_dev.editData({ ...old_org_data, ...old_dev_id });
   }
 
   if (new_group_id || new_group_id === "") {
@@ -82,4 +82,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     const group_dev = await Utils.getDevice(account, new_group_id);
     await group_dev.sendData(to_tago);
   }
-};
+}
+
+export { sensorEdit };

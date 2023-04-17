@@ -40,7 +40,10 @@ async function installDevice({ account, new_group_name, org_id }: installDeviceP
   return { ...new_group, device: new_org_dev } as DeviceCreated;
 }
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+async function groupAdd({ config_dev, context, scope, account, environment }: RouterConstructorData) {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
@@ -60,6 +63,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   // const new_group_org = scope.find((x) => x.variable === "new_group_org");
   const new_group_name = scope.find((x) => x.variable === "new_group_name");
   const new_group_address = scope.find((x) => x.variable === "new_group_address");
+
+  if (!new_group_name) {
+    throw new Error("new_group_name is missing");
+  }
 
   if ((new_group_name.value as string).length < 3) {
     throw validate("#VAL.NAME_FIELD_IS_SMALLER_THAN_3_CHAR#", "danger");
@@ -108,4 +115,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   });
 
   return validate("#VAL.GROUP_SUCCESSFULLY_CREATED#", "success");
-};
+}
+
+export { groupAdd };

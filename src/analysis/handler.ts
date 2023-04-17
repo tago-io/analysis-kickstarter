@@ -25,14 +25,14 @@ import { orgEdit } from "../services/organization/edit";
 import { orgAdd } from "../services/organization/register";
 import { orgDel } from "../services/organization/remove";
 
-import sensorAdd from "../services/device/register";
-import sensorDel from "../services/device/remove";
-import sensorEdit from "../services/device/edit";
+import { sensorAdd } from "../services/device/register";
+import { sensorDel } from "../services/device/remove";
+import { sensorEdit } from "../services/device/edit";
 import sensorPlacement from "../services/device/placeSensor";
 
-import groupAdd from "../services/group/register";
-import groupDel from "../services/group/remove";
-import groupEdit from "../services/group/edit";
+import { groupAdd } from "../services/group/register";
+import { groupDel } from "../services/group/remove";
+import { groupEdit } from "../services/group/edit";
 
 import userAdd from "../services/user/register";
 import userDel from "../services/user/remove";
