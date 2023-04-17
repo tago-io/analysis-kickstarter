@@ -14,12 +14,12 @@
  * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
-import { Utils, Services, Account, Device, Types, Analysis } from "@tago-io/sdk";
+import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
-import { ConfigurationParams, DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
+import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import moment from "moment-timezone";
-import async, { queue } from "async";
+import { queue } from "async";
 import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
@@ -57,20 +57,35 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
   const plan_data_retention = org_params.find((x) => x.key === "plan_data_retention")?.value || "0";
 
   const to_tago = {
-    total_qty,
-    active_qty,
-    inactivy_qty,
-    plan_email_limit_usage,
-    plan_sms_limit_usage,
-    plan_notif_limit_usage,
-    plan_data_retention,
+    device_qty: { value: total_qty, metadata: { total_qty: total_qty, active_qty: active_qty, inactive_qty: inactivy_qty } },
+    plan_usage: {
+      value: plan_email_limit_usage,
+      metadata: {
+        plan_email_limit_usage: plan_email_limit_usage,
+        plan_sms_limit_usage: plan_sms_limit_usage,
+        plan_notif_limit_usage: plan_notif_limit_usage,
+        plan_data_retention: plan_data_retention,
+      },
+    },
   };
   //CONSIDER INSTEAD OF DELETEING VARIABLES, PLACE A DATA RETENTION RULE AND SHOW THEM IN A HISTORIC GRAPIHC ON THE WIDGET HEADER BUTTON
-  await org_dev.deleteData({
-    variables: ["total_qty", "active_qty", "inactivy_qty", "plan_email_limit_usage", "plan_sms_limit_usage", "plan_notif_limit_usage", "plan_data_retention"],
-    qty: 9999,
+  const old_data = await org_dev.getData({
+    variables: ["device_qty", "plan_usage"],
+    query: "last_item",
   });
-  await org_dev.sendData(parseTagoObject(to_tago));
+  const device_data = old_data.find((x) => x.variable === "device_qty");
+  const plan_data = old_data.find((x) => x.variable === "plan_usage");
+
+  if (!device_data || !plan_data) {
+    throw "Device or Plan data not found";
+  }
+
+  const new_data = parseTagoObject(to_tago);
+
+  await org_dev.editData([
+    { ...device_data, ...new_data[0] },
+    { ...plan_data, ...new_data[1] },
+  ]);
 }
 
 const checkLocation = async (account: Account, device: Device) => {
@@ -95,11 +110,7 @@ const checkLocation = async (account: Account, device: Device) => {
   ) {
     return "Same position";
   }
-  await site_dev.deleteData({ variables: "dev_id", groups: device_info.id, qty: 1 });
-  dev_id.location = location_data.location;
-  delete dev_id.time;
-
-  await site_dev.sendData({ ...dev_id });
+  await site_dev.editData({ ...dev_id, location: location_data.location });
 };
 
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
@@ -112,6 +123,9 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
   checkLocation(account, device);
 
   const device_info = await account.devices.info(device_id);
+  if(!device_info.last_input){
+    throw "Device not found";
+  }
 
   const checkin_date = moment(device_info.last_input as Date);
 
@@ -130,11 +144,11 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
 
   await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
 
-  await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: diff_hours >= 24 ? true : false });
+  await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: (diff_hours as number) >= 24 ? true : false });
 }
 
 async function handler(context: TagoContext, scope: Data[]): Promise<void> {
-  console.debug("Running Analysis");
+  context.log("Running Analysis");
 
   const environment = Utils.envToJson(context.environment);
   if (!environment) {
@@ -156,7 +170,7 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 
   //creating queue which will resolve the device
 
-  const processSensorQueue = async.queue(async (sensorItem: DeviceListItem) => {
+  const processSensorQueue = queue(async (sensorItem: DeviceListItem) => {
     resolveDevice(
       context,
       account,
@@ -186,11 +200,15 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 async function startAnalysis(context: TagoContext, scope: any) {
   try {
     await handler(context, scope);
-    console.debug("Analysis finished");
+    context.log("Analysis finished");
   } catch (error) {
     console.debug(error);
-    console.debug(error.message || JSON.stringify(error));
+    context.log(error.message || JSON.stringify(error));
   }
 }
 
-export default new Analysis(startAnalysis, { token: "17ded694-4024-4f52-aa77-679b5274b287" });
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };

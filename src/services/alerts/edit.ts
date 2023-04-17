@@ -1,5 +1,5 @@
 import { Account, Device } from "@tago-io/sdk";
-import { Data, TagsObj } from "@tago-io/sdk/out/common/common.types";
+import { Data } from "@tago-io/sdk/out/common/common.types";
 import { ActionQuery } from "@tago-io/sdk/out/modules/Account/actions.types";
 import sendNotificationError from "../../lib/notificationError";
 import { RouterConstructorData } from "../../types";
@@ -23,6 +23,9 @@ async function addDeviceToAlert(account: Account, org_dev: Device, action_id: st
     return;
   }
   const action_info = await account.actions.info(action_id);
+  if(!action_info.tags) {
+    throw "Action not found";
+  }
   const device_list = [...new Set(action_info.tags.filter((tag) => tag.key === "device_id").map((tag) => tag.value))];
   device_list.push(device_id);
 
@@ -41,6 +44,9 @@ async function listDeviceAction(account: Account, { device_id, action_id, group_
   const filter: ActionQuery["filter"] = {
     tags: [],
   };
+  if(!filter.tags) {
+    filter.tags = [];
+  }
   if (device_id) {
     filter.tags.push({ key: "device_id", value: device_id });
   }
@@ -56,13 +62,20 @@ async function listDeviceAction(account: Account, { device_id, action_id, group_
 
 async function undoChanges(device: Device, scope: Data[]) {
   await device.deleteData({ variables: scope.map((data) => data.variable), groups: scope[0].device });
-  await device.sendData(scope.map((data) => ({ ...data, value: data.metadata.old_value })));
+  await device.sendData(scope.map((data) => ({ ...data, value: data?.metadata?.old_value })));
 }
 /**
  * Main edit alert function
  */
 async function editAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
+
+  if(!org_dev || !scope  || !account) {
+    throw "Organization device not found";
+  }
   const { group: action_id } = scope[0];
+  if(!action_id) {
+    throw "Action not found";
+  }
 
   // Get the fields from the Dynamic Table widget.
   // If the field was not edited, the value of the variable will be equal to null.
@@ -72,6 +85,10 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   let action_variable = scope.find((x) => ["action_list_variable", "action_group_variable"].includes(x.variable));
   const action_condition = scope.find((x) => ["action_list_condition", "action_group_condition"].includes(x.variable));
   const action_value = scope.find((x) => ["action_list_value", "action_group_value"].includes(x.variable));
+
+  if(!action_variable || !action_value) {
+    throw "Action variable and value not found";
+  }
 
   const action_type = scope.find((x) => ["action_list_type", "action_group_type"].includes(x.variable));
   const action_sendto = scope.find((x) => ["action_list_sendto", "action_group_sendto"].includes(x.variable));
@@ -99,6 +116,9 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
     device_list = await getGroupDevices(account, action_group.value as string);
   } else {
     const action_info = await account.actions.info(action_id);
+    if(!action_info.tags) {
+      throw "Action tags not found";
+    }
     device_list = action_info.tags.filter((tag) => tag.key === "device_id").map((tag) => tag.value);
   }
 

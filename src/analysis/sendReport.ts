@@ -14,7 +14,7 @@
  */
 
 import { Account, Analysis, Device, Utils } from "@tago-io/sdk";
-import moment from "moment-timezone";
+import { DateTime } from "luxon";
 import { ActionInfo } from "@tago-io/sdk/out/modules/Account/actions.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
@@ -31,10 +31,17 @@ interface SensorData {
 }
 
 async function resolveReport(account: Account, context: TagoContext, action_info: ActionInfo, org_id: string, via?: string) {
+  if (!account || !context || !action_info || !org_id) {
+    throw "Missing Router parameter";
+  }
   const org_dev = await Utils.getDevice(account, org_id);
   const { name: org_name } = await org_dev.info();
 
   let sensor_id_list: string[] = [];
+
+  if (!action_info.tags) {
+    throw console.debug("action_info.tags is undefined");
+  }
 
   const action_sensor_list = action_info.tags.find((x) => x.key === "sensor_list")?.value;
   const action_group_list = action_info.tags.find((x) => x.key === "group_list")?.value;
@@ -86,7 +93,7 @@ async function resolveReport(account: Account, context: TagoContext, action_info
       status: status_history,
       battery: `${(battery?.value as string) || "N/A"}${battery?.unit || ""}`,
       rssi: (rssi?.value as string) || "N/A",
-      date: moment(last_input).format("HH:mm DD/MM/YYYY"),
+      date: DateTime.fromISO(String(last_input)).toFormat("HH:mm dd/LL/yyyy"),
     });
   }
 
@@ -132,6 +139,10 @@ async function resolveReport(account: Account, context: TagoContext, action_info
   final_html_body = final_html_body.replace("$INACTIVE_QTY$", inactive_qty);
 
   const action_report_contact = action_info.tags.find((x) => x.key === "report_contact")?.value;
+
+  if (!action_report_contact) {
+    throw console.debug("action_report_contact not found");
+  }
 
   const users_id_list: string[] = action_report_contact.split(", ");
 
@@ -191,7 +202,7 @@ async function startAnalysis(context: TagoContext, scope: any) {
   const config_dev = new Device({ token: environment.config_token });
   const account = new Account({ token: environment.account_token });
 
-  let org_id = "";
+  let org_id: string | undefined = "";
 
   const action_id = context.environment.find((x) => x.key === "_action_id")?.value as string;
 
@@ -201,7 +212,14 @@ async function startAnalysis(context: TagoContext, scope: any) {
 
     const { tags } = action_info;
 
+    if (!tags) {
+      return console.debug("tags not found");
+    }
+
     org_id = tags.find((x) => x.key === "organization_id")?.value;
+    if (!org_id) {
+      throw "organization_id not found";
+    }
 
     resolveReport(account, context, action_info, org_id, "Squeduled Action");
   } else if (scope) {
@@ -217,14 +235,21 @@ async function startAnalysis(context: TagoContext, scope: any) {
       amount: 1,
     });
 
-    if (!action_registered) {
+    if (!action_registered.tags) {
       return console.debug("ERROR - No action found");
     }
 
     org_id = action_registered.tags.find((x) => x.key === "organization_id")?.value;
+    if (!org_id) {
+      throw "organization_id not found";
+    }
 
     resolveReport(account, context, action_registered, org_id, "Button");
   }
 }
 
-export default new Analysis(startAnalysis, { token: "37f22241-8a99-4c98-a45d-afe94d2c3b03" });
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };

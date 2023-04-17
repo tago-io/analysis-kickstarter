@@ -11,7 +11,7 @@
  * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
-import { Utils, Services, Account, Device, Analysis, Types } from "@tago-io/sdk";
+import { Utils, Account, Analysis } from "@tago-io/sdk";
 import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
@@ -82,4 +82,9 @@ async function startAnalysis(context: TagoContext, scope: any) {
       console.debug(e.message || JSON.stringify(e));
     });
 }
-export default new Analysis(startAnalysis, { token: "5e190938-6fe1-4f0a-b680-d99a2b94cc47" });
+
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };

@@ -140,6 +140,9 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
 }
 
 async function createAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
+  if (!account || !environment || !scope || !org_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const devToStoreAlert = await Utils.getDevice(account, scope[0].device);
   devToStoreAlert.sendData({ variable: "action_validation", value: "#VAL.CREATING_ALERT#", metadata: { type: "warning" } });
 
@@ -150,8 +153,12 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   const action_set_unlock = scope.find((x) => x.variable === "action_set_unlock");
   const action_sendto = scope.find((x) => x.variable === "action_sendto");
 
+  if (!action_group || !action_dev_list || !action_set_unlock || !action_sendto) {
+    throw new Error("Missing parameters");
+  }
+
   const action_variable = scope.find((x) => x.variable === "action_variable");
-  let action_condition: Data | DataToSend = scope.find((x) => x.variable === "action_condition");
+  let action_condition: Data | DataToSend | undefined = scope.find((x) => x.variable === "action_condition");
   let action_value = scope.find((x) => x.variable === "action_value");
   const action_value2 = scope.find((x) => x.variable === "action_value2");
 
@@ -159,7 +166,18 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   const action_message = scope.find((x) => x.variable === "action_message");
 
   const action_name = scope.find((x) => x.variable === "action_name")?.value as string;
-
+  if (
+    !action_value ||
+    !action_variable ||
+    !action_condition ||
+    !action_type ||
+    !action_message ||
+    !action_name ||
+    !action_dev_list?.metadata?.sentValues ||
+    action_group?.metadata?.label
+  ) {
+    throw new Error("Missing parameters");
+  }
   let groupKey = scope.find((x) => x.variable === "action_groupkey")?.value as string;
   if (!groupKey) {
     groupKey = "group_id";
@@ -170,9 +188,12 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   // const action_unlock_value = scope.find((x) => x.variable === "action_unlock_value");
 
   const action_value_unit = scope.find((x) => x.variable === "action_value_unit");
+  if (!action_value_unit?.value) {
+    throw "Missing action_value_unit";
+  }
 
   if (action_value_unit?.value === "F") {
-    action_value.value = (((Number(action_value.value) - 32) * 5) / 9).toFixed(2);
+    action_value.value = (((Number(action_value?.value) - 32) * 5) / 9).toFixed(2);
     if (action_value2?.value) {
       action_value2.value = (((Number(action_value2?.value) - 32) * 5) / 9).toFixed(2);
     }
@@ -200,12 +221,12 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   let device_list: string[] = [];
 
   if (action_dev_list) {
-    device_list = action_dev_list.metadata.sentValues.map((x) => x.value as string);
+    device_list = action_dev_list?.metadata?.sentValues.map((x) => x.value as string);
   } else if (action_group) {
     const group_id = action_group.value as string;
     const group_exist = await account.devices.info(group_id);
     if (!group_exist) {
-      throw `Group ${action_group.metadata.label} couldn't be found.`;
+      throw `Group ${action_group?.metadata?.label} couldn't be found.`;
     }
     device_list = await getGroupDevices(account, group_id, groupKey);
   }

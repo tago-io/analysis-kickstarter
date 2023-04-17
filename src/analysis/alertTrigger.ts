@@ -9,7 +9,7 @@
  * - config_token: the value must be a token from a HTTPs device, that stores general information of the application.
  * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
-import { Utils, Services, Account, Device, Types, Analysis } from "@tago-io/sdk";
+import { Utils, Services, Account, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
@@ -64,6 +64,9 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
 
   // Get action details
   const action_info = await account.actions.info(action_id);
+  if (!action_info.tags) {
+    throw "action_info.tags not found";
+  }
   const send_to = action_info.tags
     .find((x) => x.key === "send_to")
     ?.value?.replace(/;/g, ",")
@@ -72,22 +75,44 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
     .find((x) => x.key === "action_type")
     ?.value?.replace(/;/g, ",")
     .split(",");
+
+  if (!send_to) {
+    throw "send_to not found";
+  }
+
+  if (!type) {
+    throw "type not found";
+  }
   // const alert_id = action_info.tags.find((x) => x.key === "action_id")?.value;
   const alert_id = action_id;
 
   // Get action message
   const org_id = action_info.tags.find((x) => x.key === "organization_id")?.value;
+
+  if (!org_id) {
+    throw "org_id not found";
+  }
   const org_dev = await Utils.getDevice(account, org_id);
   const [message_var] = await org_dev.getData({ variables: ["action_list_message", "action_group_message"], groups: alert_id, qty: 1 });
 
   const trigger_variable = scope.find((x) => x.variable === (action_info.trigger[0] as any).variable);
+  if (!trigger_variable?.value) {
+    throw "trigger_variable.value not found";
+  }
+
   const device_id = scope[0].device;
   const device_info = await account.devices.info(device_id);
+
+  const sensor_type = device_info?.tags?.find((tag) => tag.key === "sensor")?.value;
+  if (!sensor_type) {
+    throw "sensoor_type not found";
+  }
+
 
   const replace_details: IMessageDetail = {
     device_name: device_info?.name,
     device_id: device_info?.id,
-    sensor_type: device_info?.tags?.find((tag) => tag.key === "sensor")?.value,
+    sensor_type: sensor_type,
     value: String(trigger_variable?.value),
     variable: trigger_variable?.variable,
   };
@@ -148,6 +173,9 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
     if (has_service_limit) {
       users_info.forEach((user) => {
         const smsService = new Services({ token: context.token }).sms;
+        if (!user.phone) {
+          throw "user.phone not found";
+        }
         smsService
           .send({
             message,
@@ -167,4 +195,8 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
   return console.debug("Analysis Finished!");
 }
 
-export default new Analysis(analysisAlert, { token: "a7d727c6-2a5a-414a-bc4c-99a6a21bd174" });
+if (!process.env.T_TEST) {
+  Analysis.use(analysisAlert, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { analysisAlert };

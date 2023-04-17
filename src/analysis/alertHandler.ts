@@ -21,8 +21,8 @@ import { createAlert } from "../services/alerts/register";
 import { deleteAlert } from "../services/alerts/remove";
 
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
-  if (!scope[0]) {
-    return console.debug("This analysis must be triggered by a widget.");
+  if (!("variable" in scope[0])) {
+    return console.error("Not a valid TagoIO Data");
   }
 
   console.debug(JSON.stringify(scope));
@@ -43,9 +43,17 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   // device is always the device used in the widget to trigger the analysis.
   const device_id = scope[0].device;
   const device_token = await Utils.getTokenByName(account, device_id);
-  const org_dev = new Device({ token: device_token });
 
-  const router = new Utils.AnalysisRouter({ context, config_dev: org_dev, scope, environment, account });
+  // Instance of the settings device, that stores global information of the application.
+  const config_dev = new Device({ token: environment.config_token });
+
+  const router = new Utils.AnalysisRouter({
+    scope,
+    context,
+    environment,
+    account,
+    config_dev,
+  });
 
   router.register(createAlert).whenInputFormID("create-alert-dev");
   router.register(editAlert).whenWidgetExec("edit");
@@ -57,4 +65,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   console.debug(result.services);
 }
 
-export default new Analysis(startAnalysis, { token: "0604d0ad-fad7-4739-bb9a-a2e90ca2a52b" });
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };

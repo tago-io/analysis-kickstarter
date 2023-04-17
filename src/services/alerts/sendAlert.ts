@@ -2,7 +2,6 @@ import { Account, Services, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
-import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 import checkAndChargeUsage from "../plan/checkAndChargeUsage";
 
 interface IMessageDetail {
@@ -45,11 +44,17 @@ async function sendAlert(account: Account, context: TagoContext, org_id: string,
 
   const device_id = data.device;
   const device_info = await account.devices.info(device_id);
-
+  if (!device_info.tags) {
+    throw new Error("Device tags not found");
+  }
+  const sensor_type = device_info?.tags?.find((tag) => tag.key === "sensor")?.value;
+  if (!sensor_type) {
+    throw new Error("Sensor type not found");
+  }
   const replace_details: IMessageDetail = {
     device_name: device_info?.name,
     device_id: device_info?.id,
-    sensor_type: device_info?.tags?.find((tag) => tag.key === "sensor")?.value,
+    sensor_type: sensor_type,
     value: String(data?.value),
     variable: data?.variable,
   };
@@ -108,6 +113,9 @@ async function sendAlert(account: Account, context: TagoContext, org_id: string,
     if (has_service_limit) {
       users_info.forEach((user) => {
         const smsService = new Services({ token: context.token }).sms;
+        if (!user.phone) {
+          throw new Error("User phone not found");
+        }
         smsService
           .send({
             message,

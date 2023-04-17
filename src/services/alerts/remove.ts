@@ -6,8 +6,15 @@ import { RouterConstructorData } from "../../types";
  * Function to be used externally when need to remove a device from an alert.
  */
 async function removeDeviceFromAlert(account: Account, action_id: string, device_id: string) {
-  const action_info: Omit<ActionInfo, "trigger"> & { trigger: any } = (await account.actions.info(action_id)) as any;
+  const action_info: Partial<Omit<ActionInfo, "trigger">> & { trigger: any } = (await account.actions.info(action_id)) as any;
 
+  if(!account || !action_id || !device_id) {
+    throw new Error("Missing parameters");
+  }
+
+  if(!action_info.tags) {
+    throw new Error("Action not found");
+  }
   delete action_info.created_at;
   delete action_info.updated_at;
   delete action_info.last_triggered;
@@ -38,6 +45,10 @@ async function removeDeviceFromAlert(account: Account, action_id: string, device
  * Main delete alert function.
  */
 async function deleteAlert({ account, environment, scope, config_dev, context }: RouterConstructorData) {
+  if(!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
+
   const { group } = scope[0];
   if (!group) {
     return;
@@ -47,8 +58,8 @@ async function deleteAlert({ account, environment, scope, config_dev, context }:
   device.deleteData({ groups: group });
 
   const action_info = await account.actions.info(group);
-  if (!action_info) {
-    return;
+  if(!action_info.trigger){
+    throw new Error("Action not found");
   }
 
   await account.actions.delete(group);
@@ -57,6 +68,9 @@ async function deleteAlert({ account, environment, scope, config_dev, context }:
     const params = await account.devices.paramList(device_id);
 
     const paramToDelete = params.find((x) => x.key.includes(group));
+    if(!paramToDelete?.id) {
+      throw new Error("Param not found");
+    }
     if (paramToDelete) {
       await account.devices.paramRemove(device_id, paramToDelete.id);
     }

@@ -1,7 +1,6 @@
-import { Account, Device } from "@tago-io/sdk";
+import { Account } from "@tago-io/sdk";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import moment from "moment";
-import { ActionStructureParams } from "./register";
 import { IAlertTrigger, sendAlert } from "./sendAlert";
 
 interface ICheckinParam {
@@ -26,6 +25,9 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
     if (diff_hours >= Number(interval) && !param.sent) {
       const action_id = param.key.replace("checkin", "");
       const action_info = await account.actions.info(action_id);
+      if(!action_info.tags) {
+        throw "Action not found";
+      }
 
       const send_to = action_info.tags
         .find((x) => x.key === "send_to")
@@ -36,6 +38,10 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
         ?.value?.replace(/;/g, ",")
         .split(",");
       const device = action_info.tags.find((x) => x.key === "device")?.value as string;
+
+      if(!send_to || !type || !device) {
+        throw "Action not found";
+      }
 
       const mockData = {
         variable: "Inactivity",

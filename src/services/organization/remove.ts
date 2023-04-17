@@ -1,7 +1,14 @@
 import { RouterConstructor } from "@tago-io/sdk/out/modules/Utils/router/router";
 import { fetchDeviceList } from "../../lib/fetchDeviceList";
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructor) => {
+async function orgDel({ config_dev, context, scope, account, environment }: RouterConstructor) {
+  if (!account || !config_dev) {
+    throw "Missing Router parameter";
+  }
+  if (!("variable" in scope[0])) {
+    return console.error("Not a valid TagoIO Data");
+  }
+
   //id of the org device
   const org_id = (scope[0] as any).device;
 
@@ -20,7 +27,12 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   //deleting users (organization's user)
   const user_accounts = await account.run.listUsers({ filter: { tags: [{ key: "organization_id", value: org_id }] } });
   if (user_accounts) {
-    user_accounts.forEach((user) => account.run.userDelete(user.id));
+    user_accounts.forEach((user) => {
+      if (!user.id) {
+        throw "User id not found";
+      }
+      account.run.userDelete(user.id);
+    });
   }
 
   //deleting organization's device
@@ -34,4 +46,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
 
   return;
-};
+}
+
+export { orgDel };

@@ -5,14 +5,16 @@ import { fetchDeviceList } from "../../lib/fetchDeviceList";
 import { RouterConstructorData } from "../../types";
 
 const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data) => {
+  if(!org || !plan_data || !account || !plan_data.metadata){
+    throw new Error("Missing parameters");
+  }
   //changing plan_data variable
   const org_id = org.id;
   const org_dev = await Utils.getDevice(account, org_id);
 
-  await org_dev.deleteData({ variables: "plan_data", qty: 9999 });
-  delete plan_data.device;
-  delete plan_data.time;
-  await org_dev.sendData(plan_data);
+  const old_plan_data = await org_dev.getData({ variables: "plan_data", query: "last_item" });
+
+  await org_dev.editData({ ...old_plan_data, ...plan_data });
 
   //changing params
   const org_params = await account.devices.paramList(org_id);
@@ -30,6 +32,9 @@ const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data
 };
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if(!account || !environment || !scope || !config_dev || !context){
+    throw new Error("Missing parameters");
+  }
   const plan_name = scope.find((x) => x.variable === "plan_data");
   const plan_email_limit = scope.find((x) => x.variable === "plan_email_limit");
   const plan_sms_limit = scope.find((x) => x.variable === "plan_sms_limit");
@@ -40,8 +45,8 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const [plan_data] = await config_dev.getData({ variables: "plan_data", groups: plan_group, qty: 1 });
 
-  if (!plan_data) {
-    return console.debug("No plan found!");
+  if (!plan_data.value || !plan_data.metadata) {
+    throw new Error("Plan not found");
   }
 
   const org_dev_list = await fetchDeviceList(account, [

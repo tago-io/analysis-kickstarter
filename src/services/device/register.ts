@@ -1,9 +1,9 @@
-import { Device, Account, Types, Utils } from "@tago-io/sdk";
-import { DeviceCreateInfo, DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
+import { Device, Account, Utils } from "@tago-io/sdk";
+import { DeviceCreateInfo } from "@tago-io/sdk/out/modules/Account/devices.types";
 import validation from "../../lib/validation";
 import { DeviceCreated, RouterConstructorData } from "../../types";
 import { parseTagoObject } from "../../lib/data.logic";
-import { findDashboardByExportID, findDashboardByConnectorID } from "../../lib/findResource";
+import { findDashboardByConnectorID } from "../../lib/findResource";
 import { fetchDeviceList } from "../../lib/fetchDeviceList";
 
 interface installDeviceParam {
@@ -54,6 +54,9 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
 }
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
@@ -74,7 +77,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const new_dev_group = scope.find((x) => x.variable === "new_dev_group");
   const new_dev_type = scope.find((x) => x.variable === "new_dev_type");
   const new_dev_network = scope.find((x) => x.variable === "new_dev_network");
-
+  if (!new_dev_name || !new_dev_eui || !new_dev_group || !new_dev_type || !new_dev_network) {
+    throw new Error("Missing variables");
+  }
   if ((new_dev_name?.value as string).length < 3) {
     throw validate("#VAL.NAME_FIELD_IS_SMALLER_THAN_3_CHAR#", "danger");
   }
@@ -146,8 +151,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   await account.devices.paramSet(device_id, { key: "dev_group", value: (new_dev_group?.metadata?.label as string) || "", sent: false });
   await account.devices.paramSet(device_id, { key: "dev_lastcheckin", value: "-", sent: false });
   await account.devices.paramSet(device_id, { key: "dev_battery", value: "-", sent: false });
-
-  // await config_dev.sendData(dev_data);
 
   const add_to_dropdown_list = parseTagoObject({ asset_list: new_dev_name.value }, device_id);
   await org_dev.sendData(dev_data.concat(add_to_dropdown_list));

@@ -21,9 +21,9 @@ import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 
-import orgEdit from "../services/organization/edit";
-import orgAdd from "../services/organization/register";
-import orgDel from "../services/organization/remove";
+import { orgEdit } from "../services/organization/edit";
+import { orgAdd } from "../services/organization/register";
+import { orgDel } from "../services/organization/remove";
 
 import sensorAdd from "../services/device/register";
 import sensorDel from "../services/device/remove";
@@ -80,27 +80,32 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   const config_dev = new Device({ token: environment.config_token });
   const account = new Account({ token: environment.account_token });
 
-  // The router class will help you route the function the analysis must run
-  // based on what had been received in the analysis.
-  const router = new Utils.AnalysisRouter({ scope, context, environment, account, config_dev });
+  // Instance the router classs of Utils.router
+  const router = new Utils.AnalysisRouter({
+    scope,
+    context,
+    environment,
+    account,
+    config_dev,
+  });
 
   // Organization Routing
   router.register(orgAdd).whenInputFormID("create-org");
-  router.register(orgDel).whenEnv("_input_id", "delete-org");
-  router.register(orgEdit as any).whenWidgetExec("edit-org" as any);
+  router.register(orgDel).whenCustomBtnID("delete-org");
+  router.register(orgEdit).whenCustomBtnID("edit-org");
 
   // Sensor routing
   router.register(sensorAdd).whenInputFormID("create-dev");
-  router.register(sensorDel as any).whenEnv("_input_id", "delete-dev");
-  router.register(sensorEdit as any).whenWidgetExec("edit-dev" as any);
+  router.register(sensorDel).whenCustomBtnID("delete-dev");
+  router.register(sensorEdit).whenCustomBtnID("edit-dev");
 
   // Sensor uplink routing
   router.register(sensorPlacement).whenVariables(["set_dev_pin_id"]);
 
   // group routing
   router.register(groupAdd).whenInputFormID("create-group");
-  router.register(groupDel as any).whenEnv("_input_id", "delete-group");
-  router.register(groupEdit as any).whenWidgetExec("edit-group" as any);
+  router.register(groupDel).whenCustomBtnID("delete-group");
+  router.register(groupEdit).whenCustomBtnID("edit-group");
 
   // User routing
   router.register(userAdd).whenInputFormID("create-user");
@@ -124,6 +129,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   await router.exec();
 }
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
 
 export { startAnalysis };
-export default new Analysis(startAnalysis, { token: "2c19cb48-5520-48da-85c1-8f2228be6e5d" });

@@ -23,6 +23,9 @@ function getCronString(report_time: string, report_days: string): string {
 }
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
@@ -37,6 +40,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const report_contact = scope.find((x) => x.variable === "new_report_contact");
   const report_sensors = scope.find((x) => x.variable === "new_report_sensors");
   const report_group = scope.find((x) => x.variable === "new_report_group");
+
+  if(!report_active || !report_time || !report_days || !report_contact || !action_group) {
+    throw new Error("Missing parameters report_active, report_time, report_days, report_contact or action_group");
+  }
 
   const action_tags: TagsObj[] = [
     { key: "action_group", value: action_group },

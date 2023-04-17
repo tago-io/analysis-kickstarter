@@ -1,7 +1,15 @@
 import { Utils } from "@tago-io/sdk";
 import { RouterConstructorDevice } from "../../types";
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorDevice) => {
+async function orgEdit ({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
+
+  if (!account || !config_dev) {
+    throw "Missing Router parameter";
+  }
+  if (!("variable" in scope[0])) {
+    return console.error("Not a valid TagoIO Data");
+  }
+
   const org_id = (scope[0] as any).device;
   const org_dev = await Utils.getDevice(account, org_id);
 
@@ -38,6 +46,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     const plan_notif_limit = org_params.find((x) => x.key === "plan_notif_limit") || { key: "plan_notif_limit", value: "", sent: false };
     const plan_data_retention = org_params.find((x) => x.key === "plan_data_retention") || { key: "plan_data_retention", value: "", sent: false };
 
+    if(!plan_data.metadata) {
+      throw "Plan not found";
+    }
     const org_tags = (await org_dev.info()).tags;
     const new_org_tags = org_tags.filter((tag) => tag.key !== "plan_group");
     await account.devices.edit(org_id, { tags: [...new_org_tags, { key: "plan_group", value: plan_data.group as string }] });
@@ -61,3 +72,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   }
   return console.debug("edited!");
 };
+
+
+export { orgEdit };

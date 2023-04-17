@@ -13,12 +13,15 @@
  * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
-import { Utils, Services, Account, Device, Types, Analysis } from "@tago-io/sdk";
+import { Utils, Account, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
+  if(!account || !org_id || !device_id) {
+    throw "Missing Router parameter";
+  }
   const device = await Utils.getDevice(account, device_id);
 
   const device_params = await account.devices.paramList(device_id);
@@ -60,4 +63,8 @@ async function startAnalysis(context: TagoContext, scope: any) {
   }
 }
 
-export default new Analysis(startAnalysis, { token: "5e8803f6-d0ad-451f-9dfd-8c82343044ba" });
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };

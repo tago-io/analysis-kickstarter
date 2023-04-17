@@ -5,12 +5,19 @@ import { RouterConstructorData } from "../../types";
 //registered by admin account.
 
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   //Collecting data
   const new_plan_name = scope.find((x) => x.variable === "new_plan_name");
   const new_plan_email_limit = scope.find((x) => x.variable === "new_plan_email_limit");
   const new_plan_sms_limit = scope.find((x) => x.variable === "new_plan_sms_limit");
   const new_plan_notif_limit = scope.find((x) => x.variable === "new_plan_notif_limit");
   const new_plan_data_retention = scope.find((x) => x.variable === "new_plan_data_retention");
+
+  if(!new_plan_name || !new_plan_email_limit || !new_plan_sms_limit || !new_plan_notif_limit || !new_plan_data_retention){
+    throw new Error("Missing variables in scope array to create new plan");
+  }
 
   //validation
   const validate = validation("plan_validation", config_dev);

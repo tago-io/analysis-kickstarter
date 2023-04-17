@@ -67,5 +67,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   await router.exec();
 }
 
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
 export { startAnalysis };
-export default new Analysis(startAnalysis, { token: "4528236f-de1d-4a48-8765-a4019aaad7e4" });
