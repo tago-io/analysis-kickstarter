@@ -18,7 +18,7 @@ import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
-import moment from "moment-timezone";
+import dayjs from "dayjs";
 import { queue } from "async";
 import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
@@ -36,8 +36,8 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
   ]);
 
   sensorList.forEach((sensor) => {
-    const last_input = moment(sensor.last_input);
-    const now = moment();
+    const last_input = dayjs(sensor.last_input);
+    const now = dayjs();
     const diff_time = now.diff(last_input, "hours");
     total_qty++;
     if (diff_time < 24) {
@@ -127,13 +127,13 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
     throw "Device not found";
   }
 
-  const checkin_date = moment(device_info.last_input as Date);
+  const checkin_date = dayjs(device_info.last_input as Date);
 
   if (!checkin_date) {
     return "no data";
   }
 
-  let diff_hours: string | number = moment().diff(checkin_date, "hours");
+  let diff_hours: string | number = dayjs().diff(checkin_date, "hours");
 
   if (diff_hours !== diff_hours) {
     diff_hours = "-";

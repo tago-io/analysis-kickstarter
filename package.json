@@ -50,9 +50,6 @@
     "bson-objectid": "2.0.4",
     "dayjs": "1.11.7",
     "geolib": "3.3.3",
-    "luxon": "3.3.0",
-    "moment": "2.29.4",
-    "moment-timezone": "0.5.43",
     "puppeteer": "19.9.0"
   }
 }

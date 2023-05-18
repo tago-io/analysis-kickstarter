@@ -1,6 +1,6 @@
 import { Account } from "@tago-io/sdk";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
-import moment from "moment";
+import dayjs from "dayjs";
 import { IAlertTrigger, sendAlert } from "./sendAlert";
 
 interface ICheckinParam {
@@ -10,7 +10,7 @@ interface ICheckinParam {
 
 async function checkinTrigger(account: Account, context: TagoContext, org_id: string, params: ICheckinParam) {
   const { last_input, device_id } = params;
-  const checkin_date = moment(last_input);
+  const checkin_date = dayjs(last_input);
   if (!checkin_date) {
     return "no data";
   }
@@ -20,7 +20,7 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
   const actionList = paramList.filter((param) => param.key.startsWith("checkin"));
   for (const param of actionList) {
     const [interval, last_send] = param.value.split(",");
-    const diff_hours: string | number = moment().diff(checkin_date, "hours");
+    const diff_hours: string | number = dayjs().diff(checkin_date, "hours");
 
     if (diff_hours >= Number(interval) && !param.sent) {
       const action_id = param.key.replace("checkin", "");
