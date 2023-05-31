@@ -1,12 +1,21 @@
 import { Utils } from "@tago-io/sdk";
 import { RouterConstructorData } from "../../types";
 
+/**
+ * Function that edit user information
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");
   }
   console.debug("Editting User.");
-  const user_id = scope[0].device;
+  // @ts-expect-error user is not defined on sdk types
+  const user_id = scope[0].user;
 
   const user_name = scope.find((x) => x.variable === "user_name");
   const user_phone = scope.find((x) => x.variable === "user_phone");

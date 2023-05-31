@@ -4,15 +4,18 @@ import { RouterConstructorData } from "../../types";
 
 /**
  * Function to be used externally when need to remove a device from an alert.
+ * @param account Account instanced class
+ * @param action_id Id of the action that will be removed
+ * @param device_id Device id of the action that will be removed
  */
 async function removeDeviceFromAlert(account: Account, action_id: string, device_id: string) {
   const action_info: Partial<Omit<ActionInfo, "trigger">> & { trigger: any } = (await account.actions.info(action_id)) as any;
 
-  if(!account || !action_id || !device_id) {
+  if (!account || !action_id || !device_id) {
     throw new Error("Missing parameters");
   }
 
-  if(!action_info.tags) {
+  if (!action_info.tags) {
     throw new Error("Action not found");
   }
   delete action_info.created_at;
@@ -43,22 +46,27 @@ async function removeDeviceFromAlert(account: Account, action_id: string, device
 
 /**
  * Main delete alert function.
+ * @param account Parameters used to create the structure
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ * @param scope Number of devices that will be listed
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
  */
 async function deleteAlert({ account, environment, scope, config_dev, context }: RouterConstructorData) {
-  if(!account || !environment || !scope || !config_dev || !context) {
+  if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");
   }
 
   const { group } = scope[0];
   if (!group) {
-    return;
+    throw new Error("Group not found");
   }
 
   const device = await Utils.getDevice(account, scope[0].device);
   device.deleteData({ groups: group });
 
   const action_info = await account.actions.info(group);
-  if(!action_info.trigger){
+  if (!action_info.trigger) {
     throw new Error("Action not found");
   }
 
@@ -66,13 +74,12 @@ async function deleteAlert({ account, environment, scope, config_dev, context }:
   const devices = [...new Set(action_info.trigger.map((x: any) => x.device).filter((x) => x))];
   for (const device_id of devices) {
     const params = await account.devices.paramList(device_id);
-
     const paramToDelete = params.find((x) => x.key.includes(group));
-    if(!paramToDelete?.id) {
+    if (!paramToDelete?.id) {
       throw new Error("Param not found");
     }
     if (paramToDelete) {
-      await account.devices.paramRemove(device_id, paramToDelete.id);
+      await account.devices.paramRemove(device_id, paramToDelete?.id);
     }
   }
 }

@@ -2,8 +2,15 @@ import validation from "../../lib/validation";
 import { parseTagoObject } from "../../lib/data.logic";
 import { RouterConstructorData } from "../../types";
 
-//registered by admin account.
 
+/**
+ * Main function of registered plan by admin account
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");

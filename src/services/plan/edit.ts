@@ -1,4 +1,4 @@
-import { Device, Account, Utils } from "@tago-io/sdk";
+import { Account, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { fetchDeviceList } from "../../lib/fetchDeviceList";
@@ -31,6 +31,14 @@ const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data
   await account.devices.paramSet(org_id, { ...plan_data_retention, value: String(plan_data.metadata.data_retention) });
 };
 
+/**
+ * Main function of editing plan by admin account
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
   if(!account || !environment || !scope || !config_dev || !context){
     throw new Error("Missing parameters");

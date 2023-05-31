@@ -9,6 +9,12 @@ import { RouterConstructorData } from "../../types";
 import { checkinAlertSet } from "./checkinAlerts";
 import { geofenceAlertCreate } from "./geofenceAlert";
 
+/**
+ * The function returns the group that was configured in the alert
+ * @param account Account instanced class
+ * @param group_id Id of the group
+ * @param groupKey Tag key that will be used in the device list
+ */
 async function getGroupDevices(account: Account, group_id: string, groupKey: string = "group_id") {
   const list: DeviceListItem[] = await fetchDeviceList(account, [
     { key: groupKey, value: group_id },
@@ -17,7 +23,10 @@ async function getGroupDevices(account: Account, group_id: string, groupKey: str
 
   return list.map((x) => x.id);
 }
-
+/**
+ * Function that reverses the logic of the alert so that we can use it in the trigger unlock of the action
+ * @param condition Condition of the action
+ */
 function reverseCondition(condition: string) {
   switch (condition) {
     case "=":
@@ -49,7 +58,11 @@ interface ActionStructureParams {
   device: string;
   name?: string;
 }
-
+/**
+ * Function that generate the structure of the action create
+ * @param structure Parameters used to create the structure
+ * @param device_ids Device id list
+ */
 function generateActionStructure(structure: ActionStructureParams, device_ids: string[]) {
   const action_structure: any = {
     active: true,
@@ -139,6 +152,14 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
   return action_structure;
 }
 
+/**
+ * Main function of creating alerts
+ * @param account Parameters used to create the structure
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ * @param scope Number of devices that will be listed
+ * @param config_dev Device of the organization
+ * @param context Context is a variable sent by the analysis
+ */
 async function createAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
   if (!account || !environment || !scope || !org_dev || !context) {
     throw new Error("Missing parameters");
@@ -152,10 +173,10 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
 
   const action_set_unlock = scope.find((x) => x.variable === "action_set_unlock");
   const action_sendto = scope.find((x) => x.variable === "action_sendto");
-
-  if (!action_group || !action_dev_list || !action_set_unlock || !action_sendto) {
-    throw new Error("Missing parameters");
-  }
+  console.log("action_sendto", action_sendto);
+  console.log("action_set_unlock", action_set_unlock);
+  console.log("action_dev_list", action_dev_list);
+  console.log("action_group", action_group);
 
   const action_variable = scope.find((x) => x.variable === "action_variable");
   let action_condition: Data | DataToSend | undefined = scope.find((x) => x.variable === "action_condition");
@@ -166,18 +187,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   const action_message = scope.find((x) => x.variable === "action_message");
 
   const action_name = scope.find((x) => x.variable === "action_name")?.value as string;
-  if (
-    !action_value ||
-    !action_variable ||
-    !action_condition ||
-    !action_type ||
-    !action_message ||
-    !action_name ||
-    !action_dev_list?.metadata?.sentValues ||
-    action_group?.metadata?.label
-  ) {
-    throw new Error("Missing parameters");
-  }
+
   let groupKey = scope.find((x) => x.variable === "action_groupkey")?.value as string;
   if (!groupKey) {
     groupKey = "group_id";

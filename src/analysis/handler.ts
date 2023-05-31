@@ -51,10 +51,9 @@ import planEdit from "../services/plan/edit";
 // import { editAlert } from "../services/alerts/edit";
 
 /**
- *
- * @param context
- * @param scope
- * @returns
+ * This function is the main function of the analysis.
+ * @param context The context of the analysis, containing the environment variables and parameters.
+ * @param scope The scope of the analysis, containing the data sent to the analysis.
  */
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
   console.debug("SCOPE:", JSON.stringify(scope, null, 4));
@@ -91,26 +90,26 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   // Organization Routing
   router.register(orgAdd).whenInputFormID("create-org");
-  router.register(orgDel).whenCustomBtnID("delete-org");
-  router.register(orgEdit).whenCustomBtnID("edit-org");
+  router.register(orgDel).whenDeviceListIdentifier("delete-org");
+  router.register(orgEdit).whenWidgetExec("edit");
 
   // Sensor routing
   router.register(sensorAdd).whenInputFormID("create-dev");
-  router.register(sensorDel).whenCustomBtnID("delete-dev");
-  router.register(sensorEdit).whenCustomBtnID("edit-dev");
+  router.register(sensorDel).whenDeviceListIdentifier("delete-dev");
+  router.register(sensorEdit).whenDeviceListIdentifier("edit-dev");
 
   // Sensor uplink routing
   router.register(sensorPlacement).whenVariables(["set_dev_pin_id"]);
 
   // group routing
   router.register(groupAdd).whenInputFormID("create-group");
-  router.register(groupDel).whenCustomBtnID("delete-group");
-  router.register(groupEdit).whenCustomBtnID("edit-group");
+  router.register(groupDel).whenDeviceListIdentifier("delete-group");
+  router.register(groupEdit).whenDeviceListIdentifier("edit-group");
 
   // User routing
   router.register(userAdd).whenInputFormID("create-user");
-  router.register(userDel).whenVariableLike("user_").whenWidgetExec("delete");
-  router.register(userEdit).whenVariableLike("user_").whenWidgetExec("edit");
+  router.register(userDel).whenUserListIdentifier("delete-user");
+  router.register(userEdit).whenUserListIdentifier("edit-user");
 
   //Plan routing
   router.register(planAdd).whenInputFormID("create-plan");

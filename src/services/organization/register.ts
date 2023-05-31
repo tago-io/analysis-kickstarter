@@ -1,4 +1,4 @@
-import { Device, Account, Types } from "@tago-io/sdk";
+import { Device, Account } from "@tago-io/sdk";
 import { DeviceCreateInfo } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { parseTagoObject } from "../../lib/data.logic";
 import { findDashboardByExportID } from "../../lib/findResource";
@@ -11,7 +11,12 @@ interface installDeviceParam {
   new_org_name: string;
   new_org_plan_group: string;
 }
-
+/**
+ * Function that create organizations
+ * @param account Account instanced class
+ * @param new_org_name Organization name configured by the user
+ * @param new_org_plan_group User configured plan
+ */
 async function installDevice({ account, new_org_name, new_org_plan_group }: installDeviceParam) {
   //structuring data
   const device_data: DeviceCreateInfo = {
@@ -40,6 +45,15 @@ async function installDevice({ account, new_org_name, new_org_plan_group }: inst
   //token, device_id, bucket_id
   return { ...new_org, device: new_org_dev } as DeviceCreated;
 }
+
+/**
+ * Main function of creating organizations
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 async function orgAdd({ config_dev, context, scope, account, environment }: RouterConstructorData) {
 
   if (!account || !config_dev) {

@@ -1,16 +1,29 @@
 import { RouterConstructor } from "@tago-io/sdk/out/modules/Utils/router/router";
 import { fetchDeviceList } from "../../lib/fetchDeviceList";
 
+/**
+ * Main function of deleting organizations
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 async function orgDel({ config_dev, context, scope, account, environment }: RouterConstructor) {
+  console.log("teste123");
   if (!account || !config_dev) {
     throw "Missing Router parameter";
   }
-  if (!("variable" in scope[0])) {
+
+  if (!scope[0]) {
     return console.error("Not a valid TagoIO Data");
   }
 
+  console.log("teste");
+
   //id of the org device
   const org_id = (scope[0] as any).device;
+  console.log(org_id);
 
   const params = await account.devices.paramList(org_id);
 
@@ -38,6 +51,7 @@ async function orgDel({ config_dev, context, scope, account, environment }: Rout
   //deleting organization's device
 
   const devices = await fetchDeviceList(account, [{ key: "organization_id", value: org_id }]);
+  console.log(devices);
 
   if (devices) {
     devices.forEach((x) => {

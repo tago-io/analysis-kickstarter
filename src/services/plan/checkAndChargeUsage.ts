@@ -1,8 +1,12 @@
-import { Device, Account, Services, Utils } from "@tago-io/sdk";
+import { Account, Services, Utils } from "@tago-io/sdk";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 
 type CommunicationMean = "email" | "sms" | "notification_run";
-
+/**
+ * Function that check if the user has exceeded the limit of the plan
+ * @param account Account that will be used to check the plan
+ * @param type Type of communication mean that will be checked
+ */
 const checkTagoPlan = async (account: Account, type: CommunicationMean) => {
   const { profile: profile_id } = await account.run.info();
 
@@ -39,7 +43,15 @@ const checkTagoPlan = async (account: Account, type: CommunicationMean) => {
 
   return true;
 };
-
+/**
+ * Function that send limit alert to the user
+ * @param account Account instanced class
+ * @param context Context is a variable sent by the analysis
+ * @param org_id Organization ID that will be used to check the plan
+ * @param current_email_usage Current email usage of the organization
+ * @param current_sms_usage Current sms usage of the organization
+ * @param service_type Type of service that will be checked
+ */
 const sendLimitAlert = async (account: Account, context: TagoContext, org_id: string, current_email_usage: string, current_sms_usage: string, service_type: string) => {
   //guest will not receive the notification/email
   const users_list = await account.run.listUsers({ amount: 9999, fields: ["id", "name", "email"], filter: { tags: [{ key: "organization_id", value: org_id }] } });
@@ -76,6 +88,12 @@ const sendLimitAlert = async (account: Account, context: TagoContext, org_id: st
   });
 };
 
+
+/**
+ * Function that check if the organization has exceeded the limit of the plan
+ * @param plan_sms_limit The limit of the plan
+ * @param current_plan_count The current count of the plan
+ */
 const orgHasLimit = (plan_sms_limit: string, current_plan_count: number): boolean => {
   if (Number(plan_sms_limit) >= current_plan_count) {
     return true;
@@ -84,6 +102,14 @@ const orgHasLimit = (plan_sms_limit: string, current_plan_count: number): boolea
   }
 };
 
+/**
+ * Function that check if the organization has exceeded the limit of the plan
+ * @param account Account that will be used to check the plan
+ * @param context Context is a variable sent by the analysis
+ * @param org_id Organization ID that will be used to check the plan
+ * @param to_dispatch_qty Quantity of the dispatches that will be sent
+ * @param type Type of communication mean that will be checked
+ */
 export default async (account: Account, context: TagoContext, org_id: string, to_dispatch_qty: number, type: CommunicationMean): Promise<boolean> => {
   //id of the org device
   const org_params = await account.devices.paramList(org_id);

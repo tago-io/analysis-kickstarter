@@ -14,7 +14,7 @@
  */
 
 import { Account, Analysis, Device, Utils } from "@tago-io/sdk";
-import { DateTime } from "luxon";
+import dayjs from "dayjs";
 import { ActionInfo } from "@tago-io/sdk/out/modules/Account/actions.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
@@ -30,6 +30,14 @@ interface SensorData {
   date: string;
 }
 
+/**
+ * Function that resolves the report of the organization and send it to the user
+ * @param account Account instance class
+ * @param context Context is a variable sent by the analysis
+ * @param action_info Action information of the action that triggered the analysis
+ * @param org_id Organization ID to resolve the report
+ * @param via Via is a string that defines how the report was triggered
+ */
 async function resolveReport(account: Account, context: TagoContext, action_info: ActionInfo, org_id: string, via?: string) {
   if (!account || !context || !action_info || !org_id) {
     throw "Missing Router parameter";
@@ -93,7 +101,7 @@ async function resolveReport(account: Account, context: TagoContext, action_info
       status: status_history,
       battery: `${(battery?.value as string) || "N/A"}${battery?.unit || ""}`,
       rssi: (rssi?.value as string) || "N/A",
-      date: DateTime.fromISO(String(last_input)).toFormat("HH:mm dd/LL/yyyy"),
+      date: dayjs(String(last_input)).format("YYYY-MM-DD HH:mm:ss"),
     });
   }
 
@@ -187,6 +195,11 @@ async function resolveReport(account: Account, context: TagoContext, action_info
   await org_dev.sendData([{ variable: "report_sent", value: `Report has been sent. Via: ${via}.`, metadata: { users: all_users_string } }]);
 }
 
+/**
+ * Function to start the analysis
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ */
 async function startAnalysis(context: TagoContext, scope: any) {
   console.debug("Running Analysis");
 

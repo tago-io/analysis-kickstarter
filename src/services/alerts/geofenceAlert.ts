@@ -7,7 +7,12 @@ import { isPointWithinRadius } from "geolib";
 import { ActionStructureParams } from "./register";
 import { IAlertTrigger, sendAlert } from "./sendAlert";
 
-// This function checks if our device is inside a polygon geofence
+
+/**
+ * The function checks if our device is inside a polygon geofence
+ * @param point Point on map, latitude and longitude
+ * @param geofence List of the geofences
+ */
 function insidePolygon(point: [number, number], geofence: Data["metadata"]) {
   if (!geofence) {
     throw "Invalid geofence";
@@ -53,7 +58,11 @@ function getGeofenceResult(check_list: boolean[], geofence_list: Data["metadata"
     .filter((x) => x) as any;
 }
 
-// This function checks if our device is inside any geofence
+/**
+ * The function checks if our device is inside any geofence
+ * @param point Point on map, latitude and longitude
+ * @param geofence_list List of the geofences
+ */
 function checkZones(point: [number, number], geofence_list: Data["metadata"][]): IGeofenceMetadata[] {
   let geofences: IGeofenceMetadata[] = [];
 
@@ -89,6 +98,13 @@ function checkZones(point: [number, number], geofence_list: Data["metadata"][]):
 }
 
 type IAlertToBeSent = Omit<IAlertTrigger, "data">;
+/**
+ * The function returns the list of alerts that are outside the geofence zone
+ * @param account Account instanced class
+ * @param outsideZones Zones that are outside the geofence
+ * @param deviceParams Configuration parameter of the device
+ * @param device_id Device id
+ */
 async function getAlertList(account: Account, outsideZones: IGeofenceMetadata[], deviceParams: ConfigurationParams[], device_id: string) {
   const alerts: IAlertToBeSent[] = [];
   for (const item of outsideZones) {
@@ -224,7 +240,7 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
 
 /**
  * Add this function to alert Handler in order to add the needed variable for geofence events
- * @param account Account
+ * @param account Account instanced class
  * @param devToStoreAlert Organization/Group/Etc device that will have the event stored
  * @param action_id Id of the action
  * @param structure structure of the action
@@ -241,7 +257,7 @@ async function geofenceAlertCreate(account: Account, devToStoreAlert: Device, ac
 
 /**
  * Add this function to alert Handler when editing geofence alerts.
- * @param account Account
+ * @param account Account instanced class
  * @param devToStoreAlert Organization/Group/Etc device that will have the event stored
  * @param action_id Id of the action
  * @param structure structure of the action

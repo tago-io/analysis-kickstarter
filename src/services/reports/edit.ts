@@ -1,11 +1,15 @@
-import { Utils } from "@tago-io/sdk";
-import { TagsObj } from "@tago-io/sdk/out/common/common.types";
-import { findAnalysisByExportID } from "../../lib/findResource";
-import validation from "../../lib/validation";
 import { RouterConstructorData } from "../../types";
 import { actionModel } from "./action.model";
 import { getCronString, ReportActionStructure } from "./create";
 
+/**
+ * Main function of editing reports
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");

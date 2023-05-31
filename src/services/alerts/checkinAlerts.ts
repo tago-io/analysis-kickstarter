@@ -8,6 +8,13 @@ interface ICheckinParam {
   last_input?: Date;
 }
 
+/**
+ * Function used to trigger the checkin alert
+ * @param account Account instanced class
+ * @param context context is a variable sent by the analysis
+ * @param org_id Id of the organization
+ * @param params parameters parameters that will be used to trigger the checkin
+ */
 async function checkinTrigger(account: Account, context: TagoContext, org_id: string, params: ICheckinParam) {
   const { last_input, device_id } = params;
   const checkin_date = dayjs(last_input);
@@ -68,7 +75,7 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
 
 /**
  * Add this function to alert Handler in order to add the needed variable for Checkin events
- * @param account Account
+ * @param account Account instanced class
  * @param devToStoreAlert Organization/Group/Etc device that will have the event stored
  * @param action_id Id of the action
  * @param structure structure of the action

@@ -24,6 +24,11 @@ import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
 
+/**
+ * Function that update the organization's plan usage
+ * @param account Account instance class
+ * @param org Organization device
+ */
 async function resolveOrg(account: Account, org: DeviceListItem) {
   let total_qty = 0;
   let active_qty = 0;
@@ -73,14 +78,15 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
     variables: ["device_qty", "plan_usage"],
     query: "last_item",
   });
+  console.log(old_data);
   const device_data = old_data.find((x) => x.variable === "device_qty");
   const plan_data = old_data.find((x) => x.variable === "plan_usage");
+  const new_data = parseTagoObject(to_tago);
 
   if (!device_data || !plan_data) {
-    throw "Device or Plan data not found";
+    await org_dev.sendData(new_data);
+    return;
   }
-
-  const new_data = parseTagoObject(to_tago);
 
   await org_dev.editData([
     { ...device_data, ...new_data[0] },
@@ -88,6 +94,11 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
   ]);
 }
 
+/**
+ * Function that update the sensor's params (last checkin and battery)
+ * @param account Account instance class
+ * @param device Sensor device
+ */
 const checkLocation = async (account: Account, device: Device) => {
   const [location_data] = await device.getData({ variables: "location", qty: 1 });
 
@@ -113,6 +124,13 @@ const checkLocation = async (account: Account, device: Device) => {
   await site_dev.editData({ ...dev_id, location: location_data.location });
 };
 
+/**
+ * Function that update the sensor's params (last checkin and battery)
+ * @param context
+ * @param account
+ * @param org_id
+ * @param device_id
+ */
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
   const device = await Utils.getDevice(account, device_id).catch((msg) => console.debug(msg));
 
@@ -126,6 +144,8 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
   if(!device_info.last_input){
     throw "Device not found";
   }
+
+  console.log(device_info.last_input);
 
   const checkin_date = dayjs(device_info.last_input as Date);
 

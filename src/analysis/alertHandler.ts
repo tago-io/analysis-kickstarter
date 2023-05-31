@@ -20,8 +20,13 @@ import { editAlert } from "../services/alerts/edit";
 import { createAlert } from "../services/alerts/register";
 import { deleteAlert } from "../services/alerts/remove";
 
+/**
+ * Function that starts the analysis
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ */
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
-  if (!("variable" in scope[0])) {
+  if (!scope[0]) {
     return console.error("Not a valid TagoIO Data");
   }
 
@@ -41,18 +46,18 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   // Instance the device class using the device from scope variables.
   // device is always the device used in the widget to trigger the analysis.
-  const device_id = scope[0].device;
-  const device_token = await Utils.getTokenByName(account, device_id);
+  // const device_id = scope[0].device;
+  // const device_token = await Utils.getTokenByName(account, device_id);
 
   // Instance of the settings device, that stores global information of the application.
   const config_dev = new Device({ token: environment.config_token });
 
   const router = new Utils.AnalysisRouter({
-    scope,
-    context,
-    environment,
     account,
+    environment,
+    scope,
     config_dev,
+    context,
   });
 
   router.register(createAlert).whenInputFormID("create-alert-dev");

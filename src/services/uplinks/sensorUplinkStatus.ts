@@ -1,13 +1,25 @@
-import { Utils, Services, Account, Device, Types, Analysis } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/out/common/common.types";
+import { Utils, Device } from "@tago-io/sdk";
 import { RouterConstructorData } from "../../types";
 
+/**
+ * Function that update the status history
+ * @param sensor_dev Device of the sensor
+ * @param current_sensor_info Current information of the sensor
+ */
 const updateStatusHistory = async (sensor_dev: Device, current_sensor_info: any) => {
   const status_history = `# - Sensor reported a new status.`;
 
   await sensor_dev.sendData({ variable: "status_history", value: status_history.replace("#", String(current_sensor_info.desc).toUpperCase()) });
 };
 
+/**
+ * Main function of receiving the uplink status
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");

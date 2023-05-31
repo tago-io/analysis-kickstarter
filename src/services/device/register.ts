@@ -17,6 +17,17 @@ interface installDeviceParam {
   group_id?: string;
 }
 
+/**
+ * Function that create devices
+ * @param account Account instanced class
+ * @param new_dev_name Name of the device
+ * @param org_id Organization id that devices will be created
+ * @param network_id Network id that devices will be created
+ * @param connector Connector id that devices will be created
+ * @param new_device_eui Device eui configured by the user
+ * @param type Sensor type of the device
+ * @param group_id Group id that devices will be created
+ */
 async function installDevice({ account, new_dev_name, org_id, network_id, connector, new_device_eui, type, group_id }: installDeviceParam) {
   //data retention set to 1 month
   const device_data: DeviceCreateInfo = {
@@ -53,6 +64,14 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
   return { ...new_dev, device: new_org_dev } as DeviceCreated;
 }
 
+/**
+ * Main function of creating devices
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Number of devices that will be listed
+ * @param account Parameters used to create the structure
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 async function sensorAdd({ config_dev, context, scope, account, environment }: RouterConstructorData) {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");
@@ -77,7 +96,8 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
   const new_dev_group = scope.find((x) => x.variable === "new_dev_group");
   const new_dev_type = scope.find((x) => x.variable === "new_dev_type");
   const new_dev_network = scope.find((x) => x.variable === "new_dev_network");
-  if (!new_dev_name || !new_dev_eui || !new_dev_group || !new_dev_type || !new_dev_network) {
+
+  if (!new_dev_name || !new_dev_group || !new_dev_type || !new_dev_network) {
     throw new Error("Missing variables");
   }
   if ((new_dev_name?.value as string).length < 3) {

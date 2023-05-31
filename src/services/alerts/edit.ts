@@ -15,6 +15,10 @@ interface ActionListParams {
 
 /**
  * Function to be used externally when need to add a device to an alert.
+ * @param account Account instanced class
+ * @param org_dev Device of the organization
+ * @param action_id Id of the action
+ * @param device_id Id of the device that will be sent the alert
  */
 async function addDeviceToAlert(account: Account, org_dev: Device, action_id: string, device_id: string) {
   const [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, groups: action_id });
@@ -35,6 +39,9 @@ async function addDeviceToAlert(account: Account, org_dev: Device, action_id: st
 
 /**
  * List all actions based on a "and" filter
+ * @param account Account instanced class
+ * @param device_id
+ * @param qty Number of devices that will be listed
  */
 async function listDeviceAction(account: Account, { device_id, action_id, group_id, organization_id }: ActionListParams, qty: number = 9999) {
   if (!device_id && !action_id && !group_id) {
@@ -66,8 +73,12 @@ async function undoChanges(device: Device, scope: Data[]) {
 }
 /**
  * Main edit alert function
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ * @param scope Number of devices that will be listed
+ * @param config_dev Device of the organization
  */
-async function editAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
+async function editAlert({ account, environment, scope, config_dev: org_dev }: RouterConstructorData) {
 
   if(!org_dev || !scope  || !account) {
     throw "Organization device not found";

@@ -14,6 +14,10 @@ interface UserData {
   id?: string;
 }
 
+/**
+ * Function that handle phone number
+ * @param phone_number Phone number
+ */
 function phoneNumberHandler(phone_number: string) {
   //US as default
   let country_code = "+1";
@@ -33,6 +37,14 @@ function phoneNumberHandler(phone_number: string) {
 
 //registered by admin account.
 
+/**
+ * Function that register new user
+ * @param config_dev Device that contains the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");

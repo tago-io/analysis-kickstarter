@@ -11,7 +11,11 @@ interface IMessageDetail {
   value: string;
   variable: string;
 }
-
+/**
+ * Function that replace the message variables
+ * @param message Message that will be replaced
+ * @param replace_details Object with the variables that will be replaced
+ */
 function replaceMessage(message: string, replace_details: IMessageDetail) {
   for (const key of Object.keys(replace_details)) {
     message = message.replace(new RegExp(`#${key}#`, "g"), (replace_details as any)[key]);
@@ -20,6 +24,11 @@ function replaceMessage(message: string, replace_details: IMessageDetail) {
   return message;
 }
 
+/**
+ * Function that get the users that will receive the alert
+ * @param account Account instanced class
+ * @param send_to List of users that will receive the alert
+ */
 async function getUsers(account: Account, send_to: string[]) {
   const func_list = send_to.map((user_id) => account.run.userInfo(user_id).catch(() => null));
 
@@ -34,6 +43,13 @@ interface IAlertTrigger {
   device: string;
 }
 
+/**
+ * Function that send the alert to the users
+ * @param account Account instanced class
+ * @param context Context is a variable sent by the analysis
+ * @param org_id Organization ID that will be used to charge the usage
+ * @param alert Alert that will be sent
+ */
 async function sendAlert(account: Account, context: TagoContext, org_id: string, alert: IAlertTrigger) {
   const { data, action_id: alert_id, send_to, type } = alert;
   const groupWithAlert = await Utils.getDevice(account, alert.device);

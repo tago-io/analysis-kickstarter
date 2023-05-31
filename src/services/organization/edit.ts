@@ -1,12 +1,21 @@
 import { Utils } from "@tago-io/sdk";
 import { RouterConstructorDevice } from "../../types";
 
+
+/**
+ * Main function of editing organizations
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 async function orgEdit ({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
 
   if (!account || !config_dev) {
     throw "Missing Router parameter";
   }
-  if (!("variable" in scope[0])) {
+  if (!scope[0]) {
     return console.error("Not a valid TagoIO Data");
   }
 
@@ -40,6 +49,7 @@ async function orgEdit ({ config_dev, context, scope, account, environment }: Ro
     await org_dev.sendData({ ...plan_data });
 
     const org_params = await account.devices.paramList(org_id);
+
     const plan_name = org_params.find((x) => x.key === "plan_name") || { key: "plan_name", value: "", sent: false };
     const plan_email_limit = org_params.find((x) => x.key === "plan_email_limit") || { key: "plan_email_limit", value: "", sent: false };
     const plan_sms_limit = org_params.find((x) => x.key === "plan_sms_limit") || { key: "plan_sms_limit", value: "", sent: false };
@@ -49,6 +59,7 @@ async function orgEdit ({ config_dev, context, scope, account, environment }: Ro
     if(!plan_data.metadata) {
       throw "Plan not found";
     }
+
     const org_tags = (await org_dev.info()).tags;
     const new_org_tags = org_tags.filter((tag) => tag.key !== "plan_group");
     await account.devices.edit(org_id, { tags: [...new_org_tags, { key: "plan_group", value: plan_data.group as string }] });

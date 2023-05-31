@@ -22,7 +22,16 @@ interface IMessageDetail {
   value: string;
   variable: string;
 }
-
+/**
+ * Notification messages to be sent
+ * @param type Type of message to be sent
+ * @param account Account instanced class
+ * @param context Context is a variable sent by the analysis
+ * @param org_id Organization ID of the device that triggered the alert
+ * @param to_dispatch_qty Number of messages to be sent
+ * @param users_info Array of users to receive the message
+ * @param message Message to be sent
+ */
 async function notificationMessages(type: string[], account: Account, context: TagoContext, org_id: string, to_dispatch_qty: number, users_info: UserInfo[], message: string) {
   if (type.includes("notification_run")) {
     const has_service_limit = await checkAndChargeUsage(account, context, org_id, to_dispatch_qty, "notification_run");
@@ -44,6 +53,17 @@ async function notificationMessages(type: string[], account: Account, context: T
   }
 }
 
+/**
+ * Email messages to be sent
+ * @param type Type of message to be sent
+ * @param account Account instanced class
+ * @param context Context is a variable sent by the analysis
+ * @param org_id Organization ID of the device that triggered the alert
+ * @param to_dispatch_qty Number of messages to be sent
+ * @param users_info Array of users to receive the message
+ * @param device_info Device information
+ * @param message Message to be sent
+ */
 async function emailMessages(
   type: string[],
   account: Account,
@@ -80,6 +100,16 @@ async function emailMessages(
   }
 }
 
+/**
+ * Sms messages to be sent
+ * @param type Type of message to be sent
+ * @param account Account instanced class
+ * @param context Context is a variable sent by the analysis
+ * @param org_id Organization ID of the device that triggered the alert
+ * @param to_dispatch_qty Number of messages to be sent
+ * @param users_info Array of users to receive the message
+ * @param message Message to be sent
+ */
 async function smsMessages(type: string[], account: Account, context: TagoContext, org_id: string, to_dispatch_qty: number, users_info: UserInfo[], message: string) {
   if (type.includes("sms")) {
     const has_service_limit = await checkAndChargeUsage(account, context, org_id, to_dispatch_qty, "sms");
@@ -107,6 +137,17 @@ async function smsMessages(type: string[], account: Account, context: TagoContex
   }
 }
 
+/**
+ * Function that starts the analysis and handles the alert trigger and message dispatch
+ * @param type Type of message to be sent
+ * @param account Account instanced class
+ * @param context Context is a variable sent by the analysis
+ * @param org_id Organization ID of the device that triggered the alert
+ * @param to_dispatch_qty Number of messages to be sent
+ * @param users_info Array of users to receive the message
+ * @param message Message to be sent
+ * @param device_info Device information
+ */
 async function dispachMessages(
   type: string[],
   account: Account,
@@ -124,6 +165,11 @@ async function dispachMessages(
   await smsMessages(type, account, context, org_id, to_dispatch_qty, users_info, message);
 }
 
+/**
+ * Function that replaces the message with the variables
+ * @param message Message to be sent
+ * @param replace_details Object with the variables to be replaced
+ */
 function replaceMessage(message: string, replace_details: IMessageDetail) {
   for (const key of Object.keys(replace_details)) {
     message = message.replace(new RegExp(`#${key}#`, "g"), (replace_details as any)[key]);
@@ -133,12 +179,22 @@ function replaceMessage(message: string, replace_details: IMessageDetail) {
   return message;
 }
 
+/**
+ * Function that get the users information
+ * @param account Account instanced class
+ * @param send_to Array of users to receive the message
+ */
 async function getUsers(account: Account, send_to: string[]) {
   const func_list = send_to.map((user_id) => account.run.userInfo(user_id).catch(() => null));
 
   return (await Promise.all(func_list)).filter((x) => x) as UserInfo[];
 }
 
+/**
+ * Function that starts the analysis and handles the alert trigger
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is an array of data sent by the analysis
+ */
 async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void> {
   console.debug("Running Analysis");
   if (!scope[0]) {

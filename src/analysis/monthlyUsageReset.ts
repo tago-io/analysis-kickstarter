@@ -19,6 +19,11 @@ import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 
+/**
+ * Function that initializes the analysis
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ */
 async function init(context: TagoContext, scope: Data[]): Promise<void> {
   console.debug("Monthly usage reset analysis started");
   // Convert the environment variables from [{ key, value }] to { key: value };

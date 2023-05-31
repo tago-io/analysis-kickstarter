@@ -16,6 +16,12 @@ import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 
+/**
+ * Function that resolves the data retention of the organization
+ * @param account Account class
+ * @param org_id Organization ID to resolve the data retention
+ * @param plan_data_retention Data retention of the plan
+ */
 async function resolveDataRetentionByOrg(account: Account, org_id: string, plan_data_retention: string) {
   const device_list: DeviceListItem[] = await fetchDeviceList(account, [
     { key: "device_type", value: "device" },
@@ -45,6 +51,10 @@ async function resolveDataRetentionByOrg(account: Account, org_id: string, plan_
   });
 }
 
+/**
+ * Function that updates the data retention of the application
+ * @param context Context is a variable sent by the analysis
+ */
 async function updateDataRetention(context: TagoContext) {
   console.debug("Running");
   const env_vars = Utils.envToJson(context.environment);
@@ -72,6 +82,11 @@ async function updateDataRetention(context: TagoContext) {
   console.debug("success");
 }
 
+/**
+ * Function that starts the analysis
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ */
 async function startAnalysis(context: TagoContext, scope: any) {
   await updateDataRetention(context)
     .then(() => {

@@ -1,6 +1,14 @@
 import { Utils } from "@tago-io/sdk";
 import { RouterConstructorDevice } from "../../types";
 
+/**
+ * Main function of editing groups
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 async function groupEdit({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");

@@ -5,6 +5,14 @@ import { findDashboardByConnectorID } from "../../lib/findResource";
 import { RouterConstructorDevice } from "../../types";
 import { sensor_status_false } from "./deviceInfo";
 
+/**
+ * Main function of editing devices
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 async function sensorEdit({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
   if (!account || !environment || !scope || !config_dev || !context) {
     throw new Error("Missing parameters");
