@@ -4,6 +4,12 @@ import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { fetchDeviceList } from "../../lib/fetchDeviceList";
 import { RouterConstructorData } from "../../types";
 
+/**
+ * Function that resolves the report of the organization and send it to the user
+ * @param account
+ * @param org
+ * @param plan_data
+ */
 const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data) => {
   if(!org || !plan_data || !account || !plan_data.metadata){
     throw new Error("Missing parameters");

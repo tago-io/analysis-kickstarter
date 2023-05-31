@@ -137,12 +137,12 @@ async function resolveReport(account: Account, context: TagoContext, action_info
 
   final_html_body = final_html_body.replace("$REPORT_TABLE$", report_table);
 
-  const org_indicators = await org_dev.getData({ variables: ["total_qty", "active_qty", "inactivy_qty"], qty: 1 });
-  const total_qty = (org_indicators.find((x) => x.variable === "total_qty")?.value as string) || "0";
-  const active_qty = (org_indicators.find((x) => x.variable === "active_qty")?.value as string) || "0";
-  const inactive_qty = (org_indicators.find((x) => x.variable === "inactivy_qty")?.value as string) || "0";
+  const org_indicators = await org_dev.getData({ variables: ["device_qty"], qty: 1 });
+  const total_qty = org_indicators[0].value || "0";
+  const active_qty = org_indicators[0]?.metadata?.active_qty || "0";
+  const inactive_qty = org_indicators[0]?.metadata?.inactive_qty || "0";
 
-  final_html_body = final_html_body.replace("$TOTAL_QTY$", total_qty);
+  final_html_body = final_html_body.replace("$TOTAL_QTY$", String(total_qty));
   final_html_body = final_html_body.replace("$ACTIVE_QTY$", active_qty);
   final_html_body = final_html_body.replace("$INACTIVE_QTY$", inactive_qty);
 
