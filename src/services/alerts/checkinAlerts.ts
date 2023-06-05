@@ -1,7 +1,6 @@
-import { Account, Device } from "@tago-io/sdk";
+import { Account } from "@tago-io/sdk";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
-import moment from "moment";
-import { ActionStructureParams } from "./register";
+import dayjs from "dayjs";
 import { IAlertTrigger, sendAlert } from "./sendAlert";
 
 interface ICheckinParam {
@@ -9,9 +8,16 @@ interface ICheckinParam {
   last_input?: Date;
 }
 
+/**
+ * Function used to trigger the checkin alert
+ * @param account Account instanced class
+ * @param context context is a variable sent by the analysis
+ * @param org_id Id of the organization
+ * @param params parameters parameters that will be used to trigger the checkin
+ */
 async function checkinTrigger(account: Account, context: TagoContext, org_id: string, params: ICheckinParam) {
   const { last_input, device_id } = params;
-  const checkin_date = moment(last_input);
+  const checkin_date = dayjs(last_input);
   if (!checkin_date) {
     return "no data";
   }
@@ -21,11 +27,14 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
   const actionList = paramList.filter((param) => param.key.startsWith("checkin"));
   for (const param of actionList) {
     const [interval, last_send] = param.value.split(",");
-    const diff_hours: string | number = moment().diff(checkin_date, "hours");
+    const diff_hours: string | number = dayjs().diff(checkin_date, "hours");
 
     if (diff_hours >= Number(interval) && !param.sent) {
       const action_id = param.key.replace("checkin", "");
       const action_info = await account.actions.info(action_id);
+      if(!action_info.tags) {
+        throw "Action not found";
+      }
 
       const send_to = action_info.tags
         .find((x) => x.key === "send_to")
@@ -36,6 +45,10 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
         ?.value?.replace(/;/g, ",")
         .split(",");
       const device = action_info.tags.find((x) => x.key === "device")?.value as string;
+
+      if(!send_to || !type || !device) {
+        throw "Action not found";
+      }
 
       const mockData = {
         variable: "Inactivity",
@@ -62,7 +75,7 @@ async function checkinTrigger(account: Account, context: TagoContext, org_id: st
 
 /**
  * Add this function to alert Handler in order to add the needed variable for Checkin events
- * @param account Account
+ * @param account Account instanced class
  * @param devToStoreAlert Organization/Group/Etc device that will have the event stored
  * @param action_id Id of the action
  * @param structure structure of the action

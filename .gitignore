@@ -51,3 +51,5 @@ yarn.lock
 # ignore local files
 *.LOCAL.*
 *.local.*
+.tago-lock.kickstarter.lock
+.tagoio

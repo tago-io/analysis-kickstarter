@@ -1,6 +1,5 @@
 import { Utils } from "@tago-io/sdk";
 import { TagsObj } from "@tago-io/sdk/out/common/common.types";
-import { findAnalysisByExportID } from "../../lib/findResource";
 import validation from "../../lib/validation";
 import { RouterConstructorData } from "../../types";
 import { actionModel } from "./action.model";
@@ -13,6 +12,11 @@ interface ReportActionStructure {
   tags?: TagsObj[];
 }
 
+/**
+ * Function that create the chronological string
+ * @param report_time  e.g. "08:00"
+ * @param report_days  e.g. "Mon;Tue;Wed;Thu;Fri;Sat;Sun"
+ */
 function getCronString(report_time: string, report_days: string): string {
   // 00 08 */1 * Fri,Mon,Sat,Sun,Thu,Tue,Wed
   const time = `${(report_time as string)?.slice(3, 5)} ${(report_time as string)?.slice(0, 2)}`;
@@ -22,7 +26,18 @@ function getCronString(report_time: string, report_days: string): string {
   return `${time} */1 * ${week_days}`;
 }
 
+/**
+ * Main function of creating reports
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
@@ -37,6 +52,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const report_contact = scope.find((x) => x.variable === "new_report_contact");
   const report_sensors = scope.find((x) => x.variable === "new_report_sensors");
   const report_group = scope.find((x) => x.variable === "new_report_group");
+
+  if(!report_active || !report_time || !report_days || !report_contact || !action_group) {
+    throw new Error("Missing parameters report_active, report_time, report_days, report_contact or action_group");
+  }
 
   const action_tags: TagsObj[] = [
     { key: "action_group", value: action_group },
@@ -73,7 +92,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   // action_tags.push({ key: "action_group", value: action_group }, { key: "report_contact", value: report_contact.value as string });
   const action_model = await actionModel(account, action_object);
-  console.log(action_model);
+  console.debug(action_model);
   const { action: action_id } = await account.actions.create(action_model).catch((e) => {
     throw validate(e, "danger");
   });

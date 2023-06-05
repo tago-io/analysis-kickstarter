@@ -25,7 +25,7 @@ async function sendNotificationError(account: Account, environment: { [key: stri
       title: title || "Operation Error",
       message: errorMessage,
     })
-    .catch((e) => console.log(`Notification Error: ${e}`));
+    .catch((e) => console.debug(`Notification Error: ${e}`));
 }
 
 export default sendNotificationError;

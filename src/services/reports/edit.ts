@@ -1,12 +1,19 @@
-import { Utils } from "@tago-io/sdk";
-import { TagsObj } from "@tago-io/sdk/out/common/common.types";
-import { findAnalysisByExportID } from "../../lib/findResource";
-import validation from "../../lib/validation";
 import { RouterConstructorData } from "../../types";
 import { actionModel } from "./action.model";
 import { getCronString, ReportActionStructure } from "./create";
 
+/**
+ * Main function of editing reports
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const org_id = scope[0].device as string;
 
   const action_group = scope[0].group;
@@ -18,7 +25,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const report_sensors = scope.find((x) => x.variable === "report_sensors" || x.variable === "bysite_report_sensors");
   const report_group = scope.find((x) => x.variable === "report_group" || x.variable === "bysite_report_group");
 
-  console.log(report_days?.value);
+  if (!report_active || !report_time || !report_days || !report_contact || !action_group) {
+    throw new Error("Missing parameters report_active, report_time, report_days, report_contact, action_group");
+  }
 
   const [action_registered] = await account.actions.list({
     page: 1,
@@ -32,7 +41,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   let action_info;
 
   if (action_registered) {
-    console.log("Editting report action");
+    console.debug("Editting report action");
     action_info = await account.actions.info(action_registered?.id);
   }
 
@@ -43,12 +52,18 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     active: false,
     tags: [{ key: "action_group", value: action_group }], //sensor/group, contact, org_id
   };
+  if (!action_registered.tags) {
+    throw new Error("Action not found in Tago");
+  }
 
+  if (!action_object.tags) {
+    action_object.tags = [{ key: "action_group", value: action_group }];
+  }
   //if new sensor or new group
   if (report_sensors) {
     action_object.tags.push({ key: "sensor_list", value: (report_sensors?.value as string).replace(/;/g, ", ") });
   } else {
-    const sensor_list_tag = action_registered.tags.find((x) => x.key === "sensor_list");
+    const sensor_list_tag = action_registered?.tags.find((x) => x.key === "sensor_list");
     //if it previously has a sensor_list tag
     if (sensor_list_tag) {
       action_object.tags.push(sensor_list_tag);
@@ -73,17 +88,19 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const new_week_days = report_days?.value as string;
 
   action_object.cron = getCronString(new_time || old_time, new_week_days || old_week_days);
-
   if (report_active?.value) {
     action_object.active = report_active.value === "true" ? true : false; //type boolean only
   } else {
-    action_object.active = action_registered.active;
+    action_object.active = action_registered.active as boolean;
   }
 
   if (report_contact) {
     action_object.tags.push({ key: "report_contact", value: (report_contact?.value as string).replace(/;/g, ", ") });
   } else {
     const contact_tag = action_registered.tags.find((x) => x.key === "report_contact");
+    if (!contact_tag) {
+      throw new Error("Missing report_contact tag");
+    }
     action_object.tags.push(contact_tag);
   }
 
@@ -91,8 +108,8 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   await account.actions
     .edit(action_registered.id, action_model)
-    .then((msg) => console.log(msg))
-    .catch((msg) => console.log(msg));
+    .then((msg) => console.debug(msg))
+    .catch((msg) => console.debug(msg));
 
-  return console.log("Successfuly edited!");
+  return console.debug("Successfuly edited!");
 };

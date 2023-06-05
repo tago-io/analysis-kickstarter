@@ -2,7 +2,15 @@ import { Account } from "@tago-io/sdk";
 import { findAnalysisByExportID } from "../../lib/findResource";
 import { ReportActionStructure } from "./create";
 
+/**
+ * Function that create the action model
+ * @param account Account instanced class
+ * @param action_object Object with the action data
+ */
 async function actionModel(account: Account, action_object: ReportActionStructure): Promise<any> {
+  if(!account || !action_object.tags) {
+    throw new Error("Missing parameters");
+  }
   const script_id = await findAnalysisByExportID(account, "sendReport");
 
   const action_model = {

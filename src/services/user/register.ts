@@ -14,6 +14,10 @@ interface UserData {
   id?: string;
 }
 
+/**
+ * Function that handle phone number
+ * @param phone_number Phone number
+ */
 function phoneNumberHandler(phone_number: string) {
   //US as default
   let country_code = "+1";
@@ -33,7 +37,18 @@ function phoneNumberHandler(phone_number: string) {
 
 //registered by admin account.
 
+/**
+ * Function that register new user
+ * @param config_dev Device that contains the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const org_id = scope[0].device;
   const org_dev = await Utils.getDevice(account, org_id);
 
@@ -46,16 +61,16 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   //validation
   const validate = validation("user_validation", org_dev);
 
-  if (!new_user_name.value) {
+  if (!new_user_name?.value) {
     throw validate("Name field is empty", "danger");
   }
   if ((new_user_name.value as string).length < 3) {
     throw validate("Name field is smaller than 3 character", "danger");
   }
-  if (!new_user_email.value) {
+  if (!new_user_email?.value) {
     throw validate("Email field is empty", "danger");
   }
-  if (!new_user_access.value) {
+  if (!new_user_access?.value) {
     throw validate("Access field is empty", "danger");
   }
   if (new_user_phone?.value) {
@@ -99,7 +114,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     throw validate(msg, "danger");
   });
 
-  let user_access_label = "";
+  let user_access_label: string | undefined= "";
 
   if (new_user_access.value === "admin") {
     user_access_label = "Administrator";
@@ -108,7 +123,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   } else if (new_user_access.value === "guest") {
     user_access_label = "Guest";
   } else {
-    user_access_label = new_user_access.metadata.label;
+    user_access_label = new_user_access?.metadata?.label;
   }
 
   let user_data = parseTagoObject(
