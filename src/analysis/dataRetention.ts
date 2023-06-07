@@ -11,11 +11,17 @@
  * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
-import { Utils, Services, Account, Device, Analysis, Types } from "@tago-io/sdk";
+import { Utils, Account, Analysis } from "@tago-io/sdk";
 import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 
+/**
+ * Function that resolves the data retention of the organization
+ * @param account Account class
+ * @param org_id Organization ID to resolve the data retention
+ * @param plan_data_retention Data retention of the plan
+ */
 async function resolveDataRetentionByOrg(account: Account, org_id: string, plan_data_retention: string) {
   const device_list: DeviceListItem[] = await fetchDeviceList(account, [
     { key: "device_type", value: "device" },
@@ -45,14 +51,18 @@ async function resolveDataRetentionByOrg(account: Account, org_id: string, plan_
   });
 }
 
+/**
+ * Function that updates the data retention of the application
+ * @param context Context is a variable sent by the analysis
+ */
 async function updateDataRetention(context: TagoContext) {
-  context.log("Running");
+  console.debug("Running");
   const env_vars = Utils.envToJson(context.environment);
   if (!env_vars.account_token) {
-    throw context.log("Missing account_token in the environment variables");
+    throw console.debug("Missing account_token in the environment variables");
   }
   if (!env_vars.config_token) {
-    throw context.log("Missing config_token in the environment variables");
+    throw console.debug("Missing config_token in the environment variables");
   }
 
   const account = new Account({ token: env_vars.account_token });
@@ -69,17 +79,27 @@ async function updateDataRetention(context: TagoContext) {
     }
   }
 
-  context.log("success");
+  console.debug("success");
 }
 
+/**
+ * Function that starts the analysis
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ */
 async function startAnalysis(context: TagoContext, scope: any) {
   await updateDataRetention(context)
     .then(() => {
-      context.log("Script end.");
+      console.debug("Script end.");
     })
     .catch((e) => {
-      console.log(e);
-      context.log(e.message || JSON.stringify(e));
+      console.debug(e);
+      console.debug(e.message || JSON.stringify(e));
     });
 }
-export default new Analysis(startAnalysis, { token: "5e190938-6fe1-4f0a-b680-d99a2b94cc47" });
+
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };

@@ -21,18 +21,18 @@ import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 
-import orgEdit from "../services/organization/edit";
-import orgAdd from "../services/organization/register";
-import orgDel from "../services/organization/remove";
+import { orgEdit } from "../services/organization/edit";
+import { orgAdd } from "../services/organization/register";
+import { orgDel } from "../services/organization/remove";
 
-import sensorAdd from "../services/device/register";
-import sensorDel from "../services/device/remove";
-import sensorEdit from "../services/device/edit";
+import { sensorAdd } from "../services/device/register";
+import { sensorDel } from "../services/device/remove";
+import { sensorEdit } from "../services/device/edit";
 import sensorPlacement from "../services/device/placeSensor";
 
-import groupAdd from "../services/group/register";
-import groupDel from "../services/group/remove";
-import groupEdit from "../services/group/edit";
+import { groupAdd } from "../services/group/register";
+import { groupDel } from "../services/group/remove";
+import { groupEdit } from "../services/group/edit";
 
 import userAdd from "../services/user/register";
 import userDel from "../services/user/remove";
@@ -51,15 +51,14 @@ import planEdit from "../services/plan/edit";
 // import { editAlert } from "../services/alerts/edit";
 
 /**
- *
- * @param context
- * @param scope
- * @returns
+ * This function is the main function of the analysis.
+ * @param context The context of the analysis, containing the environment variables and parameters.
+ * @param scope The scope of the analysis, containing the data sent to the analysis.
  */
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
-  console.log("SCOPE:", JSON.stringify(scope, null, 4));
-  console.log("CONTEXT:", JSON.stringify(context, null, 4));
-  console.log("Running Analysis");
+  console.debug("SCOPE:", JSON.stringify(scope, null, 4));
+  console.debug("CONTEXT:", JSON.stringify(context, null, 4));
+  console.debug("Running Analysis");
 
   // Convert the environment variables from [{ key, value }] to { key: value };
   const environment = Utils.envToJson(context.environment);
@@ -80,32 +79,37 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   const config_dev = new Device({ token: environment.config_token });
   const account = new Account({ token: environment.account_token });
 
-  // The router class will help you route the function the analysis must run
-  // based on what had been received in the analysis.
-  const router = new Utils.AnalysisRouter({ scope, context, environment, account, config_dev });
+  // Instance the router classs of Utils.router
+  const router = new Utils.AnalysisRouter({
+    scope,
+    context,
+    environment,
+    account,
+    config_dev,
+  });
 
   // Organization Routing
   router.register(orgAdd).whenInputFormID("create-org");
-  router.register(orgDel).whenEnv("_input_id", "delete-org");
-  router.register(orgEdit as any).whenWidgetExec("edit-org" as any);
+  router.register(orgDel).whenDeviceListIdentifier("delete-org");
+  router.register(orgEdit).whenWidgetExec("edit");
 
   // Sensor routing
   router.register(sensorAdd).whenInputFormID("create-dev");
-  router.register(sensorDel as any).whenEnv("_input_id", "delete-dev");
-  router.register(sensorEdit as any).whenWidgetExec("edit-dev" as any);
+  router.register(sensorDel).whenDeviceListIdentifier("delete-dev");
+  router.register(sensorEdit).whenDeviceListIdentifier("edit-dev");
 
   // Sensor uplink routing
   router.register(sensorPlacement).whenVariables(["set_dev_pin_id"]);
 
   // group routing
   router.register(groupAdd).whenInputFormID("create-group");
-  router.register(groupDel as any).whenEnv("_input_id", "delete-group");
-  router.register(groupEdit as any).whenWidgetExec("edit-group" as any);
+  router.register(groupDel).whenDeviceListIdentifier("delete-group");
+  router.register(groupEdit).whenDeviceListIdentifier("edit-group");
 
   // User routing
   router.register(userAdd).whenInputFormID("create-user");
-  router.register(userDel).whenVariableLike("user_").whenWidgetExec("delete");
-  router.register(userEdit).whenVariableLike("user_").whenWidgetExec("edit");
+  router.register(userDel).whenUserListIdentifier("delete-user");
+  router.register(userEdit).whenUserListIdentifier("edit-user");
 
   //Plan routing
   router.register(planAdd).whenInputFormID("create-plan");
@@ -123,6 +127,9 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   router.register(reportEdit).whenVariableLike("report_").whenWidgetExec("edit");
 
   await router.exec();
+}
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
 }
 
 if (!process.env.T_TEST) {

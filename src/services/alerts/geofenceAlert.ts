@@ -7,8 +7,16 @@ import { isPointWithinRadius } from "geolib";
 import { ActionStructureParams } from "./register";
 import { IAlertTrigger, sendAlert } from "./sendAlert";
 
-// This function checks if our device is inside a polygon geofence
+
+/**
+ * The function checks if our device is inside a polygon geofence
+ * @param point Point on map, latitude and longitude
+ * @param geofence List of the geofences
+ */
 function insidePolygon(point: [number, number], geofence: Data["metadata"]) {
+  if (!geofence) {
+    throw "Invalid geofence";
+  }
   const x = point[1];
   const y = point[0];
   let inside = false;
@@ -50,20 +58,24 @@ function getGeofenceResult(check_list: boolean[], geofence_list: Data["metadata"
     .filter((x) => x) as any;
 }
 
-// This function checks if our device is inside any geofence
+/**
+ * The function checks if our device is inside any geofence
+ * @param point Point on map, latitude and longitude
+ * @param geofence_list List of the geofences
+ */
 function checkZones(point: [number, number], geofence_list: Data["metadata"][]): IGeofenceMetadata[] {
   let geofences: IGeofenceMetadata[] = [];
 
   // The line below gets all Polygon geofences that we may have.
-  const polygons = geofence_list.filter((x) => x.geolocation.type === "Polygon");
+  const polygons = geofence_list.filter((x) => x?.geolocation.type === "Polygon");
   if (polygons.length) {
     // Here we check if our device is inside any Polygon geofence using our function above.
-    const pass_check = polygons.map((x) => insidePolygon(point, x.geolocation.coordinates[0]));
+    const pass_check = polygons.map((x) => insidePolygon(point, x?.geolocation.coordinates[0]));
     geofences = geofences.concat(getGeofenceResult(pass_check, polygons));
   }
 
   // The line below gets all Point (circle) geofences that we may have.
-  const circles = geofence_list.filter((x) => x.geolocation.type === "Point");
+  const circles = geofence_list.filter((x) => x?.geolocation.type === "Point");
   if (!circles.length) {
     return geofences;
   }
@@ -73,10 +85,10 @@ function checkZones(point: [number, number], geofence_list: Data["metadata"][]):
     isPointWithinRadius(
       { latitude: point[1], longitude: point[0] },
       {
-        latitude: x.geolocation.coordinates[0],
-        longitude: x.geolocation.coordinates[1],
+        latitude: x?.geolocation.coordinates[0],
+        longitude: x?.geolocation.coordinates[1],
       },
-      x.geolocation.radius
+      x?.geolocation.radius
     )
   );
 
@@ -86,13 +98,23 @@ function checkZones(point: [number, number], geofence_list: Data["metadata"][]):
 }
 
 type IAlertToBeSent = Omit<IAlertTrigger, "data">;
+/**
+ * The function returns the list of alerts that are outside the geofence zone
+ * @param account Account instanced class
+ * @param outsideZones Zones that are outside the geofence
+ * @param deviceParams Configuration parameter of the device
+ * @param device_id Device id
+ */
 async function getAlertList(account: Account, outsideZones: IGeofenceMetadata[], deviceParams: ConfigurationParams[], device_id: string) {
   const alerts: IAlertToBeSent[] = [];
   for (const item of outsideZones) {
-    const action_info: ActionInfo = await account.actions.info(item.event).catch(() => null);
+    const action_info: ActionInfo = await account.actions.info(item.event);
     if (!action_info) {
-      console.log(`Action not found ${item.event}`);
+      console.debug(`Action not found ${item.event}`);
       continue;
+    }
+    if (!action_info.trigger || !action_info.tags) {
+      throw "Invalid action";
     }
 
     const devices = action_info.trigger.map((x: any) => x.device).filter((x) => x);
@@ -114,6 +136,10 @@ async function getAlertList(account: Account, outsideZones: IGeofenceMetadata[],
       .find((x) => x.key === "action_type")
       ?.value?.replace(/;/g, ",")
       .split(",");
+
+    if (!send_to || !action_type) {
+      throw "Invalid action type and send to";
+    }
     const action_device = action_info.tags.find((x) => x.key === "device")?.value as string;
 
     await account.devices.paramSet(device_id, { ...alertParam, key: item.event, value: "geofence", sent: true });
@@ -172,10 +198,6 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
     geofences = geofences.concat(geofence_list);
   }
 
-  if (!org_dev) {
-    return console.log("Device is not linked to an organization");
-  }
-
   // Filter the geofences and send the alerts if any
   const geofenceMetadaList = geofences.map((geofences) => geofences.metadata) as IGeofenceMetadata[];
   const zones = checkZones([coordinates.lng, coordinates.lat], geofenceMetadaList);
@@ -218,7 +240,7 @@ async function geofenceAlertTrigger(account: Account, context: TagoContext, loca
 
 /**
  * Add this function to alert Handler in order to add the needed variable for geofence events
- * @param account Account
+ * @param account Account instanced class
  * @param devToStoreAlert Organization/Group/Etc device that will have the event stored
  * @param action_id Id of the action
  * @param structure structure of the action
@@ -235,7 +257,7 @@ async function geofenceAlertCreate(account: Account, devToStoreAlert: Device, ac
 
 /**
  * Add this function to alert Handler when editing geofence alerts.
- * @param account Account
+ * @param account Account instanced class
  * @param devToStoreAlert Organization/Group/Etc device that will have the event stored
  * @param action_id Id of the action
  * @param structure structure of the action

@@ -1,6 +1,11 @@
 import { Account, Device } from "@tago-io/sdk";
 import { parseTagoObject } from "./data.logic";
 
+/**
+ * Function that edit user information and send audit log
+ * @param account Account instanced class
+ * @param device Device instanced class
+ */
 export default function auditLogSetup(account: Account, device: Device) {
   return async function _(new_value: string, siren_state?: string, user_id?: string) {
     if (!new_value) {

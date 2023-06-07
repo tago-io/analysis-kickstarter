@@ -1,5 +1,5 @@
 import { Account, Device } from "@tago-io/sdk";
-import { Data, TagsObj } from "@tago-io/sdk/out/common/common.types";
+import { Data } from "@tago-io/sdk/out/common/common.types";
 import { ActionQuery } from "@tago-io/sdk/out/modules/Account/actions.types";
 import sendNotificationError from "../../lib/notificationError";
 import { RouterConstructorData } from "../../types";
@@ -15,14 +15,21 @@ interface ActionListParams {
 
 /**
  * Function to be used externally when need to add a device to an alert.
+ * @param account Account instanced class
+ * @param org_dev Device of the organization
+ * @param action_id Id of the action
+ * @param device_id Id of the device that will be sent the alert
  */
 async function addDeviceToAlert(account: Account, org_dev: Device, action_id: string, device_id: string) {
   const [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, groups: action_id });
   if (!action_variable) {
-    console.log(`Couldnt find the action_variable for ${action_id}`);
+    console.debug(`Couldnt find the action_variable for ${action_id}`);
     return;
   }
   const action_info = await account.actions.info(action_id);
+  if(!action_info.tags) {
+    throw "Action not found";
+  }
   const device_list = [...new Set(action_info.tags.filter((tag) => tag.key === "device_id").map((tag) => tag.value))];
   device_list.push(device_id);
 
@@ -32,6 +39,9 @@ async function addDeviceToAlert(account: Account, org_dev: Device, action_id: st
 
 /**
  * List all actions based on a "and" filter
+ * @param account Account instanced class
+ * @param device_id
+ * @param qty Number of devices that will be listed
  */
 async function listDeviceAction(account: Account, { device_id, action_id, group_id, organization_id }: ActionListParams, qty: number = 9999) {
   if (!device_id && !action_id && !group_id) {
@@ -41,6 +51,9 @@ async function listDeviceAction(account: Account, { device_id, action_id, group_
   const filter: ActionQuery["filter"] = {
     tags: [],
   };
+  if(!filter.tags) {
+    filter.tags = [];
+  }
   if (device_id) {
     filter.tags.push({ key: "device_id", value: device_id });
   }
@@ -56,13 +69,24 @@ async function listDeviceAction(account: Account, { device_id, action_id, group_
 
 async function undoChanges(device: Device, scope: Data[]) {
   await device.deleteData({ variables: scope.map((data) => data.variable), groups: scope[0].device });
-  await device.sendData(scope.map((data) => ({ ...data, value: data.metadata.old_value })));
+  await device.sendData(scope.map((data) => ({ ...data, value: data?.metadata?.old_value })));
 }
 /**
  * Main edit alert function
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ * @param scope Number of devices that will be listed
+ * @param config_dev Device of the organization
  */
-async function editAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
+async function editAlert({ account, environment, scope, config_dev: org_dev }: RouterConstructorData) {
+
+  if(!org_dev || !scope  || !account) {
+    throw "Organization device not found";
+  }
   const { group: action_id } = scope[0];
+  if(!action_id) {
+    throw "Action not found";
+  }
 
   // Get the fields from the Dynamic Table widget.
   // If the field was not edited, the value of the variable will be equal to null.
@@ -73,6 +97,10 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   const action_condition = scope.find((x) => ["action_list_condition", "action_group_condition"].includes(x.variable));
   const action_value = scope.find((x) => ["action_list_value", "action_group_value"].includes(x.variable));
 
+  if(!action_variable || !action_value) {
+    throw "Action variable and value not found";
+  }
+
   const action_type = scope.find((x) => ["action_list_type", "action_group_type"].includes(x.variable));
   const action_sendto = scope.find((x) => ["action_list_sendto", "action_group_sendto"].includes(x.variable));
 
@@ -81,13 +109,13 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   }
 
   if (!action_variable) {
-    console.log("[Error] Update action: action_variable not found");
+    console.debug("[Error] Update action: action_variable not found");
     undoChanges(org_dev, scope);
     return sendNotificationError(account, environment, "An error ocurred, please try again", "Error when editing alert");
   }
 
   // if (action_variable.value === "geofence" && (action_value || action_condition)) {
-  //   console.log("[Error] Updating geofence value or condition is not allowed");
+  //   console.debug("[Error] Updating geofence value or condition is not allowed");
   //   undoChanges(org_dev, scope);
   //   return sendNotificationError(account, environment, "Erro ao editar alerta", "Não é possível editar valor e condição de alertas de geofence. Delete e crie um novo alerta.");
   // }
@@ -99,6 +127,9 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
     device_list = await getGroupDevices(account, action_group.value as string);
   } else {
     const action_info = await account.actions.info(action_id);
+    if(!action_info.tags) {
+      throw "Action tags not found";
+    }
     device_list = action_info.tags.filter((tag) => tag.key === "device_id").map((tag) => tag.value);
   }
 
@@ -139,7 +170,7 @@ async function editAlert({ account, environment, scope, config_dev: org_dev, con
   }
 
   await account.actions.edit(action_id, action_structure).catch(async (e) => {
-    console.log("[Error] ", e);
+    console.debug("[Error] ", e);
     // Simple way to remove the edited fields and add it back again with the old value;
     undoChanges(org_dev, scope);
     await sendNotificationError(account, environment, e);
