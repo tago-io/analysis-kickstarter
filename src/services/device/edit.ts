@@ -1,11 +1,22 @@
-import { Device, Account, Utils } from "@tago-io/sdk";
+import { Utils } from "@tago-io/sdk";
 import getDevice from "@tago-io/sdk/out/modules/Utils/getDevice";
 import { parseTagoObject } from "../../lib/data.logic";
 import { findDashboardByConnectorID } from "../../lib/findResource";
 import { RouterConstructorDevice } from "../../types";
 import { sensor_status_false } from "./deviceInfo";
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorDevice) => {
+/**
+ * Main function of editing devices
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
+async function sensorEdit({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const dev_id = (scope[0] as any).device;
   if (!dev_id) {
     return;
@@ -16,21 +27,26 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   const { name: device_name, tags: device_tags } = await account.devices.info(dev_id);
 
-  const org_id = device_tags.find((x) => x.key === "organization_id").value;
+  const org_id = device_tags.find((x) => x.key === "organization_id")?.value;
+  if (!org_id) {
+    throw new Error("Organization not found");
+  }
   const org_dev = await getDevice(account, org_id);
-  const type = device_tags.find((x) => x.key === "sensor").value;
+  const type = device_tags.find((x) => x.key === "sensor")?.value;
+  if (!type) {
+    throw new Error("Sensor type not found");
+  }
   const current_group_id = device_tags.find((x) => x.key === "group_id")?.value;
 
   //updating only the group's dev_id data
   if (new_dev_name && current_group_id) {
     const group_dev = await Utils.getDevice(account, current_group_id);
     const [old_dev_id] = await group_dev.getData({ variables: "dev_id", groups: dev_id, qty: 1 });
-    await group_dev.deleteData({ variables: "dev_id", groups: dev_id });
-    await org_dev.deleteData({ variables: "dev_id", groups: dev_id });
+    const old_group_data = await group_dev.getData({ variables: "dev_id", groups: dev_id });
+    const old_org_data = await org_dev.getData({ variables: "dev_id", groups: dev_id });
 
-    old_dev_id.metadata.label = new_dev_name;
-    await group_dev.sendData(old_dev_id);
-    await org_dev.sendData(old_dev_id);
+    await org_dev.editData({ ...old_group_data, ...old_dev_id });
+    await group_dev.editData({ ...old_org_data, ...old_dev_id });
   }
 
   if (new_group_id || new_group_id === "") {
@@ -74,4 +90,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     const group_dev = await Utils.getDevice(account, new_group_id);
     await group_dev.sendData(to_tago);
   }
-};
+}
+
+export { sensorEdit };

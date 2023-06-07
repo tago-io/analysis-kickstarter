@@ -2,15 +2,29 @@ import validation from "../../lib/validation";
 import { parseTagoObject } from "../../lib/data.logic";
 import { RouterConstructorData } from "../../types";
 
-//registered by admin account.
 
+/**
+ * Main function of registered plan by admin account
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   //Collecting data
   const new_plan_name = scope.find((x) => x.variable === "new_plan_name");
   const new_plan_email_limit = scope.find((x) => x.variable === "new_plan_email_limit");
   const new_plan_sms_limit = scope.find((x) => x.variable === "new_plan_sms_limit");
   const new_plan_notif_limit = scope.find((x) => x.variable === "new_plan_notif_limit");
   const new_plan_data_retention = scope.find((x) => x.variable === "new_plan_data_retention");
+
+  if(!new_plan_name || !new_plan_email_limit || !new_plan_sms_limit || !new_plan_notif_limit || !new_plan_data_retention){
+    throw new Error("Missing variables in scope array to create new plan");
+  }
 
   //validation
   const validate = validation("plan_validation", config_dev);

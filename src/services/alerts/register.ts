@@ -9,6 +9,12 @@ import { RouterConstructorData } from "../../types";
 import { checkinAlertSet } from "./checkinAlerts";
 import { geofenceAlertCreate } from "./geofenceAlert";
 
+/**
+ * The function returns the group that was configured in the alert
+ * @param account Account instanced class
+ * @param group_id Id of the group
+ * @param groupKey Tag key that will be used in the device list
+ */
 async function getGroupDevices(account: Account, group_id: string, groupKey: string = "group_id") {
   const list: DeviceListItem[] = await fetchDeviceList(account, [
     { key: groupKey, value: group_id },
@@ -17,7 +23,10 @@ async function getGroupDevices(account: Account, group_id: string, groupKey: str
 
   return list.map((x) => x.id);
 }
-
+/**
+ * Function that reverses the logic of the alert so that we can use it in the trigger unlock of the action
+ * @param condition Condition of the action
+ */
 function reverseCondition(condition: string) {
   switch (condition) {
     case "=":
@@ -49,7 +58,11 @@ interface ActionStructureParams {
   device: string;
   name?: string;
 }
-
+/**
+ * Function that generate the structure of the action create
+ * @param structure Parameters used to create the structure
+ * @param device_ids Device id list
+ */
 function generateActionStructure(structure: ActionStructureParams, device_ids: string[]) {
   const action_structure: any = {
     active: true,
@@ -139,7 +152,18 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
   return action_structure;
 }
 
+/**
+ * Main function of creating alerts
+ * @param account Parameters used to create the structure
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ * @param scope Number of devices that will be listed
+ * @param config_dev Device of the organization
+ * @param context Context is a variable sent by the analysis
+ */
 async function createAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
+  if (!account || !environment || !scope || !org_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const devToStoreAlert = await Utils.getDevice(account, scope[0].device);
   devToStoreAlert.sendData({ variable: "action_validation", value: "#VAL.CREATING_ALERT#", metadata: { type: "warning" } });
 
@@ -149,9 +173,13 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
 
   const action_set_unlock = scope.find((x) => x.variable === "action_set_unlock");
   const action_sendto = scope.find((x) => x.variable === "action_sendto");
+  console.log("action_sendto", action_sendto);
+  console.log("action_set_unlock", action_set_unlock);
+  console.log("action_dev_list", action_dev_list);
+  console.log("action_group", action_group);
 
   const action_variable = scope.find((x) => x.variable === "action_variable");
-  let action_condition: Data | DataToSend = scope.find((x) => x.variable === "action_condition");
+  let action_condition: Data | DataToSend | undefined = scope.find((x) => x.variable === "action_condition");
   let action_value = scope.find((x) => x.variable === "action_value");
   const action_value2 = scope.find((x) => x.variable === "action_value2");
 
@@ -170,9 +198,12 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   // const action_unlock_value = scope.find((x) => x.variable === "action_unlock_value");
 
   const action_value_unit = scope.find((x) => x.variable === "action_value_unit");
+  if (!action_value_unit?.value) {
+    throw "Missing action_value_unit";
+  }
 
   if (action_value_unit?.value === "F") {
-    action_value.value = (((Number(action_value.value) - 32) * 5) / 9).toFixed(2);
+    action_value.value = (((Number(action_value?.value) - 32) * 5) / 9).toFixed(2);
     if (action_value2?.value) {
       action_value2.value = (((Number(action_value2?.value) - 32) * 5) / 9).toFixed(2);
     }
@@ -200,12 +231,12 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   let device_list: string[] = [];
 
   if (action_dev_list) {
-    device_list = action_dev_list.metadata.sentValues.map((x) => x.value as string);
+    device_list = action_dev_list?.metadata?.sentValues.map((x) => x.value as string);
   } else if (action_group) {
     const group_id = action_group.value as string;
     const group_exist = await account.devices.info(group_id);
     if (!group_exist) {
-      throw `Group ${action_group.metadata.label} couldn't be found.`;
+      throw `Group ${action_group?.metadata?.label} couldn't be found.`;
     }
     device_list = await getGroupDevices(account, group_id, groupKey);
   }

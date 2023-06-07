@@ -1,12 +1,27 @@
 import { Utils } from "@tago-io/sdk";
 import { RouterConstructorDevice } from "../../types";
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorDevice) => {
+
+/**
+ * Main function of deleting devices
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
+async function sensorDel({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const dev_id = (scope[0] as any).device;
   const device_info = await (await Utils.getDevice(account, dev_id)).info();
+  if (!device_info?.tags) {
+    throw new Error("Device not found");
+  }
 
   const group_id = device_info.tags.find((tag) => tag.key === "group_id")?.value;
-  const org_id = device_info.tags.find((tag) => tag.key === "organization_id").value;
+  const org_id = device_info.tags.find((tag) => tag.key === "organization_id")?.value;
 
   if (org_id) {
     const org_dev = await Utils.getDevice(account, org_id);
@@ -21,5 +36,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   await config_dev.deleteData({ groups: dev_id, qty: 99999 });
 
   await account.devices.delete(dev_id);
-  return console.log("Device deleted!");
-};
+  return console.debug("Device deleted!");
+}
+
+export { sensorDel };

@@ -7,7 +7,11 @@ import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
 interface GenericBody {
   [index: string]: any;
 }
-
+/**
+ * Function that parse the body of the request to TagoIO
+ * @param body Body of the request
+ * @param group Group of the request
+ */
 function parseTagoObject(body: GenericBody, group?: string): DataToSend[] {
   if (!group) {
     group = String(new Date().getTime());

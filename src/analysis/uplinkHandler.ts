@@ -32,9 +32,9 @@ import sensorUplinkTempHum from "../services/uplinks/sensorUplinkTempHum";
  * @returns
  */
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
-  console.log("SCOPE:", JSON.stringify(scope, null, 4));
-  console.log("CONTEXT:", JSON.stringify(context, null, 4));
-  console.log("Running Analysis");
+  console.debug("SCOPE:", JSON.stringify(scope, null, 4));
+  console.debug("CONTEXT:", JSON.stringify(context, null, 4));
+  console.debug("Running Analysis");
 
   // Convert the environment variables from [{ key, value }] to { key: value };
   const environment = Utils.envToJson(context.environment);
@@ -67,5 +67,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   await router.exec();
 }
 
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
 export { startAnalysis };
-export default new Analysis(startAnalysis, { token: "4528236f-de1d-4a48-8765-a4019aaad7e4" });

@@ -1,18 +1,26 @@
-import { Device, Account, Utils } from "@tago-io/sdk";
+import { Account, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { fetchDeviceList } from "../../lib/fetchDeviceList";
 import { RouterConstructorData } from "../../types";
 
+/**
+ * Function that resolves the report of the organization and send it to the user
+ * @param account
+ * @param org
+ * @param plan_data
+ */
 const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data) => {
+  if(!org || !plan_data || !account || !plan_data.metadata){
+    throw new Error("Missing parameters");
+  }
   //changing plan_data variable
   const org_id = org.id;
   const org_dev = await Utils.getDevice(account, org_id);
 
-  await org_dev.deleteData({ variables: "plan_data", qty: 9999 });
-  delete plan_data.device;
-  delete plan_data.time;
-  await org_dev.sendData(plan_data);
+  const old_plan_data = await org_dev.getData({ variables: "plan_data", query: "last_item" });
+
+  await org_dev.editData({ ...old_plan_data, ...plan_data });
 
   //changing params
   const org_params = await account.devices.paramList(org_id);
@@ -29,7 +37,18 @@ const resolveOrg = async (account: Account, org: DeviceListItem, plan_data: Data
   await account.devices.paramSet(org_id, { ...plan_data_retention, value: String(plan_data.metadata.data_retention) });
 };
 
+/**
+ * Main function of editing plan by admin account
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ * @param account Account instanced class
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
 export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+  if(!account || !environment || !scope || !config_dev || !context){
+    throw new Error("Missing parameters");
+  }
   const plan_name = scope.find((x) => x.variable === "plan_data");
   const plan_email_limit = scope.find((x) => x.variable === "plan_email_limit");
   const plan_sms_limit = scope.find((x) => x.variable === "plan_sms_limit");
@@ -37,11 +56,11 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const plan_data_retention = scope.find((x) => x.variable === "plan_data_retention");
 
   const plan_group = scope[0].group;
-  console.log(plan_group);
+
   const [plan_data] = await config_dev.getData({ variables: "plan_data", groups: plan_group, qty: 1 });
 
-  if (!plan_data) {
-    return console.log("No plan found!");
+  if (!plan_data.value || !plan_data.metadata) {
+    throw new Error("Plan not found");
   }
 
   const org_dev_list = await fetchDeviceList(account, [
@@ -75,5 +94,5 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   await config_dev.sendData(plan_data);
 
-  return console.log("Plan edited!");
+  return console.debug("Plan edited!");
 };

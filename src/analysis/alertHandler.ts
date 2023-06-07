@@ -20,20 +20,25 @@ import { editAlert } from "../services/alerts/edit";
 import { createAlert } from "../services/alerts/register";
 import { deleteAlert } from "../services/alerts/remove";
 
+/**
+ * Function that starts the analysis
+ * @param context Context is a variable sent by the analysis
+ * @param scope Scope is a variable sent by the analysis
+ */
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
   if (!scope[0]) {
-    return context.log("This analysis must be triggered by a widget.");
+    return console.error("Not a valid TagoIO Data");
   }
 
-  context.log(JSON.stringify(scope));
-  context.log("Alert analysis started");
+  console.debug(JSON.stringify(scope));
+  console.debug("Alert analysis started");
 
   // Get the environment variables.
   const environment = Utils.envToJson(context.environment);
   if (!environment.account_token) {
-    return context.log('Missing "account_token" environment variable');
+    return console.debug('Missing "account_token" environment variable');
   } else if (environment.account_token.length !== 36) {
-    return context.log('Invalid "account_token" in the environment variable');
+    return console.debug('Invalid "account_token" in the environment variable');
   }
 
   // Instance the Account class
@@ -41,11 +46,19 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   // Instance the device class using the device from scope variables.
   // device is always the device used in the widget to trigger the analysis.
-  const device_id = scope[0].device;
-  const device_token = await Utils.getTokenByName(account, device_id);
-  const org_dev = new Device({ token: device_token });
+  // const device_id = scope[0].device;
+  // const device_token = await Utils.getTokenByName(account, device_id);
 
-  const router = new Utils.AnalysisRouter({ context, config_dev: org_dev, scope, environment, account });
+  // Instance of the settings device, that stores global information of the application.
+  const config_dev = new Device({ token: environment.config_token });
+
+  const router = new Utils.AnalysisRouter({
+    account,
+    environment,
+    scope,
+    config_dev,
+    context,
+  });
 
   router.register(createAlert).whenInputFormID("create-alert-dev");
   router.register(editAlert).whenWidgetExec("edit");
@@ -53,8 +66,12 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   const result = await router.exec();
 
-  console.log("Script end. Functions that run:");
-  console.log(result.services);
+  console.debug("Script end. Functions that run:");
+  console.debug(result.services);
 }
 
-export default new Analysis(startAnalysis, { token: "0604d0ad-fad7-4739-bb9a-a2e90ca2a52b" });
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
+export { startAnalysis };

@@ -1,4 +1,4 @@
-import { Device, Account, Types, Utils } from "@tago-io/sdk";
+import { Device, Account, Utils } from "@tago-io/sdk";
 import { DeviceCreateInfo } from "@tago-io/sdk/out/modules/Account/devices.types";
 import validation from "../../lib/validation";
 import { DeviceCreated, RouterConstructorData } from "../../types";
@@ -11,7 +11,12 @@ interface installDeviceParam {
   new_group_name: string;
   org_id: string;
 }
-
+/**
+ * Function that create groups
+ * @param account Account instanced class
+ * @param new_group_name Group name that will be created
+ * @param org_id Organization id that the group will be created
+ */
 async function installDevice({ account, new_group_name, org_id }: installDeviceParam) {
   //structuring data
   const device_data: DeviceCreateInfo = {
@@ -40,7 +45,19 @@ async function installDevice({ account, new_group_name, org_id }: installDeviceP
   return { ...new_group, device: new_org_dev } as DeviceCreated;
 }
 
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
+
+/**
+ * Main function of creating groups
+ * @param config_dev Device of the configuration
+ * @param context Context is a variable sent by the analysis
+ * @param scope Number of devices that will be listed
+ * @param account Parameters used to create the structure
+ * @param environment Environment Variable is a resource to send variables values to the context of your script
+ */
+async function groupAdd({ config_dev, context, scope, account, environment }: RouterConstructorData) {
+  if (!account || !environment || !scope || !config_dev || !context) {
+    throw new Error("Missing parameters");
+  }
   const org_id = scope[0].device as string;
   const org_dev = await Utils.getDevice(account, org_id);
 
@@ -60,6 +77,10 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   // const new_group_org = scope.find((x) => x.variable === "new_group_org");
   const new_group_name = scope.find((x) => x.variable === "new_group_name");
   const new_group_address = scope.find((x) => x.variable === "new_group_address");
+
+  if (!new_group_name) {
+    throw new Error("new_group_name is missing");
+  }
 
   if ((new_group_name.value as string).length < 3) {
     throw validate("#VAL.NAME_FIELD_IS_SMALLER_THAN_3_CHAR#", "danger");
@@ -108,4 +129,6 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   });
 
   return validate("#VAL.GROUP_SUCCESSFULLY_CREATED#", "success");
-};
+}
+
+export { groupAdd };
