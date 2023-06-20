@@ -1,4 +1,4 @@
-import getDevice from "@tago-io/sdk/out/modules/Utils/getDevice";
+import { Utils } from "@tago-io/sdk";
 import { RouterConstructorData } from "../../types";
 
 /**
@@ -37,7 +37,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     throw new Error("Organization not found in Tago");
   }
 
-  const org_dev = await getDevice(account, org_id);
+  const org_dev = await Utils.getDevice(account, org_id);
   await org_dev.deleteData({ groups: action_group, qty: 9999 });
 
   if (!action_registered) {

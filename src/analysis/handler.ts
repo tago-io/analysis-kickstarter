@@ -132,4 +132,8 @@ if (!process.env.T_TEST) {
   Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
 }
 
+if (!process.env.T_TEST) {
+  Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
+}
+
 export { startAnalysis };
