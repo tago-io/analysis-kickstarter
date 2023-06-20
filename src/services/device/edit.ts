@@ -1,5 +1,4 @@
 import { Utils } from "@tago-io/sdk";
-import getDevice from "@tago-io/sdk/out/modules/Utils/getDevice";
 import { parseTagoObject } from "../../lib/data.logic";
 import { findDashboardByConnectorID } from "../../lib/findResource";
 import { RouterConstructorDevice } from "../../types";
@@ -31,7 +30,7 @@ async function sensorEdit({ config_dev, context, scope, account, environment }: 
   if (!org_id) {
     throw new Error("Organization not found");
   }
-  const org_dev = await getDevice(account, org_id);
+  const org_dev = await Utils.getDevice(account, org_id);
   const type = device_tags.find((x) => x.key === "sensor")?.value;
   if (!type) {
     throw new Error("Sensor type not found");
