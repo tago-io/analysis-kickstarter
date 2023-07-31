@@ -1,4 +1,4 @@
-import { Account, Device } from "@tago-io/sdk";
+import { Account, Device, Utils } from "@tago-io/sdk";
 import { Data } from "@tago-io/sdk/out/common/common.types";
 import { ActionQuery } from "@tago-io/sdk/out/modules/Account/actions.types";
 import sendNotificationError from "../../lib/notificationError";
@@ -27,7 +27,7 @@ async function addDeviceToAlert(account: Account, org_dev: Device, action_id: st
     return;
   }
   const action_info = await account.actions.info(action_id);
-  if(!action_info.tags) {
+  if (!action_info.tags) {
     throw "Action not found";
   }
   const device_list = [...new Set(action_info.tags.filter((tag) => tag.key === "device_id").map((tag) => tag.value))];
@@ -51,7 +51,7 @@ async function listDeviceAction(account: Account, { device_id, action_id, group_
   const filter: ActionQuery["filter"] = {
     tags: [],
   };
-  if(!filter.tags) {
+  if (!filter.tags) {
     filter.tags = [];
   }
   if (device_id) {
@@ -78,13 +78,18 @@ async function undoChanges(device: Device, scope: Data[]) {
  * @param scope Number of devices that will be listed
  * @param config_dev Device of the organization
  */
-async function editAlert({ account, environment, scope, config_dev: org_dev }: RouterConstructorData) {
-
-  if(!org_dev || !scope  || !account) {
+async function editAlert({ account, environment, scope }: RouterConstructorData) {
+  if (!scope || !account) {
     throw "Organization device not found";
   }
+
+  const organization_id = scope[0].device;
+  if (!organization_id) {
+    throw "Organization device not found";
+  }
+  const org_dev = await Utils.getDevice(account, organization_id);
   const { group: action_id } = scope[0];
-  if(!action_id) {
+  if (!action_id) {
     throw "Action not found";
   }
 
@@ -97,10 +102,6 @@ async function editAlert({ account, environment, scope, config_dev: org_dev }: R
   const action_condition = scope.find((x) => ["action_list_condition", "action_group_condition"].includes(x.variable));
   const action_value = scope.find((x) => ["action_list_value", "action_group_value"].includes(x.variable));
 
-  if(!action_variable || !action_value) {
-    throw "Action variable and value not found";
-  }
-
   const action_type = scope.find((x) => ["action_list_type", "action_group_type"].includes(x.variable));
   const action_sendto = scope.find((x) => ["action_list_sendto", "action_group_sendto"].includes(x.variable));
 
@@ -108,17 +109,13 @@ async function editAlert({ account, environment, scope, config_dev: org_dev }: R
     [action_variable] = await org_dev.getData({ variables: ["action_list_variable", "action_group_variable"], qty: 1, groups: action_id });
   }
 
+
+
   if (!action_variable) {
     console.debug("[Error] Update action: action_variable not found");
     undoChanges(org_dev, scope);
     return sendNotificationError(account, environment, "An error ocurred, please try again", "Error when editing alert");
   }
-
-  // if (action_variable.value === "geofence" && (action_value || action_condition)) {
-  //   console.debug("[Error] Updating geofence value or condition is not allowed");
-  //   undoChanges(org_dev, scope);
-  //   return sendNotificationError(account, environment, "Erro ao editar alerta", "Não é possível editar valor e condição de alertas de geofence. Delete e crie um novo alerta.");
-  // }
 
   let device_list: string[] = [];
   if (action_devices) {
@@ -127,10 +124,17 @@ async function editAlert({ account, environment, scope, config_dev: org_dev }: R
     device_list = await getGroupDevices(account, action_group.value as string);
   } else {
     const action_info = await account.actions.info(action_id);
-    if(!action_info.tags) {
+    if (!action_info.tags) {
       throw "Action tags not found";
     }
-    device_list = action_info.tags.filter((tag) => tag.key === "device_id").map((tag) => tag.value);
+    const group_id = action_info.tags.find((tag) => tag.key === "group_id")?.value;
+    console.log(group_id);
+    if (group_id) {
+      device_list = await getGroupDevices(account, group_id);
+    }
+    else {
+      device_list = action_info.tags.filter((tag) => tag.key === "device_id").map((tag) => tag.value);
+    }
   }
 
   const structure: ActionStructureParams = action_variable.metadata as any;
@@ -156,11 +160,12 @@ async function editAlert({ account, environment, scope, config_dev: org_dev }: R
   if (action_sendto) {
     structure.send_to = action_sendto.value as string;
   }
-
-  if (structure.condition === "><" && (action_value.value as string)?.split(";").length !== 2) {
-    undoChanges(org_dev, scope);
-    sendNotificationError(account, environment, "Invalid between condition, you must enter the value such as: 2;15");
-    throw `[Error] Invalid between value: ${action_value.value}`;
+  if (action_value) {
+    if (structure.condition === "><" && (action_value.value as string)?.split(";").length !== 2) {
+      undoChanges(org_dev, scope);
+      sendNotificationError(account, environment, "Invalid between condition, you must enter the value such as: 2;15");
+      throw `[Error] Invalid between value: ${action_value.value}`;
+    }
   }
 
   const action_structure = generateActionStructure(structure, device_list);

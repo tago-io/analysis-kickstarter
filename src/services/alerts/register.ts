@@ -83,14 +83,9 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
     },
   };
 
-  action_structure.tags = action_structure.tags.concat(
-    device_ids.map((id) => {
-      return { key: "device_id", value: id };
-    })
-  );
-
   const value_type = Number.isNaN(Number(structure.trigger_value)) ? "string" : "number";
   const variables = (structure.variable as string).split(",");
+  console.log(device_ids, variables, structure);
   for (const device_id of device_ids) {
     for (const variable of variables) {
       action_structure.trigger.push({
@@ -201,6 +196,9 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   if (!action_value_unit?.value) {
     throw "Missing action_value_unit";
   }
+  if(!action_value?.value){
+    throw "Missing action_value";
+  }
 
   if (action_value_unit?.value === "F") {
     action_value.value = (((Number(action_value?.value) - 32) * 5) / 9).toFixed(2);
@@ -230,7 +228,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   const organization_id = scope[0].device;
   let device_list: string[] = [];
 
-  if (action_dev_list) {
+  if (action_dev_list?.metadata?.sentValues) {
     device_list = action_dev_list?.metadata?.sentValues.map((x) => x.value as string);
   } else if (action_group) {
     const group_id = action_group.value as string;
@@ -242,6 +240,10 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   }
 
   const script_id = await findAnalysisByExportID(account, "alertTrigger");
+
+  if (!action_sendto?.value){
+   throw "Missing action_sendto";
+  }
 
   // Create the action structure.
   const structure: ActionStructureParams = {
