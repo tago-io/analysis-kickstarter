@@ -128,7 +128,6 @@ async function editAlert({ account, environment, scope }: RouterConstructorData)
       throw "Action tags not found";
     }
     const group_id = action_info.tags.find((tag) => tag.key === "group_id")?.value;
-    console.log(group_id);
     if (group_id) {
       device_list = await getGroupDevices(account, group_id);
     }
