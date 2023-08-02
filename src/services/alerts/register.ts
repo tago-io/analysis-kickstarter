@@ -83,12 +83,6 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
     },
   };
 
-  action_structure.tags = action_structure.tags.concat(
-    device_ids.map((id) => {
-      return { key: "device_id", value: id };
-    })
-  );
-
   const value_type = Number.isNaN(Number(structure.trigger_value)) ? "string" : "number";
   const variables = (structure.variable as string).split(",");
   for (const device_id of device_ids) {
@@ -170,13 +164,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   // Get the fields from the Input widget.
   const action_group = scope.find((x) => x.variable === "action_group_list");
   const action_dev_list = scope.find((x) => x.variable === "action_device_list" && x.metadata?.sentValues);
-
-  const action_set_unlock = scope.find((x) => x.variable === "action_set_unlock");
   const action_sendto = scope.find((x) => x.variable === "action_sendto");
-  console.log("action_sendto", action_sendto);
-  console.log("action_set_unlock", action_set_unlock);
-  console.log("action_dev_list", action_dev_list);
-  console.log("action_group", action_group);
 
   const action_variable = scope.find((x) => x.variable === "action_variable");
   let action_condition: Data | DataToSend | undefined = scope.find((x) => x.variable === "action_condition");
@@ -198,8 +186,8 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   // const action_unlock_value = scope.find((x) => x.variable === "action_unlock_value");
 
   const action_value_unit = scope.find((x) => x.variable === "action_value_unit");
-  if (!action_value_unit?.value) {
-    throw "Missing action_value_unit";
+  if(!action_value?.value){
+    throw "Missing action_value";
   }
 
   if (action_value_unit?.value === "F") {
@@ -230,7 +218,7 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   const organization_id = scope[0].device;
   let device_list: string[] = [];
 
-  if (action_dev_list) {
+  if (action_dev_list?.metadata?.sentValues) {
     device_list = action_dev_list?.metadata?.sentValues.map((x) => x.value as string);
   } else if (action_group) {
     const group_id = action_group.value as string;
@@ -242,6 +230,10 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   }
 
   const script_id = await findAnalysisByExportID(account, "alertTrigger");
+
+  if (!action_sendto?.value){
+   throw "Missing action_sendto";
+  }
 
   // Create the action structure.
   const structure: ActionStructureParams = {
