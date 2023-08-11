@@ -19,7 +19,7 @@ import { Data } from "@tago-io/sdk/out/common/common.types";
 import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
 import dayjs from "dayjs";
-import { queue } from "async";
+import async, { queue } from "async";
 import { parseTagoObject } from "../lib/data.logic";
 import { fetchDeviceList } from "../lib/fetchDeviceList";
 import { checkinTrigger } from "../services/alerts/checkinAlerts";
@@ -78,7 +78,6 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
     variables: ["device_qty", "plan_usage"],
     query: "last_item",
   });
-  console.log(old_data);
   const device_data = old_data.find((x) => x.variable === "device_qty");
   const plan_data = old_data.find((x) => x.variable === "plan_usage");
   const new_data = parseTagoObject(to_tago);
@@ -132,20 +131,19 @@ const checkLocation = async (account: Account, device: Device) => {
  * @param device_id
  */
 async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
+  console.debug("Resolving device", device_id);
   const device = await Utils.getDevice(account, device_id).catch((msg) => console.debug(msg));
 
   if (!device) {
-    throw "Device not found";
+    return Promise.reject("Device not found");
   }
 
-  checkLocation(account, device);
+  checkLocation(account, device).catch((msg) => console.debug(msg));
 
   const device_info = await account.devices.info(device_id);
-  if(!device_info.last_input){
-    throw "Device not found";
+  if (!device_info.last_input) {
+    return Promise.reject("Device not found");
   }
-
-  console.log(device_info.last_input);
 
   const checkin_date = dayjs(device_info.last_input as Date);
 
@@ -165,10 +163,12 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
   await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
 
   await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: (diff_hours as number) >= 24 ? true : false });
+
+  console.debug("Device resolved", device_id);
 }
 
 async function handler(context: TagoContext, scope: Data[]): Promise<void> {
-  context.log("Running Analysis");
+  console.debug("Running Analysis");
 
   const environment = Utils.envToJson(context.environment);
   if (!environment) {
@@ -188,26 +188,21 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 
   const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
 
-  //creating queue which will resolve the device
-
-  const processSensorQueue = queue(async (sensorItem: DeviceListItem) => {
-    resolveDevice(
-      context,
-      account,
-      sensorItem.tags.find((tag) => tag.key === "organization_id")?.value as string,
-      sensorItem.tags.find((tag) => tag.key === "device_id")?.value as string
-    ).catch((msg) => console.debug(`${msg} - ${sensorItem.id}`));
+  const processSensorQueue = async.queue(async function (sensorItem: DeviceListItem, callback) {
+    const organization_id = sensorItem?.tags?.find((tag) => tag.key === "organization_id")?.value as string;
+    const device_id = sensorItem?.tags?.find((tag) => tag.key === "device_id")?.value as string;
+    await resolveDevice(context, account, organization_id, device_id).catch((msg) => console.debug(`${msg} - ${sensorItem.id}`));
+    callback();
   }, 1);
 
   //populating the queue
-
   for (const sensorItem of sensorList) {
     processSensorQueue.push(sensorItem);
   }
 
-  //starting the queue
+  // console.debug("Queue populated", processSensorQueue.length());
 
-  processSensorQueue.drain();
+  await processSensorQueue.drain();
 
   //throwing possible errors generated while running the queue
 
@@ -220,10 +215,10 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
 async function startAnalysis(context: TagoContext, scope: any) {
   try {
     await handler(context, scope);
-    context.log("Analysis finished");
+    console.debug("Analysis finished");
   } catch (error) {
     console.debug(error);
-    context.log(error.message || JSON.stringify(error));
+    console.debug(error.message || JSON.stringify(error));
   }
 }
 

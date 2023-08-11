@@ -90,7 +90,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
       action_structure.trigger.push({
         is: structure.condition,
         value: String(structure.trigger_value),
-        value_type,
+        value_type: "number",
         variable,
         device: device_id,
         second_value: structure.trigger_value2,
@@ -101,7 +101,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
           is: reverseCondition(structure.condition),
           unlock: true,
           value: String(structure.trigger_value),
-          value_type,
+          value_type: "number",
           variable,
           device: device_id,
           second_value: structure.trigger_value2 || "",
@@ -186,11 +186,8 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   // const action_unlock_value = scope.find((x) => x.variable === "action_unlock_value");
 
   const action_value_unit = scope.find((x) => x.variable === "action_value_unit");
-  if(!action_value?.value){
-    throw "Missing action_value";
-  }
 
-  if (action_value_unit?.value === "F") {
+  if (action_value_unit?.value === "F" && action_value?.value) {
     action_value.value = (((Number(action_value?.value) - 32) * 5) / 9).toFixed(2);
     if (action_value2?.value) {
       action_value2.value = (((Number(action_value2?.value) - 32) * 5) / 9).toFixed(2);

@@ -54,3 +54,4 @@ yarn.lock
 .tago-lock.kickstarter.lock
 .tagoio
 .tago-lock.tagoio init.lock
+tagoconfig
