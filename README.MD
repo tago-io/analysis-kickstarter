@@ -25,6 +25,7 @@ You can quickly install the application in your account by using the Import tool
 * Keep all entities selected, paste your token in the account token field.
 * Press Import Application and you should receive notification in your account when it's done.
 * To access the application using TagoRUN. Make sure to create a user using your TagoIO Developer account, adding the tag key **access** with the tag value **admin**.
+* **Make sure you change the account_token** analysis enviornment variables otherwise the Analysis won't create the devices in the correct profile. 
 
 ### Easy Update
 To easy update your application when new version is out, you can just repeat the previous step.
