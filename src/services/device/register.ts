@@ -1,10 +1,12 @@
-import { Device, Account, Utils } from "@tago-io/sdk";
+import { Account, Device, Utils } from "@tago-io/sdk";
 import { DeviceCreateInfo } from "@tago-io/sdk/out/modules/Account/devices.types";
+
+import { createDashURL } from "../../lib/create-dash-url";
+import { parseTagoObject } from "../../lib/data.logic";
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
+import { GetDashboardByTagID } from "../../lib/findResource";
 import validation from "../../lib/validation";
 import { DeviceCreated, RouterConstructorData } from "../../types";
-import { parseTagoObject } from "../../lib/data.logic";
-import { findDashboardByConnectorID } from "../../lib/findResource";
-import { fetchDeviceList } from "../../lib/fetchDeviceList";
 
 interface installDeviceParam {
   account: Account;
@@ -122,12 +124,7 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
 
   const connector_id = new_dev_type.value as string;
 
-  let dash_id = "";
-  try {
-    ({ id: dash_id } = await findDashboardByConnectorID(account, connector_id));
-  } catch (error) {
-    return validate("#VAL.ERROR__NO_DASHBOARD_FOUND#", "danger");
-  }
+  const dash_id = await GetDashboardByTagID(account, "simulator_summary_soil");
 
   const dash_info = await account.dashboards.info(dash_id);
   const type = dash_info.blueprint_devices.find((bp) => bp.conditions[0].key === "sensor");
@@ -146,13 +143,15 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
     group_id,
   });
 
+  const url = createDashURL(dash_id, { org_dev: org_id, sensor: device_id });
+
   const dev_data = parseTagoObject(
     {
       dev_id: {
         value: device_id,
         metadata: {
           label: new_dev_name.value,
-          url: `https://admin.tago.io/dashboards/info/${dash_info.id}?org_dev=${org_id}&sensor=${device_id}`,
+          url,
           status: "unknwon",
           type: dash_info.type,
         },
@@ -163,7 +162,7 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
 
   await account.devices.paramSet(device_id, {
     key: "dashboard_url",
-    value: `https://admin.tago.io/dashboards/info/${dash_info.id}?org_dev=${org_id}&sensor=${device_id}`,
+    value: url,
     sent: false,
   });
 

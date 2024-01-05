@@ -13,11 +13,13 @@
  * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
-import { Account, Analysis, Device, Utils } from "@tago-io/sdk";
 import dayjs from "dayjs";
+
+import { Account, Analysis, Device, Utils } from "@tago-io/sdk";
 import { ActionInfo } from "@tago-io/sdk/out/modules/Account/actions.types";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+
 import html_body from "../lib/html_body";
 import sendPDF from "../lib/sendPDF";
 import checkAndChargeUsage from "../services/plan/checkAndChargeUsage";
@@ -87,9 +89,9 @@ async function resolveReport(account: Account, context: TagoContext, action_info
     const temperature = sensor_data.find((x) => x.variable === "temperature");
     const humidity = sensor_data.find((x) => x.variable === "humidity");
     const compressor = sensor_data.find((x) => x.variable === "compressor");
-    const temp_status = `Temp: ${temperature?.value || "N/A"}${temperature?.unit || ""}`;
-    const hum_status = `Hum: ${humidity?.value || "N/A"}${humidity?.unit || ""}`;
-    const compressor_status = `Compressor: ${compressor?.value || "N/A"}`;
+    const temp_status = `Temp: ${temperature?.value ?? "N/A"}${temperature?.unit ?? ""}`;
+    const hum_status = `Hum: ${humidity?.value ?? "N/A"}${humidity?.unit ?? ""}`;
+    const compressor_status = `Compressor: ${compressor?.value ?? "N/A"}`;
     const status_history = `${temp_status} | ${hum_status} | ${compressor_status}`;
     const battery = sensor_data.find((x) => x.variable === "battery");
     const rssi = sensor_data.find((x) => x.variable === "rssi");
@@ -99,8 +101,8 @@ async function resolveReport(account: Account, context: TagoContext, action_info
     report_data.push({
       name: sensor_name,
       status: status_history,
-      battery: `${(battery?.value as string) || "N/A"}${battery?.unit || ""}`,
-      rssi: (rssi?.value as string) || "N/A",
+      battery: `${(battery?.value as string) ?? "N/A"}${battery?.unit ?? ""}`,
+      rssi: (rssi?.value as string) ?? "N/A",
       date: dayjs(String(last_input)).format("YYYY-MM-DD HH:mm:ss"),
     });
   }
@@ -184,15 +186,17 @@ async function resolveReport(account: Account, context: TagoContext, action_info
     ]);
   }
 
+  let filename: string | undefined;
   if (users_id_list.length > 0 && plan_service_status) {
-    await sendPDF(context, final_html_body, users_info_list, org_name);
+    filename = await sendPDF(context, final_html_body, users_info_list, org_name, org_id);
   } else if (users_id_list.length == 0) {
     return await org_dev.sendData([{ variable: "report_sent", value: `Report has not been sent. No user registered.`, metadata: { users: "-" } }]);
   }
 
   const all_users_string = all_users_label.join(", ");
 
-  await org_dev.sendData([{ variable: "report_sent", value: `Report has been sent. Via: ${via}.`, metadata: { users: all_users_string } }]);
+  const url_file = filename ? `https://api.tago.io/file/651e993977b37400096c7860${filename}` : "-";
+  await org_dev.sendData([{ variable: "report_sent", value: `Report has been sent. Via: ${via}.`, metadata: { users: all_users_string, url_file } }]);
 }
 
 /**

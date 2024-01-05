@@ -1,8 +1,11 @@
 import { PaperFormat, PDFOptions } from "puppeteer";
-import { Services } from "@tago-io/sdk";
+import { v4 as uuidv4 } from "uuid";
+
+import { Account, Services } from "@tago-io/sdk";
 import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
 import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
-import { headerTemplate, footerTemplate } from "../lib/pdfTemplate";
+
+import { footerTemplate, headerTemplate } from "../lib/pdfTemplate";
 
 // ? ==================================== (c) TagoIO ====================================
 // ? What is in this file?
@@ -10,7 +13,6 @@ import { headerTemplate, footerTemplate } from "../lib/pdfTemplate";
 // ? ====================================================================================
 
 //code below is a base64 code for MyCompany logo
-
 
 const options: PDFOptions = {
   path: "example.pdf", //changes the path where the file will be stored
@@ -27,7 +29,7 @@ const options: PDFOptions = {
   printBackground: true,
 };
 
-export default async function createPDF(context: TagoContext, htmlBody: string, users_info_list: Array<UserInfo>, org_name: string) {
+export default async function createPDF(context: TagoContext, htmlBody: string, users_info_list: Array<UserInfo>, org_name: string, org_id: string) {
   // Start the email service
   const email = new Services({ token: context.token }).email;
 
@@ -60,5 +62,21 @@ export default async function createPDF(context: TagoContext, htmlBody: string, 
     }
   });
 
-  return console.debug("PDF Generated!");
+  const account = new Account({ token: context.token });
+  const filename = `/reports/${org_id}/sensor_report_${uuidv4()}.pdf`;
+
+  await account.files
+    .uploadBase64([
+      {
+        filename,
+        file: (report as any).result,
+        public: true,
+      },
+    ])
+    .then((msg) => console.debug(msg))
+    .catch((error) => console.debug(`Error - failed to send pdf to FILE - ${error}`));
+
+  console.debug("PDF Generated!");
+
+  return filename;
 }

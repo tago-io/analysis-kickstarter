@@ -1,6 +1,24 @@
-import { Utils } from "@tago-io/sdk";
+import { Account, Utils } from "@tago-io/sdk";
+
+import { fetchDeviceList } from "../../lib/fetchDeviceList";
 import { RouterConstructorDevice } from "../../types";
 
+/**
+ * Function that remove aggregation data from the organization
+ * @param account Account instanced class
+ * @param org_id Organization id that devices will be created
+ */
+async function removeAggregationData(account: Account, org_id: string) {
+  const soil_devices = await fetchDeviceList(account, [
+    { key: "device_type", value: "device" },
+    { key: "sensor", value: "soil" },
+    { key: "organization_id", value: org_id },
+  ]);
+
+  if (soil_devices.length === 0) {
+    await account.devices.deleteDeviceData(org_id, { variables: ["temperature_maximum", "temperature_average", "temperature_minimum"], qty: 9999 });
+  }
+}
 
 /**
  * Main function of deleting devices
@@ -23,11 +41,6 @@ async function sensorDel({ config_dev, context, scope, account, environment }: R
   const group_id = device_info.tags.find((tag) => tag.key === "group_id")?.value;
   const org_id = device_info.tags.find((tag) => tag.key === "organization_id")?.value;
 
-  if (org_id) {
-    const org_dev = await Utils.getDevice(account, org_id);
-    await org_dev.deleteData({ groups: dev_id, qty: 9999 });
-  }
-
   if (group_id) {
     const group_dev = await Utils.getDevice(account, group_id as string);
     await group_dev.deleteData({ groups: dev_id, qty: 9999 });
@@ -36,6 +49,12 @@ async function sensorDel({ config_dev, context, scope, account, environment }: R
   await config_dev.deleteData({ groups: dev_id, qty: 99999 });
 
   await account.devices.delete(dev_id);
+
+  if (org_id) {
+    const org_dev = await Utils.getDevice(account, org_id);
+    await org_dev.deleteData({ groups: dev_id, qty: 9999 });
+    await removeAggregationData(account, org_id);
+  }
   return console.debug("Device deleted!");
 }
 

@@ -27,4 +27,22 @@ async function findDashboardByConnectorID(account: Account, connector_id: string
   return { id: dash?.id };
 }
 
-export { findDashboardByExportID, findDashboardByConnectorID, findAnalysisByExportID };
+/**
+ * Get the Dashboard ID by it's tag export_id value
+ * @param tagValue tag value string
+ * @returns
+ */
+async function GetDashboardByTagID(account: Account, tagValue: string, tagKey: string = "export_id") {
+  const [dash] = await account.dashboards.list({
+    amount: 1,
+    fields: ["id", "tags"],
+    filter: { tags: [{ key: tagKey, value: tagValue }] },
+  });
+  if (!dash) {
+    throw `Dashboard ${tagValue} not found`;
+  }
+
+  return dash?.id;
+}
+
+export { findDashboardByExportID, findDashboardByConnectorID, findAnalysisByExportID, GetDashboardByTagID };

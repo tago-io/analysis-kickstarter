@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2021",
     "module": "CommonJS",
-    "lib": ["ES2021"],
+    "lib": [
+      "ES2021"
+    ],
     "allowJs": true,
     "noImplicitAny": true,
     "resolveJsonModule": true,
@@ -13,7 +15,8 @@
     "removeComments": true,
     "strictNullChecks": true,
     "skipLibCheck": true,
-    "inlineSourceMap": true,
+    "inlineSourceMap": false,
+    "sourceMap": true
   },
   "exclude": [
     "node_modules",
@@ -22,7 +25,7 @@
     "packages/payload-parser-runtime/**/*"
   ],
   "include": [
-    "packages/**/*"
+    "src/**/*"
   ],
   "rules": {
     "no-unused-declaration": true
