@@ -1,11 +1,10 @@
 import { PaperFormat, PDFOptions } from "puppeteer";
 import { v4 as uuidv4 } from "uuid";
 
-import { Account, Services } from "@tago-io/sdk";
-import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
-import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { Resources, Services } from "@tago-io/sdk";
+import { TagoContext, UserInfo } from "@tago-io/sdk/lib/types";
 
-import { footerTemplate, headerTemplate } from "../lib/pdfTemplate";
+import { footerTemplate, headerTemplate } from "./pdf-template";
 
 // ? ==================================== (c) TagoIO ====================================
 // ? What is in this file?
@@ -29,19 +28,20 @@ const options: PDFOptions = {
   printBackground: true,
 };
 
-export default async function createPDF(context: TagoContext, htmlBody: string, users_info_list: Array<UserInfo>, org_name: string, org_id: string) {
+async function createPDF(context: TagoContext, htmlBody: string, users_info_list: Array<UserInfo>, org_name: string, org_id: string) {
   // Start the email service
   const email = new Services({ token: context.token }).email;
 
   // Start the PDF service
-  const pdf = new Services({ token: context.token }).PDF;
+  const pdf = new Services({ token: context.token }).pdf;
 
   options.headerTemplate = headerTemplate.replace("$ORG_NAME$", org_name);
   const base64 = Buffer.from(htmlBody).toString("base64");
 
-  const report = await pdf.generate({ base64, options }).catch((msg) => console.debug(msg));
+  const report = await pdf.generate({ base64, options }).catch((error) => console.debug(error));
 
   // Send the email.
+  // eslint-disable-next-line unicorn/no-array-for-each
   users_info_list.forEach(async (user_info) => {
     if (user_info?.email) {
       await email
@@ -56,16 +56,15 @@ export default async function createPDF(context: TagoContext, htmlBody: string, 
           } as any,
         })
         .then((msg) => console.debug(msg))
-        .catch((msg) => console.debug(msg));
+        .catch((error) => console.debug(error));
     } else {
       console.debug("Error - couldnt find user");
     }
   });
 
-  const account = new Account({ token: context.token });
   const filename = `/reports/${org_id}/sensor_report_${uuidv4()}.pdf`;
 
-  await account.files
+  await Resources.files
     .uploadBase64([
       {
         filename,
@@ -80,3 +79,5 @@ export default async function createPDF(context: TagoContext, htmlBody: string, 
 
   return filename;
 }
+
+export { createPDF };

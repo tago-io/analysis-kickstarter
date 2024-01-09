@@ -1,4 +1,4 @@
-export default `<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700&display=swap" rel="stylesheet" />
+const htmlBody = `<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700&display=swap" rel="stylesheet" />
 
 <head>
     <style>
@@ -181,3 +181,5 @@ export default `<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:w
 </body>
 
 </html>`;
+
+export { htmlBody };
