@@ -1,25 +1,29 @@
-import { Utils } from "@tago-io/sdk";
+import { Resources } from "@tago-io/sdk";
+
 import { RouterConstructorData } from "../../types";
 
 /**
  * Function that remove user from organization
- * @param config_dev Device that contains the configuration
- * @param context Context is a variable sent by the analysis
  * @param scope Scope is a variable sent by the analysis
- * @param account Account instanced class
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  if (!account || !environment || !scope || !config_dev || !context) {
+async function userDel({ scope, environment }: RouterConstructorData) {
+  if (!environment || !scope) {
     throw new Error("Missing parameters");
   }
+
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
+  }
+
   // @ts-expect-error user is not defined on sdk types
-  const user_id  = scope[0].user;
-  if(!user_id) {
+  const user_id = scope[0].user;
+  if (!user_id) {
     throw new Error("User id not found");
   }
   //checking if user exists
-  const user_exists = await account.run.userInfo(user_id);
+  const user_exists = await Resources.run.userInfo(user_id);
   if (!user_exists) {
     throw "User does not exist";
   }
@@ -28,28 +32,24 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   if (!org_id) {
     throw "Organization id not found";
   }
-  const org_dev = await Utils.getDevice(account, org_id);
 
   //collecting org id
   const group_id = user_exists.tags.find((x) => x.key === "group_id")?.value;
 
-  if (!org_dev) {
-    throw "Organization device not found";
-  }
-
   // block the user from deleting himself
   if (environment._user_id === user_id) {
-    // await org_dev.sendData(scope);
     throw "User tried to delete himself";
   }
 
   if (group_id) {
-    const group_dev = await Utils.getDevice(account, group_id);
-    await group_dev.deleteData({ groups: user_id, qty: 9999 });
+    await Resources.devices.deleteDeviceData(group_id, { groups: user_id, qty: 9999 });
   }
-  await config_dev.deleteData({ groups: user_id, qty: 9999 });
-  await org_dev.deleteData({ groups: user_id, qty: 9999 });
+
+  await Resources.devices.deleteDeviceData(config_id, { groups: user_id, qty: 9999 });
+  await Resources.devices.deleteDeviceData(org_id, { groups: user_id, qty: 9999 });
   //deleting user
-  await account.run.userDelete(user_id).then((msg) => console.debug(msg));
+  await Resources.run.userDelete(user_id).then((msg) => console.debug(msg));
   return;
-};
+}
+
+export { userDel };

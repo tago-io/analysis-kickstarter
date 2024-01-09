@@ -1,20 +1,24 @@
-import validation from "../../lib/validation";
-import { parseTagoObject } from "../../lib/data.logic";
-import { RouterConstructorData } from "../../types";
+import { Resources } from "@tago-io/sdk";
 
+import { parseTagoObject } from "../../lib/data.logic";
+import { initializeValidation } from "../../lib/validation";
+import { RouterConstructorData } from "../../types";
 
 /**
  * Main function of registered plan by admin account
- * @param config_dev Device of the configuration
- * @param context Context is a variable sent by the analysis
  * @param scope Scope is a variable sent by the analysis
- * @param account Account instanced class
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  if (!account || !environment || !scope || !config_dev || !context) {
+async function planAdd({ scope, environment }: RouterConstructorData) {
+  if (!scope) {
     throw new Error("Missing parameters");
   }
+
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
+  }
+
   //Collecting data
   const new_plan_name = scope.find((x) => x.variable === "new_plan_name");
   const new_plan_email_limit = scope.find((x) => x.variable === "new_plan_email_limit");
@@ -22,17 +26,16 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const new_plan_notif_limit = scope.find((x) => x.variable === "new_plan_notif_limit");
   const new_plan_data_retention = scope.find((x) => x.variable === "new_plan_data_retention");
 
-  if(!new_plan_name || !new_plan_email_limit || !new_plan_sms_limit || !new_plan_notif_limit || !new_plan_data_retention){
+  if (!new_plan_name || !new_plan_email_limit || !new_plan_sms_limit || !new_plan_notif_limit || !new_plan_data_retention) {
     throw new Error("Missing variables in scope array to create new plan");
   }
 
-  //validation
-  const validate = validation("plan_validation", config_dev);
+  const validate = initializeValidation("plan_validation", config_id);
 
-  const plan_exists = await config_dev.getData({ variables: "plan_data", values: new_plan_name.value });
+  const plan_exists = await Resources.devices.getDeviceData(config_id, { variables: "plan_data", values: new_plan_name.value });
 
   if (plan_exists.length > 0) {
-    throw validate("Plan name already in use!", "danger");
+    throw await validate("Plan name already in use!", "danger").catch((error) => console.log(error));
   }
 
   const to_tago = {
@@ -51,7 +54,9 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
     plan_data_retention: new_plan_data_retention.value,
   };
 
-  await config_dev.sendData(parseTagoObject(to_tago));
+  await Resources.devices.sendDeviceData(config_id, parseTagoObject(to_tago));
 
   return validate("New plan has been successfully created!", "success");
-};
+}
+
+export { planAdd };

@@ -1,49 +1,59 @@
-import { Utils } from "@tago-io/sdk";
+import { Resources } from "@tago-io/sdk";
+import { UserListScope } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
+
 import { RouterConstructorData } from "../../types";
 
 /**
  * Function that edit user information
- * @param config_dev Device of the configuration
- * @param context Context is a variable sent by the analysis
  * @param scope Scope is a variable sent by the analysis
- * @param account Account instanced class
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  if (!account || !environment || !scope || !config_dev || !context) {
+async function userEdit({ scope, environment }: RouterConstructorData & { scope: UserListScope[] }) {
+  if (!environment || !scope) {
     throw new Error("Missing parameters");
   }
-  console.debug("Editting User.");
-  // @ts-expect-error user is not defined on sdk types
+
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
+  }
+
   const user_id = scope[0].user;
 
-  const user_name = scope.find((x) => x.variable === "user_name");
-  const user_phone = scope.find((x) => x.variable === "user_phone");
+  const user_active = scope[0]?.["tags.active"];
+  const user_name = scope[0]?.name as string;
+  const user_phone = scope[0]?.phone as string;
 
-  const user_exists = await account.run.userInfo(user_id);
+  const user_exists = await Resources.run.userInfo(user_id);
   if (!user_exists) {
     throw "User does not exist";
   }
 
   const new_user_info: any = {};
 
+  if (user_active) {
+    await Resources.run.userEdit(user_id, { active: JSON.parse(user_active) });
+  }
+
   if (user_name) {
     //fetching prev data
-    const [user_name_config_dev] = await config_dev.getData({ variables: "user_name", qty: 1, groups: user_id });
+    const [user_name_config_dev] = await Resources.devices.getDeviceData(config_id, { variables: "user_name", qty: 1, groups: user_id });
 
-    await config_dev.editData({ ...user_name_config_dev, value: user_name.value as string });
+    await Resources.devices.editDeviceData(config_id, { ...user_name_config_dev, value: user_name });
 
-    new_user_info.name = user_name.value;
-    await account.run.userEdit(user_id, new_user_info);
+    new_user_info.name = user_name;
+    await Resources.run.userEdit(user_id, new_user_info);
   }
   if (user_phone) {
     //fetching prev data
-    const [user_phone_config_dev] = await config_dev.getData({ variables: "user_phone", qty: 1, groups: user_id });
+    const [user_phone_config_dev] = await Resources.devices.getDeviceData(config_id, { variables: "user_phone", qty: 1, groups: user_id });
 
-    await config_dev.editData({ ...user_phone_config_dev, value: user_phone.value as string });
+    await Resources.devices.editDeviceData(config_id, { ...user_phone_config_dev, value: user_phone });
 
-    new_user_info.phone = user_phone.value;
-    await account.run.userEdit(user_id, new_user_info);
+    new_user_info.phone = user_phone;
+    await Resources.run.userEdit(user_id, new_user_info);
   }
-  return;
-};
+  return console.debug("User edited!");
+}
+
+export { userEdit };

@@ -1,65 +1,60 @@
-import { RouterConstructor } from "@tago-io/sdk/out/modules/Utils/router/router";
-import { fetchDeviceList } from "../../lib/fetchDeviceList";
+import { Resources } from "@tago-io/sdk";
+import { DeviceListScope, RouterConstructor } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
+
+import { fetchDeviceList } from "../../lib/fetch-device-list";
+import { fetchUserList } from "../../lib/fetch-user-list";
 
 /**
  * Main function of deleting organizations
- * @param config_dev Device of the configuration
- * @param context Context is a variable sent by the analysis
  * @param scope Scope is a variable sent by the analysis
- * @param account Account instanced class
- * @param environment Environment Variable is a resource to send variables values to the context of your script
+ * @param environment Environment is a variable sent by the analysis
  */
-async function orgDel({ config_dev, context, scope, account, environment }: RouterConstructor) {
-  console.log("teste123");
-  if (!account || !config_dev) {
-    throw "Missing Router parameter";
-  }
-
+async function orgDel({ scope, environment }: RouterConstructor & { scope: DeviceListScope[] }) {
   if (!scope[0]) {
     return console.error("Not a valid TagoIO Data");
   }
 
-  console.log("teste");
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
+  }
 
   //id of the org device
-  const org_id = (scope[0] as any).device;
-  console.log(org_id);
+  const org_id = scope[0].device;
 
-  const params = await account.devices.paramList(org_id);
+  const params = await Resources.devices.paramList(org_id);
 
   const org_auth_token = params.find((x) => x.key === "org_auth_token");
   //deleting token
-  // const [org_auth_token] = await config_dev.getData({ variables: "org_auth_token", qty: 1, groups: org_id });
+  // const [org_auth_token] = await Resources.devices.getDeviceData(config_id, { variables: "org_auth_token", qty: 1, groups: org_id });
   if (org_auth_token?.value) {
-    await account.ServiceAuthorization.tokenDelete(org_auth_token.value as string);
+    // This should be made because the Acess Management doesn't have permission to delete tokens
+    const service_authorization = new Resources({ token: environment.ACCOUNT_TOKEN }).serviceAuthorization;
+    await service_authorization.tokenDelete(org_auth_token.value);
   }
 
   //delete from settings_device
-  await config_dev.deleteData({ groups: org_id, qty: 99999 });
+  await Resources.devices.deleteDeviceData(config_id, { groups: org_id, qty: 9999 });
 
   //deleting users (organization's user)
-  const user_accounts = await account.run.listUsers({ filter: { tags: [{ key: "organization_id", value: org_id }] } });
+  const user_accounts = await fetchUserList({ tags: [{ key: "organization_id", value: org_id }] });
   if (user_accounts) {
-    user_accounts.forEach((user) => {
-      if (!user.id) {
-        throw "User id not found";
-      }
-      account.run.userDelete(user.id);
-    });
+    for (const user of user_accounts) {
+      await Resources.run.userDelete(user.id);
+    }
   }
 
   //deleting organization's device
 
-  const devices = await fetchDeviceList(account, [{ key: "organization_id", value: org_id }]);
-  console.log(devices);
+  const devices = await fetchDeviceList({ tags: [{ key: "organization_id", value: org_id }] });
 
   if (devices) {
-    devices.forEach((x) => {
-      account.devices.delete(x.id); /*passing the device id*/
-    });
+    for (const x of devices) {
+      await Resources.devices.delete(x.id); /*passing the device id*/
+    }
   }
 
-  return;
+  return console.debug("Organization deleted");
 }
 
 export { orgDel };
