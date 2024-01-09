@@ -1,17 +1,17 @@
-import { Account, Utils } from "@tago-io/sdk";
-import { ActionInfo } from "@tago-io/sdk/out/modules/Account/actions.types";
+import { Resources } from "@tago-io/sdk";
+import { ActionInfo } from "@tago-io/sdk/lib/types";
+
 import { RouterConstructorData } from "../../types";
 
 /**
  * Function to be used externally when need to remove a device from an alert.
- * @param account Account instanced class
  * @param action_id Id of the action that will be removed
  * @param device_id Device id of the action that will be removed
  */
-async function removeDeviceFromAlert(account: Account, action_id: string, device_id: string) {
-  const action_info: Partial<Omit<ActionInfo, "trigger">> & { trigger: any } = (await account.actions.info(action_id)) as any;
+async function removeDeviceFromAlert(action_id: string, device_id: string) {
+  const action_info: Partial<Omit<ActionInfo, "trigger">> & { trigger: any } = (await Resources.actions.info(action_id)) as any;
 
-  if (!account || !action_id || !device_id) {
+  if (!action_id || !device_id) {
     throw new Error("Missing parameters");
   }
 
@@ -28,7 +28,7 @@ async function removeDeviceFromAlert(account: Account, action_id: string, device
   action_info.trigger = action_info.trigger.filter((trigger: any) => trigger.device !== device_id);
 
   // Add a random trigger, so the API can accept it.
-  if (!action_info.trigger.length) {
+  if (action_info.trigger.length === 0) {
     action_info.trigger.push({
       is: "<",
       unlock: true,
@@ -41,19 +41,16 @@ async function removeDeviceFromAlert(account: Account, action_id: string, device
     });
   }
 
-  account.actions.edit(action_id, action_info);
+  await Resources.actions.edit(action_id, action_info);
 }
 
 /**
  * Main delete alert function.
- * @param account Parameters used to create the structure
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  * @param scope Number of devices that will be listed
- * @param config_dev Device of the configuration
- * @param context Context is a variable sent by the analysis
  */
-async function deleteAlert({ account, environment, scope, config_dev, context }: RouterConstructorData) {
-  if (!account || !environment || !scope || !config_dev || !context) {
+async function deleteAlert({ environment, scope }: RouterConstructorData) {
+  if (!environment || !scope) {
     throw new Error("Missing parameters");
   }
 
@@ -62,24 +59,25 @@ async function deleteAlert({ account, environment, scope, config_dev, context }:
     throw new Error("Group not found");
   }
 
-  const device = await Utils.getDevice(account, scope[0].device);
-  device.deleteData({ groups: group });
+  const organization_id = scope[0].device;
 
-  const action_info = await account.actions.info(group);
+  await Resources.devices.deleteDeviceData(organization_id, { groups: group });
+
+  const action_info = await Resources.actions.info(group);
   if (!action_info.trigger) {
     throw new Error("Action not found");
   }
 
-  await account.actions.delete(group);
+  await Resources.actions.delete(group);
   const devices = [...new Set(action_info.trigger.map((x: any) => x.device).filter((x) => x))];
   for (const device_id of devices) {
-    const params = await account.devices.paramList(device_id);
+    const params = await Resources.devices.paramList(device_id);
     const paramToDelete = params.find((x) => x.key.includes(group));
     if (!paramToDelete?.id) {
       throw new Error("Param not found");
     }
     if (paramToDelete) {
-      await account.devices.paramRemove(device_id, paramToDelete?.id);
+      await Resources.devices.paramRemove(device_id, paramToDelete?.id);
     }
   }
 }

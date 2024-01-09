@@ -7,15 +7,10 @@
  *
  * Handles the following actions:
  * - Add, edit and delete an Alert
- *
- * How to setup this analysis
- * Make sure you have the following enviroment variables:
- * - config_token: the value must be a token from a HTTPs device, that stores general information of the application.
- * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
-import { Account, Device, Analysis, Utils } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/out/common/common.types";
-import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { Analysis, Utils } from "@tago-io/sdk";
+import { Data, TagoContext } from "@tago-io/sdk/lib/types";
+
 import { editAlert } from "../services/alerts/edit";
 import { createAlert } from "../services/alerts/register";
 import { deleteAlert } from "../services/alerts/remove";
@@ -35,28 +30,10 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   // Get the environment variables.
   const environment = Utils.envToJson(context.environment);
-  if (!environment.account_token) {
-    return console.debug('Missing "account_token" environment variable');
-  } else if (environment.account_token.length !== 36) {
-    return console.debug('Invalid "account_token" in the environment variable');
-  }
-
-  // Instance the Account class
-  const account = new Account({ token: environment.account_token });
-
-  // Instance the device class using the device from scope variables.
-  // device is always the device used in the widget to trigger the analysis.
-  // const device_id = scope[0].device;
-  // const device_token = await Utils.getTokenByName(account, device_id);
-
-  // Instance of the settings device, that stores global information of the application.
-  const config_dev = new Device({ token: environment.config_token });
 
   const router = new Utils.AnalysisRouter({
-    account,
     environment,
     scope,
-    config_dev,
     context,
   });
 
