@@ -1,0 +1,67 @@
+{
+    "$schema": "https://github.com/tago-io/tagoio-cli/blob/master/docs/schema.json",
+    "analysisPath": "./src/analysis",
+    "buildPath": "./build",
+    "prod": {
+        "analysisList": [
+            {
+                "fileName": "alert-handler.ts",
+                "name": "[TagoIO] - Alert Handler",
+                "id": "61b2f60d26edc70018bda3bf"
+            },
+            {
+                "fileName": "alert-trigger.ts",
+                "name": "[TagoIO] - Alert Trigger",
+                "id": "61b2f610a14c040018c6672f"
+            },
+            {
+                "fileName": "battery-updater.ts",
+                "name": "[TagoIO] - Battery Updater",
+                "id": "62700cd16d0a8000129b2011"
+            },
+            {
+                "fileName": "clear-buckets.ts",
+                "name": "[TagoIO] - Clear Buckets",
+                "id": "6477404717f4110009e5c4dc"
+            },
+            {
+                "fileName": "data-retention.ts",
+                "name": "[TagoIO] - Data Retention Updater",
+                "id": "61c310d6d6df77001acb54a4"
+            },
+            {
+                "fileName": "handler.ts",
+                "name": "[TagoIO] - Handler",
+                "id": "61b2f617e3f46d00191d997c"
+            },
+            {
+                "fileName": "monthly-usage-reset.ts",
+                "name": "[TagoIO] - Monthly Usage Reset",
+                "id": "61b2f614561da800197abed4"
+            },
+            {
+                "fileName": "send-report.ts",
+                "name": "[TagoIO] - Send Report ",
+                "id": "61b2f6199e269200196d4344"
+            },
+            {
+                "fileName": "status-updater.ts",
+                "name": "[TagoIO] - Status Updater",
+                "id": "61b2f6124edcc00019b44f0b"
+            },
+            {
+                "fileName": "uplink-handler.ts",
+                "name": "[TagoIO] - Uplink Handler",
+                "id": "61c1c1346aec8f001844ea3b"
+            },
+            {
+                "fileName": "user-sign-up.ts",
+                "name": "[TagoIO] - User Signup",
+                "id": "61b327b8e3f46d00192153b7"
+            }
+        ],
+        "id": "61b2f46e561da800197a9c43",
+        "profileName": "Kickstarter Application [TEMPLATE]",
+        "email": "mateus.silva@tago.io"
+    }
+}
