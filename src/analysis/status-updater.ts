@@ -8,39 +8,36 @@
  *
  * Status Updater will run when:
  * - When the scheduled action (Status Updater Trigger) triggers this script. (Default 1 minute)
- *
- * How to setup this analysis
- * Make sure you have the following enviroment variables:
- * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
-import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/out/common/common.types";
-import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
-import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import async from "async";
 import dayjs from "dayjs";
-import async, { queue } from "async";
+
+import { Analysis, Resources, Utils } from "@tago-io/sdk";
+import { DeviceInfo, DeviceListItem, TagoContext } from "@tago-io/sdk/lib/types";
+
 import { parseTagoObject } from "../lib/data.logic";
-import { fetchDeviceList } from "../lib/fetchDeviceList";
-import { checkinTrigger } from "../services/alerts/checkinAlerts";
+import { fetchDeviceList } from "../lib/fetch-device-list";
+import { checkInTrigger } from "../services/alerts/check-in-alerts";
 
 /**
  * Function that update the organization's plan usage
- * @param account Account instance class
  * @param org Organization device
  */
-async function resolveOrg(account: Account, org: DeviceListItem) {
+async function resolveOrg(org: DeviceListItem) {
   let total_qty = 0;
   let active_qty = 0;
-  let inactivy_qty = 0;
+  let inactive_qty = 0;
   const org_id = org.id;
 
-  const sensorList = await fetchDeviceList(account, [
-    { key: "organization_id", value: org.id },
-    { key: "device_type", value: "device" },
-  ]);
+  const sensorList = await fetchDeviceList({
+    tags: [
+      { key: "organization_id", value: org.id },
+      { key: "device_type", value: "device" },
+    ],
+  });
 
-  sensorList.forEach((sensor) => {
+  for (const sensor of sensorList) {
     const last_input = dayjs(sensor.last_input);
     const now = dayjs();
     const diff_time = now.diff(last_input, "hours");
@@ -48,13 +45,11 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
     if (diff_time < 24) {
       active_qty++;
     } else {
-      inactivy_qty++;
+      inactive_qty++;
     }
-  });
+  }
 
-  const org_dev = await Utils.getDevice(account, org_id);
-
-  const org_params = await account.devices.paramList(org_id);
+  const org_params = await Resources.devices.paramList(org_id);
 
   const plan_email_limit_usage = org_params.find((x) => x.key === "plan_email_limit_usage")?.value || "0";
   const plan_sms_limit_usage = org_params.find((x) => x.key === "plan_sms_limit_usage")?.value || "0";
@@ -62,7 +57,7 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
   const plan_data_retention = org_params.find((x) => x.key === "plan_data_retention")?.value || "0";
 
   const to_tago = {
-    device_qty: { value: total_qty, metadata: { total_qty: total_qty, active_qty: active_qty, inactive_qty: inactivy_qty } },
+    device_qty: { value: total_qty, metadata: { total_qty: total_qty, active_qty: active_qty, inactive_qty: inactive_qty } },
     plan_usage: {
       value: plan_email_limit_usage,
       metadata: {
@@ -73,8 +68,8 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
       },
     },
   };
-  //CONSIDER INSTEAD OF DELETEING VARIABLES, PLACE A DATA RETENTION RULE AND SHOW THEM IN A HISTORIC GRAPIHC ON THE WIDGET HEADER BUTTON
-  const old_data = await org_dev.getData({
+  //CONSIDER INSTEAD OF DELETING VARIABLES, PLACE A DATA RETENTION RULE AND SHOW THEM IN A HISTORIC GRAPHIC ON THE WIDGET HEADER BUTTON
+  const old_data = await Resources.devices.getDeviceData(org_id, {
     variables: ["device_qty", "plan_usage"],
     query: "last_item",
   });
@@ -83,11 +78,11 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
   const new_data = parseTagoObject(to_tago);
 
   if (!device_data || !plan_data) {
-    await org_dev.sendData(new_data);
+    await Resources.devices.sendDeviceData(org_id, new_data);
     return;
   }
 
-  await org_dev.editData([
+  await Resources.devices.editDeviceData(org_id, [
     { ...device_data, ...new_data[0] },
     { ...plan_data, ...new_data[1] },
   ]);
@@ -95,57 +90,53 @@ async function resolveOrg(account: Account, org: DeviceListItem) {
 
 /**
  * Function that update the sensor's params (last checkin and battery)
- * @param account Account instance class
- * @param device Sensor device
+ * @param sensor_info - Sensor information
  */
-const checkLocation = async (account: Account, device: Device) => {
-  const [location_data] = await device.getData({ variables: "location", qty: 1 });
+const checkLocation = async (sensor_info: DeviceInfo) => {
+  const [location_data] = await Resources.devices.getDeviceData(sensor_info.id, { variables: "location", qty: 1 });
 
   if (!location_data) {
     return "No location sent by device";
   }
 
-  const device_info = await device.info();
-  const site_id = device_info.tags.find((x) => x.key === "site_id")?.value;
+  const site_id = sensor_info.tags.find((x) => x.key === "site_id")?.value;
 
   if (!site_id) {
     return "No site addressed to the sensor";
   }
 
-  const site_dev = await Utils.getDevice(account, site_id);
-  const [dev_id] = await site_dev.getData({ variables: "dev_id", groups: device_info.id, qty: 1 });
+  const [dev_id] = await Resources.devices.getDeviceData(site_id, { variables: "dev_id", groups: sensor_info.id, qty: 1 });
   if (
     (dev_id?.location as any).coordinates[0] === (location_data.location as any).coordinates[0] &&
     (dev_id?.location as any).coordinates[1] === (location_data.location as any).coordinates[1]
   ) {
     return "Same position";
   }
-  await site_dev.editData({ ...dev_id, location: location_data.location });
+  await Resources.devices.editDeviceData(site_id, { ...dev_id, location: location_data.location });
 };
 
 /**
  * Function that update the sensor's params (last checkin and battery)
  * @param context
- * @param account
  * @param org_id
  * @param device_id
  */
-async function resolveDevice(context: TagoContext, account: Account, org_id: string, device_id: string) {
+async function resolveDevice(context: TagoContext, org_id: string, device_id: string) {
   console.debug("Resolving device", device_id);
-  const device = await Utils.getDevice(account, device_id).catch((msg) => console.debug(msg));
+  const sensor_info = await Resources.devices.info(device_id);
 
-  if (!device) {
+  if (!sensor_info) {
     return Promise.reject("Device not found");
   }
 
-  checkLocation(account, device).catch((msg) => console.debug(msg));
+  checkLocation(sensor_info).catch((error) => console.debug(error));
 
-  const device_info = await account.devices.info(device_id);
+  const device_info = await Resources.devices.info(device_id);
   if (!device_info.last_input) {
     return Promise.reject("Device not found");
   }
 
-  const checkin_date = dayjs(device_info.last_input as Date);
+  const checkin_date = dayjs(device_info.last_input);
 
   if (!checkin_date) {
     return "no data";
@@ -157,47 +148,40 @@ async function resolveDevice(context: TagoContext, account: Account, org_id: str
     diff_hours = "-";
   } //checking for NaN
 
-  const device_params = await account.devices.paramList(device_id);
+  const device_params = await Resources.devices.paramList(device_id);
   const dev_lastcheckin_param = device_params.find((param) => param.key === "dev_lastcheckin") || { key: "dev_lastcheckin", value: String(diff_hours), sent: false };
 
-  await checkinTrigger(account, context, org_id, { device_id, last_input: device_info.last_input });
+  await checkInTrigger(context, org_id, { device_id, last_input: device_info.last_input });
 
-  await account.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: (diff_hours as number) >= 24 ? true : false });
+  await Resources.devices.paramSet(device_id, { ...dev_lastcheckin_param, value: String(diff_hours), sent: (diff_hours as number) >= 24 ? true : false });
 
   console.debug("Device resolved", device_id);
 }
 
-async function handler(context: TagoContext, scope: Data[]): Promise<void> {
+async function handler(context: TagoContext): Promise<void> {
   console.debug("Running Analysis");
 
   const environment = Utils.envToJson(context.environment);
   if (!environment) {
     return;
-  } else if (!environment.config_token) {
-    throw "Missing config_token environment var";
-  } else if (!environment.account_token) {
-    throw "Missing account_token environment var";
   }
 
-  const config_dev = new Device({ token: environment.config_token });
-  const account = new Account({ token: environment.account_token });
+  const orgList = await fetchDeviceList({ tags: [{ key: "device_type", value: "organization" }] });
 
-  const orgList = await fetchDeviceList(account, [{ key: "device_type", value: "organization" }]);
+  orgList.map((org) => resolveOrg(org));
 
-  orgList.map((org) => resolveOrg(account, org));
-
-  const sensorList = await fetchDeviceList(account, [{ key: "device_type", value: "device" }]);
+  const sensorList = await fetchDeviceList({ tags: [{ key: "device_type", value: "device" }] });
 
   const processSensorQueue = async.queue(async function (sensorItem: DeviceListItem, callback) {
     const organization_id = sensorItem?.tags?.find((tag) => tag.key === "organization_id")?.value as string;
     const device_id = sensorItem?.tags?.find((tag) => tag.key === "device_id")?.value as string;
-    await resolveDevice(context, account, organization_id, device_id).catch((msg) => console.debug(`${msg} - ${sensorItem.id}`));
+    await resolveDevice(context, organization_id, device_id).catch((error) => console.debug(`${error} - ${sensorItem.id}`));
     callback();
   }, 1);
 
   //populating the queue
   for (const sensorItem of sensorList) {
-    processSensorQueue.push(sensorItem);
+    void processSensorQueue.push(sensorItem);
   }
 
   // console.debug("Queue populated", processSensorQueue.length());
@@ -205,16 +189,18 @@ async function handler(context: TagoContext, scope: Data[]): Promise<void> {
   await processSensorQueue.drain();
 
   //throwing possible errors generated while running the queue
-
   processSensorQueue.error((error) => {
     console.debug(error);
     process.exit();
   });
 }
 
-async function startAnalysis(context: TagoContext, scope: any) {
+/**
+ * Start the analysis
+ */
+async function startAnalysis(context: TagoContext) {
   try {
-    await handler(context, scope);
+    await handler(context);
     console.debug("Analysis finished");
   } catch (error) {
     console.debug(error);

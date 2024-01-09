@@ -14,11 +14,10 @@
  * Create an Action of type Resource whenever an user is registered in the application to run this analysis.
  */
 
-import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
-import { UserInfo } from "@tago-io/sdk/out/modules/Account/run.types";
-import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
-import { parseTagoObject } from "../lib/data.logic";
+import { Analysis, Resources, Utils } from "@tago-io/sdk";
+import { TagoContext, UserInfo } from "@tago-io/sdk/lib/types";
 
+import { parseTagoObject } from "../lib/data.logic";
 import { orgAdd } from "../services/organization/register";
 
 /**
@@ -38,14 +37,10 @@ async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<v
     return;
   }
 
-  if (!environment.config_token) {
-    throw "Missing config_token environment var";
-  } else if (!environment.account_token) {
-    throw "Missing account_token environment var";
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
   }
-
-  const config_dev = new Device({ token: environment.config_token });
-  const account = new Account({ token: environment.account_token });
 
   const organization_scope: any = parseTagoObject({
     new_org_name: scope[0].name,
@@ -56,9 +51,9 @@ async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<v
   let org_id: string | void = "";
 
   try {
-    org_id = await orgAdd({ config_dev, context, scope: organization_scope, account, environment });
+    org_id = await orgAdd({ context, scope: organization_scope, environment });
   } catch (error) {
-    await account.run.userDelete(scope[0].id);
+    await Resources.run.userDelete(scope[0].id);
     return console.debug(error);
   }
 
@@ -66,15 +61,14 @@ async function startAnalysis(context: TagoContext, scope: UserInfo[]): Promise<v
     throw "Error creating organization";
   }
 
-  await account.run.userEdit(scope[0].id, {
+  await Resources.run.userEdit(scope[0].id, {
     tags: [
       { key: "organization_id", value: org_id },
       { key: "access", value: "orgadmin" },
     ],
   });
 
-  const device = await Utils.getDevice(account, org_id);
-  device.sendData({ variable: "user_id", value: scope[0].id, metadata: { label: `${scope[0].name} (${scope[0].email})` } });
+  await Resources.devices.sendDeviceData(org_id, { variable: "user_id", value: scope[0].id, metadata: { label: `${scope[0].name} (${scope[0].email})` } });
 }
 
 if (!process.env.T_TEST) {
