@@ -1,21 +1,40 @@
-import { Utils } from "@tago-io/sdk";
+import { Resources } from "@tago-io/sdk";
+import { DeviceListScope } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
+
+import { fetchDeviceList } from "../../lib/fetch-device-list";
 import { RouterConstructorDevice } from "../../types";
 
+/**
+ * Function that remove aggregation data from the organization
+ * @param org_id Organization id that devices will be created
+ */
+async function removeAggregationData(org_id: string) {
+  const soil_devices = await fetchDeviceList({
+    tags: [
+      { key: "device_type", value: "device" },
+      { key: "sensor", value: "soil" },
+      { key: "organization_id", value: org_id },
+    ],
+  });
+
+  if (soil_devices.length === 0) {
+    await Resources.devices.deleteDeviceData(org_id, { variables: ["temperature_maximum", "temperature_average", "temperature_minimum"], qty: 9999 });
+  }
+}
 
 /**
  * Main function of deleting devices
- * @param config_dev Device of the configuration
- * @param context Context is a variable sent by the analysis
  * @param scope Scope is a variable sent by the analysis
- * @param account Account instanced class
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function sensorDel({ config_dev, context, scope, account, environment }: RouterConstructorDevice) {
-  if (!account || !environment || !scope || !config_dev || !context) {
-    throw new Error("Missing parameters");
+async function sensorDel({ scope, environment }: RouterConstructorDevice & { scope: DeviceListScope[] }) {
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
   }
-  const dev_id = (scope[0] as any).device;
-  const device_info = await (await Utils.getDevice(account, dev_id)).info();
+
+  const dev_id = scope[0].device;
+  const device_info = await Resources.devices.info(dev_id);
   if (!device_info?.tags) {
     throw new Error("Device not found");
   }
@@ -23,19 +42,18 @@ async function sensorDel({ config_dev, context, scope, account, environment }: R
   const group_id = device_info.tags.find((tag) => tag.key === "group_id")?.value;
   const org_id = device_info.tags.find((tag) => tag.key === "organization_id")?.value;
 
-  if (org_id) {
-    const org_dev = await Utils.getDevice(account, org_id);
-    await org_dev.deleteData({ groups: dev_id, qty: 9999 });
-  }
-
   if (group_id) {
-    const group_dev = await Utils.getDevice(account, group_id as string);
-    await group_dev.deleteData({ groups: dev_id, qty: 9999 });
+    await Resources.devices.deleteDeviceData(group_id, { groups: dev_id, qty: 9999 });
   }
 
-  await config_dev.deleteData({ groups: dev_id, qty: 99999 });
+  await Resources.devices.deleteDeviceData(config_id, { groups: dev_id, qty: 9999 });
 
-  await account.devices.delete(dev_id);
+  await Resources.devices.delete(dev_id);
+
+  if (org_id) {
+    await Resources.devices.deleteDeviceData(org_id, { groups: dev_id, qty: 9999 });
+    await removeAggregationData(org_id);
+  }
   return console.debug("Device deleted!");
 }
 

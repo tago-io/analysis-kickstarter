@@ -1,23 +1,23 @@
-import { Device, Account, Utils } from "@tago-io/sdk";
-import { DeviceCreateInfo } from "@tago-io/sdk/out/modules/Account/devices.types";
-import validation from "../../lib/validation";
-import { DeviceCreated, RouterConstructorData } from "../../types";
+import { Device, Resources } from "@tago-io/sdk";
+import { DeviceCreateInfo } from "@tago-io/sdk/lib/types";
+
 import { parseTagoObject } from "../../lib/data.logic";
-import { findDashboardByExportID } from "../../lib/findResource";
-import { fetchDeviceList } from "../../lib/fetchDeviceList";
+import { deviceNameExists } from "../../lib/device-name-exists";
+import { fetchDeviceList } from "../../lib/fetch-device-list";
+import { getDashboardByTagID } from "../../lib/find-resource";
+import { initializeValidation } from "../../lib/validation";
+import { DeviceCreated, RouterConstructorData } from "../../types";
 
 interface installDeviceParam {
-  account: Account;
   new_group_name: string;
   org_id: string;
 }
 /**
  * Function that create groups
- * @param account Account instanced class
  * @param new_group_name Group name that will be created
  * @param org_id Organization id that the group will be created
  */
-async function installDevice({ account, new_group_name, org_id }: installDeviceParam) {
+async function installDevice({ new_group_name, org_id }: installDeviceParam) {
   //structuring data
   const device_data: DeviceCreateInfo = {
     name: new_group_name,
@@ -27,10 +27,10 @@ async function installDevice({ account, new_group_name, org_id }: installDeviceP
   };
 
   //creating new device
-  const new_group = await account.devices.create(device_data);
+  const new_group = await Resources.devices.create(device_data);
 
   //inserting device id -> so we can reference this later
-  await account.devices.edit(new_group.device_id, {
+  await Resources.devices.edit(new_group.device_id, {
     tags: [
       { key: "group_id", value: new_group.device_id },
       { key: "organization_id", value: org_id },
@@ -45,32 +45,30 @@ async function installDevice({ account, new_group_name, org_id }: installDeviceP
   return { ...new_group, device: new_org_dev } as DeviceCreated;
 }
 
-
 /**
  * Main function of creating groups
- * @param config_dev Device of the configuration
  * @param context Context is a variable sent by the analysis
  * @param scope Number of devices that will be listed
- * @param account Parameters used to create the structure
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function groupAdd({ config_dev, context, scope, account, environment }: RouterConstructorData) {
-  if (!account || !environment || !scope || !config_dev || !context) {
+async function groupAdd({ context, scope, environment }: RouterConstructorData) {
+  if (!environment || !scope || !context) {
     throw new Error("Missing parameters");
   }
-  const org_id = scope[0].device as string;
-  const org_dev = await Utils.getDevice(account, org_id);
+  const org_id = scope[0].device;
 
-  const validate = validation("group_validation", org_dev);
-  validate("#VAL.REGISTERING#", "warning");
+  const validate = initializeValidation("group_validation", org_id);
+  await validate("#VAL.REGISTERING#", "warning").catch((error) => console.error(error));
 
-  const group_qty = await fetchDeviceList(account, [
-    { key: "device_type", value: "group" },
-    { key: "organization_id", value: org_id },
-  ]);
+  const group_qty = await fetchDeviceList({
+    tags: [
+      { key: "device_type", value: "group" },
+      { key: "organization_id", value: org_id },
+    ],
+  });
 
   if (group_qty.length >= 2) {
-    return validate("#VAL.LIMIT_OF_2_GROUPS_REACHED#", "danger");
+    return await validate("#VAL.LIMIT_OF_2_GROUPS_REACHED#", "danger").catch((error) => console.error(error));
   }
 
   //Collecting data
@@ -83,16 +81,28 @@ async function groupAdd({ config_dev, context, scope, account, environment }: Ro
   }
 
   if ((new_group_name.value as string).length < 3) {
-    throw validate("#VAL.NAME_FIELD_IS_SMALLER_THAN_3_CHAR#", "danger");
+    throw await validate("#VAL.NAME_FIELD_IS_SMALLER_THAN_3_CHAR#", "danger").catch((error) => console.error(error));
   }
 
-  const [group_exists] = await org_dev.getData({ variables: "group_name", values: new_group_name.value, qty: 1 }); /** */
+  const [group_exists] = await Resources.devices.getDeviceData(org_id, { variables: "group_name", values: new_group_name.value, qty: 1 }); /** */
+
+  const is_device_name_exists = await deviceNameExists({
+    name: new_group_name.value as string,
+    tags: [
+      { key: "device_type", value: "group" },
+      { key: "organization_id", value: org_id },
+    ],
+  });
+
+  if (is_device_name_exists) {
+    throw await validate("#VAL.GROUP_ALREADY_EXISTS#", "danger").catch((error) => console.error(error));
+  }
 
   if (group_exists) {
-    throw validate("#VAL.GROUP_ALREADY_EXISTS#", "danger");
+    throw await validate("#VAL.GROUP_ALREADY_EXISTS#", "danger").catch((error) => console.error(error));
   }
 
-  const { device_id: group_id, device: group_dev } = await installDevice({ account, new_group_name: new_group_name.value as string, org_id });
+  const { device_id: group_id, device: group_dev } = await installDevice({ new_group_name: new_group_name.value as string, org_id });
 
   const group_data = {
     group_id: {
@@ -103,17 +113,17 @@ async function groupAdd({ config_dev, context, scope, account, environment }: Ro
     },
   };
 
-  const dash_organization_id = await findDashboardByExportID(account, "dash_groupview");
+  const dash_organization_id = await getDashboardByTagID("dash_groupview");
 
-  await account.devices.paramSet(group_id, {
+  await Resources.devices.paramSet(group_id, {
     key: "dashboard_url",
     value: `https://admin.tago.io/dashboards/info/${dash_organization_id}?group_dev=${group_id}&org_dev=${org_id}`,
     sent: false,
   });
-  await account.devices.paramSet(group_id, { key: "group_address", value: (new_group_address?.value as string) || "N/A", sent: false });
+  await Resources.devices.paramSet(group_id, { key: "group_address", value: (new_group_address?.value as string) || "N/A", sent: false });
 
   //send to organization device
-  await org_dev.sendData(parseTagoObject(group_data, group_id));
+  await Resources.devices.sendDeviceData(org_id, parseTagoObject(group_data, group_id));
 
   //uploading a default layer
   await group_dev.sendData({

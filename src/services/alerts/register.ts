@@ -1,25 +1,25 @@
-import { Account, Utils } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/out/common/common.types";
-import { DeviceListItem } from "@tago-io/sdk/out/modules/Account/devices.types";
-import { DataToSend } from "@tago-io/sdk/out/modules/Device/device.types";
+import { Resources } from "@tago-io/sdk";
+import { Data, DataToSend, DeviceListItem } from "@tago-io/sdk/lib/types";
+
 import { parseTagoObject } from "../../lib/data.logic";
-import { fetchDeviceList } from "../../lib/fetchDeviceList";
-import { findAnalysisByExportID } from "../../lib/findResource";
+import { fetchDeviceList } from "../../lib/fetch-device-list";
+import { getDashboardByTagID } from "../../lib/find-resource";
 import { RouterConstructorData } from "../../types";
-import { checkinAlertSet } from "./checkinAlerts";
-import { geofenceAlertCreate } from "./geofenceAlert";
+import { checkInAlertSet } from "./check-in-alerts";
+import { geofenceAlertCreate } from "./geofence-alert";
 
 /**
  * The function returns the group that was configured in the alert
- * @param account Account instanced class
  * @param group_id Id of the group
  * @param groupKey Tag key that will be used in the device list
  */
-async function getGroupDevices(account: Account, group_id: string, groupKey: string = "group_id") {
-  const list: DeviceListItem[] = await fetchDeviceList(account, [
-    { key: groupKey, value: group_id },
-    { key: "device_type", value: "device" }, //?
-  ]);
+async function getGroupDevices(group_id: string, groupKey: string = "group_id") {
+  const list: DeviceListItem[] = await fetchDeviceList({
+    tags: [
+      { key: groupKey, value: group_id },
+      { key: "device_type", value: "device" }, //?
+    ],
+  });
 
   return list.map((x) => x.id);
 }
@@ -72,8 +72,8 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
       { key: "organization_id", value: structure.org_id },
       { key: "device", value: structure.device },
       { key: "name", value: structure.name || "" },
-      { key: "send_to", value: structure.send_to.replace(/ /g, "") },
-      { key: "action_type", value: structure.type.replace(/ /g, "") },
+      { key: "send_to", value: structure.send_to.replaceAll(" ", "") },
+      { key: "action_type", value: structure.type.replaceAll(" ", "") },
     ],
     type: "condition",
     trigger: [],
@@ -83,8 +83,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
     },
   };
 
-  const value_type = Number.isNaN(Number(structure.trigger_value)) ? "string" : "number";
-  const variables = (structure.variable as string).split(",");
+  const variables = structure.variable.split(",");
   for (const device_id of device_ids) {
     for (const variable of variables) {
       action_structure.trigger.push({
@@ -131,7 +130,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
   }
 
   // Add a random trigger, so the API can accept it.
-  if (!action_structure.trigger.length) {
+  if (action_structure.trigger.length === 0) {
     action_structure.trigger.push({
       is: "=",
       value: String(structure.trigger_value),
@@ -148,18 +147,15 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
 
 /**
  * Main function of creating alerts
- * @param account Parameters used to create the structure
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  * @param scope Number of devices that will be listed
- * @param config_dev Device of the organization
- * @param context Context is a variable sent by the analysis
  */
-async function createAlert({ account, environment, scope, config_dev: org_dev, context }: RouterConstructorData) {
-  if (!account || !environment || !scope || !org_dev || !context) {
+async function createAlert({ environment, scope }: RouterConstructorData) {
+  if (!environment || !scope) {
     throw new Error("Missing parameters");
   }
-  const devToStoreAlert = await Utils.getDevice(account, scope[0].device);
-  devToStoreAlert.sendData({ variable: "action_validation", value: "#VAL.CREATING_ALERT#", metadata: { type: "warning" } });
+  const organization_id = scope[0].device;
+  await Resources.devices.sendDeviceData(organization_id, { variable: "action_validation", value: "#VAL.CREATING_ALERT#", metadata: { type: "warning" } });
 
   // Get the fields from the Input widget.
   const action_group = scope.find((x) => x.variable === "action_group_list");
@@ -212,24 +208,23 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     throw 'Missing "action_value" in the data scope.';
   }
 
-  const organization_id = scope[0].device;
   let device_list: string[] = [];
 
   if (action_dev_list?.metadata?.sentValues) {
     device_list = action_dev_list?.metadata?.sentValues.map((x) => x.value as string);
   } else if (action_group) {
     const group_id = action_group.value as string;
-    const group_exist = await account.devices.info(group_id);
+    const group_exist = await Resources.devices.info(group_id);
     if (!group_exist) {
       throw `Group ${action_group?.metadata?.label} couldn't be found.`;
     }
-    device_list = await getGroupDevices(account, group_id, groupKey);
+    device_list = await getGroupDevices(group_id, groupKey);
   }
 
-  const script_id = await findAnalysisByExportID(account, "alertTrigger");
+  const script_id = await getDashboardByTagID("alertTrigger");
 
-  if (!action_sendto?.value){
-   throw "Missing action_sendto";
+  if (!action_sendto?.value) {
+    throw "Missing action_sendto";
   }
 
   // Create the action structure.
@@ -250,9 +245,9 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
   };
   const action_structure = generateActionStructure(structure, device_list);
 
-  const { action: action_id } = await account.actions.create(action_structure).catch((e) => {
-    devToStoreAlert.sendData({ variable: "action_validation", value: e, metadata: { type: "danger" } });
-    throw e;
+  const { action: action_id } = await Resources.actions.create(action_structure).catch(async (error) => {
+    await Resources.devices.sendDeviceData(organization_id, { variable: "action_validation", value: error, metadata: { type: "danger" } });
+    throw error;
   });
   // Store the data in the device, so we can see and edit it in the Dynamic Table.
   // It's very important that the group is the action ID, so we can use it to edit/delete later.
@@ -277,12 +272,12 @@ async function createAlert({ account, environment, scope, config_dev: org_dev, c
     data_to_tago = data_to_tago.map((x) => ({ ...x, variable: x.variable.replace("action_list", "action_group") }));
   }
 
-  devToStoreAlert.sendData(data_to_tago);
-  devToStoreAlert.sendData({ variable: "action_validation", value: "#ALC.CREATE_SUCCESS#", metadata: { type: "success" } });
+  await Resources.devices.sendDeviceData(organization_id, data_to_tago);
+  await Resources.devices.sendDeviceData(organization_id, { variable: "action_validation", value: "#ALC.CREATE_SUCCESS#", metadata: { type: "success" } });
   if (structure.variable === "geofence") {
-    await geofenceAlertCreate(account, devToStoreAlert, action_id, structure);
+    await geofenceAlertCreate(organization_id, action_id, structure);
   } else if (structure.variable === "checkin") {
-    await checkinAlertSet(account, action_id, structure.trigger_value as number, device_list);
+    await checkInAlertSet(action_id, structure.trigger_value as number, device_list);
   }
 }
 

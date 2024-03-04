@@ -1,13 +1,14 @@
-import { Device, Account, Utils } from "@tago-io/sdk";
-import { DeviceCreateInfo } from "@tago-io/sdk/out/modules/Account/devices.types";
-import validation from "../../lib/validation";
-import { DeviceCreated, RouterConstructorData } from "../../types";
+import { Device, Resources } from "@tago-io/sdk";
+import { DeviceCreateInfo } from "@tago-io/sdk/lib/types";
+
+import { createDashURL } from "../../lib/create-dash-url";
 import { parseTagoObject } from "../../lib/data.logic";
-import { findDashboardByConnectorID } from "../../lib/findResource";
-import { fetchDeviceList } from "../../lib/fetchDeviceList";
+import { fetchDeviceList } from "../../lib/fetch-device-list";
+import { getDashboardByTagID } from "../../lib/find-resource";
+import { initializeValidation } from "../../lib/validation";
+import { DeviceCreated, RouterConstructorData } from "../../types";
 
 interface installDeviceParam {
-  account: Account;
   new_dev_name: string;
   org_id: string;
   network_id: string;
@@ -19,7 +20,6 @@ interface installDeviceParam {
 
 /**
  * Function that create devices
- * @param account Account instanced class
  * @param new_dev_name Name of the device
  * @param org_id Organization id that devices will be created
  * @param network_id Network id that devices will be created
@@ -28,7 +28,7 @@ interface installDeviceParam {
  * @param type Sensor type of the device
  * @param group_id Group id that devices will be created
  */
-async function installDevice({ account, new_dev_name, org_id, network_id, connector, new_device_eui, type, group_id }: installDeviceParam) {
+async function installDevice({ new_dev_name, org_id, network_id, connector, new_device_eui, type, group_id }: installDeviceParam) {
   //data retention set to 1 month
   const device_data: DeviceCreateInfo = {
     name: new_dev_name,
@@ -41,7 +41,7 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
   };
 
   //creating new device
-  const new_dev = await account.devices.create(device_data);
+  const new_dev = await Resources.devices.create(device_data);
 
   const new_tags = {
     tags: [
@@ -57,7 +57,7 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
     new_tags.tags.push({ key: "group_id", value: group_id });
   }
 
-  await account.devices.edit(new_dev.device_id, new_tags);
+  await Resources.devices.edit(new_dev.device_id, new_tags);
 
   const new_org_dev = new Device({ token: new_dev.token });
 
@@ -66,26 +66,26 @@ async function installDevice({ account, new_dev_name, org_id, network_id, connec
 
 /**
  * Main function of creating devices
- * @param config_dev Device of the configuration
  * @param context Context is a variable sent by the analysis
  * @param scope Number of devices that will be listed
- * @param account Parameters used to create the structure
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function sensorAdd({ config_dev, context, scope, account, environment }: RouterConstructorData) {
-  if (!account || !environment || !scope || !config_dev || !context) {
+async function sensorAdd({ context, scope, environment }: RouterConstructorData) {
+  if (!environment || !scope || !context) {
     throw new Error("Missing parameters");
   }
-  const org_id = scope[0].device as string;
-  const org_dev = await Utils.getDevice(account, org_id);
 
-  const validate = validation("dev_validation", org_dev);
-  validate("#VAL.REGISTERING#", "warning");
+  const org_id = scope[0].device;
 
-  const sensor_qty = await fetchDeviceList(account, [
-    { key: "device_type", value: "device" },
-    { key: "organization_id", value: org_id },
-  ]);
+  const validate = initializeValidation("dev_validation", org_id);
+  await validate("#VAL.REGISTERING#", "warning").catch((error) => console.error(error));
+
+  const sensor_qty = await fetchDeviceList({
+    tags: [
+      { key: "device_type", value: "device" },
+      { key: "organization_id", value: org_id },
+    ],
+  });
 
   if (sensor_qty.length >= 5) {
     return validate("#VAL.LIMIT_OF_5_DEVICES_REACHED#", "danger");
@@ -109,9 +109,9 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
   }
 
   //If choosing for the simulator, we generate a random EUI
-  const dev_eui = (new_dev_eui?.value as string)?.toUpperCase() || String(Math.ceil(Math.random() * 10000000));
+  const dev_eui = (new_dev_eui?.value as string)?.toUpperCase() || String(Math.ceil(Math.random() * 10_000_000));
 
-  const dev_exists = await fetchDeviceList(account, [{ key: "dev_eui", value: dev_eui }]);
+  const dev_exists = await fetchDeviceList({ tags: [{ key: "dev_eui", value: dev_eui }] });
 
   if (dev_exists.length > 0) {
     console.debug("Sensor EUI already in use.");
@@ -122,21 +122,15 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
 
   const connector_id = new_dev_type.value as string;
 
-  let dash_id = "";
-  try {
-    ({ id: dash_id } = await findDashboardByConnectorID(account, connector_id));
-  } catch (error) {
-    return validate("#VAL.ERROR__NO_DASHBOARD_FOUND#", "danger");
-  }
+  const dash_id = await getDashboardByTagID("hum_dashboard");
 
-  const dash_info = await account.dashboards.info(dash_id);
+  const dash_info = await Resources.dashboards.info(dash_id);
   const type = dash_info.blueprint_devices.find((bp) => bp.conditions[0].key === "sensor");
   if (!type) {
     return validate("#VAL.ERROR__DASHBOARD_IS_MISSING_THE_BLUEPRINT_DEVICE_SENSOR#", "danger");
   }
 
-  const { device_id, device } = await installDevice({
-    account,
+  const { device_id } = await installDevice({
     new_dev_name: new_dev_name.value as string,
     org_id,
     network_id: new_dev_network.value as string,
@@ -146,13 +140,15 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
     group_id,
   });
 
+  const url = createDashURL(dash_id, { org_dev: org_id, sensor: device_id });
+
   const dev_data = parseTagoObject(
     {
       dev_id: {
         value: device_id,
         metadata: {
           label: new_dev_name.value,
-          url: `https://admin.tago.io/dashboards/info/${dash_info.id}?org_dev=${org_id}&sensor=${device_id}`,
+          url,
           status: "unknwon",
           type: dash_info.type,
         },
@@ -161,23 +157,22 @@ async function sensorAdd({ config_dev, context, scope, account, environment }: R
     device_id
   );
 
-  await account.devices.paramSet(device_id, {
+  await Resources.devices.paramSet(device_id, {
     key: "dashboard_url",
-    value: `https://admin.tago.io/dashboards/info/${dash_info.id}?org_dev=${org_id}&sensor=${device_id}`,
+    value: url,
     sent: false,
   });
 
-  await account.devices.paramSet(device_id, { key: "dev_eui", value: dev_eui, sent: false });
-  await account.devices.paramSet(device_id, { key: "dev_group", value: (new_dev_group?.metadata?.label as string) || "", sent: false });
-  await account.devices.paramSet(device_id, { key: "dev_lastcheckin", value: "-", sent: false });
-  await account.devices.paramSet(device_id, { key: "dev_battery", value: "-", sent: false });
+  await Resources.devices.paramSet(device_id, { key: "dev_eui", value: dev_eui, sent: false });
+  await Resources.devices.paramSet(device_id, { key: "dev_group", value: (new_dev_group?.metadata?.label as string) || "", sent: false });
+  await Resources.devices.paramSet(device_id, { key: "dev_lastcheckin", value: "-", sent: false });
+  await Resources.devices.paramSet(device_id, { key: "dev_battery", value: "-", sent: false });
 
   const add_to_dropdown_list = parseTagoObject({ asset_list: new_dev_name.value }, device_id);
-  await org_dev.sendData(dev_data.concat(add_to_dropdown_list));
+  await Resources.devices.sendDeviceData(org_id, dev_data.concat(add_to_dropdown_list));
 
   if (group_id) {
-    const group_dev = await Utils.getDevice(account, new_dev_group.value as string);
-    await group_dev.sendData(dev_data);
+    await Resources.devices.sendDeviceData(new_dev_group.value as string, dev_data);
   }
 
   return validate("#VAL.DEVICE_CREATED_SUCCESSFULLY#", "success");

@@ -10,41 +10,30 @@
  * - Add, edit and delete a Sensor.
  * - Add, edit and delete a User.
  * - Add, edit and delete scheduled reports.
- *
- * How to setup this analysis
- * Make sure you have the following enviroment variables:
- * - config_token: the value must be a token from a HTTPs device, that stores general information of the application.
- * - account_token: the value must be a token from your profile. See how to generate account-token at: https://help.tago.io/portal/en/kb/articles/495-account-token.
  */
 
-import { Utils, Account, Device, Analysis } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/out/common/common.types";
-import { TagoContext } from "@tago-io/sdk/out/modules/Analysis/analysis.types";
+import { Analysis, Utils } from "@tago-io/sdk";
+import { Data, TagoContext } from "@tago-io/sdk/lib/types";
 
+import { sensorEdit } from "../services/device/edit";
+import { sensorPlacement } from "../services/device/place-sensor";
+import { sensorAdd } from "../services/device/register";
+import { sensorDel } from "../services/device/remove";
+import { groupEdit } from "../services/group/edit";
+import { groupAdd } from "../services/group/register";
+import { groupDel } from "../services/group/remove";
 import { orgEdit } from "../services/organization/edit";
 import { orgAdd } from "../services/organization/register";
 import { orgDel } from "../services/organization/remove";
-
-import { sensorAdd } from "../services/device/register";
-import { sensorDel } from "../services/device/remove";
-import { sensorEdit } from "../services/device/edit";
-import sensorPlacement from "../services/device/placeSensor";
-
-import { groupAdd } from "../services/group/register";
-import { groupDel } from "../services/group/remove";
-import { groupEdit } from "../services/group/edit";
-
-import userAdd from "../services/user/register";
-import userDel from "../services/user/remove";
-import userEdit from "../services/user/edit";
-
-import report from "../services/reports/create";
-import reportDel from "../services/reports/remove";
-import reportEdit from "../services/reports/edit";
-
-import planAdd from "../services/plan/register";
-import planDel from "../services/plan/remove";
-import planEdit from "../services/plan/edit";
+import { planEdit } from "../services/plan/edit";
+import { planAdd } from "../services/plan/register";
+import { planDel } from "../services/plan/remove";
+import { reportAdd } from "../services/reports/create";
+import { reportEdit } from "../services/reports/edit";
+import { reportDel } from "../services/reports/remove";
+import { userEdit } from "../services/user/edit";
+import { userAdd } from "../services/user/register";
+import { userDel } from "../services/user/remove";
 
 // import { createAlert } from "../services/alerts/register";
 // import { deleteAlert } from "../services/alerts/remove";
@@ -56,42 +45,31 @@ import planEdit from "../services/plan/edit";
  * @param scope The scope of the analysis, containing the data sent to the analysis.
  */
 async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void> {
-  console.debug("SCOPE:", JSON.stringify(scope, null, 4));
-  console.debug("CONTEXT:", JSON.stringify(context, null, 4));
-  console.debug("Running Analysis");
+  context.log("Running Analysis");
+  console.log("Scope:", scope);
 
   // Convert the environment variables from [{ key, value }] to { key: value };
   const environment = Utils.envToJson(context.environment);
-  if (!environment) {
-    return;
+  console.log("Environment:", environment);
+
+  // Check if all tokens needed for the application were provided.
+  if (!environment.config_id) {
+    throw "Missing config_id environment var";
+  } else if (environment.config_id.length !== 24) {
+    return context.log('Invalid "config_id" in the environment variable');
   }
 
-  if (!environment.config_token) {
-    throw "Missing config_token environment var";
-  } else if (!environment.account_token) {
-    throw "Missing account_token environment var";
-  }
-
-  // Just a little hack to set the device_list_button_id that come sfrom the scope
+  // Just a little hack to set the device_list_button_id that come from the scope
   // and set it to the environment variables instead. It makes easier to use router function later.
   environment._input_id = (scope as any).find((x: any) => x.device_list_button_id)?.device_list_button_id;
 
-  const config_dev = new Device({ token: environment.config_token });
-  const account = new Account({ token: environment.account_token });
-
-  // Instance the router classs of Utils.router
-  const router = new Utils.AnalysisRouter({
-    scope,
-    context,
-    environment,
-    account,
-    config_dev,
-  });
+  // Instance the router class of Utils.router
+  const router = new Utils.AnalysisRouter({ scope, context, environment });
 
   // Organization Routing
   router.register(orgAdd).whenInputFormID("create-org");
   router.register(orgDel).whenDeviceListIdentifier("delete-org");
-  router.register(orgEdit).whenWidgetExec("edit");
+  router.register(orgEdit).whenCustomBtnID("edit-org");
 
   // Sensor routing
   router.register(sensorAdd).whenInputFormID("create-dev");
@@ -104,12 +82,12 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   // group routing
   router.register(groupAdd).whenInputFormID("create-group");
   router.register(groupDel).whenDeviceListIdentifier("delete-group");
-  router.register(groupEdit).whenDeviceListIdentifier("edit-group");
+  router.register(groupEdit).whenCustomBtnID("edit-group");
 
   // User routing
   router.register(userAdd).whenInputFormID("create-user");
   router.register(userDel).whenUserListIdentifier("delete-user");
-  router.register(userEdit).whenUserListIdentifier("edit-user");
+  router.register(userEdit).whenCustomBtnID("edit-user");
 
   //Plan routing
   router.register(planAdd).whenInputFormID("create-plan");
@@ -122,12 +100,13 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
   // router.register(deleteAlert).whenVariableLike("action_").whenWidgetExec("delete");
 
   // Report routing
-  router.register(report).whenInputFormID("create-report");
+  router.register(reportAdd).whenInputFormID("create-report");
   router.register(reportDel).whenVariableLike("report_").whenWidgetExec("delete");
   router.register(reportEdit).whenVariableLike("report_").whenWidgetExec("edit");
 
   await router.exec();
 }
+
 if (!process.env.T_TEST) {
   Analysis.use(startAnalysis, { token: process.env.T_ANALYSIS_TOKEN });
 }

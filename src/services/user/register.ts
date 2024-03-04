@@ -1,7 +1,9 @@
-import { Device, Types, Utils } from "@tago-io/sdk";
-import validation from "../../lib/validation";
-import registerUser from "../../lib/registerUser";
+import { Resources } from "@tago-io/sdk";
+import { TagsObj } from "@tago-io/sdk/lib/types";
+
 import { parseTagoObject } from "../../lib/data.logic";
+import { inviteUser } from "../../lib/register-user";
+import { initializeValidation } from "../../lib/validation";
 import { RouterConstructorData } from "../../types";
 
 interface UserData {
@@ -9,7 +11,7 @@ interface UserData {
   email: string;
   phone?: string | number | boolean | void;
   timezone: string;
-  tags?: Types.Common.TagsObj[];
+  tags?: TagsObj[];
   password?: string;
   id?: string;
 }
@@ -28,29 +30,32 @@ function phoneNumberHandler(phone_number: string) {
     phone_number = phone_number.slice(3);
   }
   //removing special characters
-  resulted_phone_number = phone_number.replace(/[^\w\s]/gi, "");
+  resulted_phone_number = phone_number.replaceAll(/[^\w\s]/gi, "");
 
   resulted_phone_number = `${country_code}${resulted_phone_number}`;
 
   return resulted_phone_number;
 }
 
-//registered by admin account.
+//registered by admin Resources.
 
 /**
  * Function that register new user
- * @param config_dev Device that contains the configuration
  * @param context Context is a variable sent by the analysis
  * @param scope Scope is a variable sent by the analysis
- * @param account Account instanced class
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-export default async ({ config_dev, context, scope, account, environment }: RouterConstructorData) => {
-  if (!account || !environment || !scope || !config_dev || !context) {
+async function userAdd({ context, scope, environment }: RouterConstructorData) {
+  if (!environment || !scope || !context) {
     throw new Error("Missing parameters");
   }
+
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
+  }
+
   const org_id = scope[0].device;
-  const org_dev = await Utils.getDevice(account, org_id);
 
   //Collecting data
   const new_user_name = scope.find((x) => x.variable === "new_user_name" || x.variable === "new_orgadmin_name");
@@ -59,36 +64,37 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   const new_user_phone = scope.find((x) => x.variable === "new_user_phone" || x.variable === "new_orgadmin_phone");
 
   //validation
-  const validate = validation("user_validation", org_dev);
+  const validate = initializeValidation("user_validation", org_id);
 
   if (!new_user_name?.value) {
-    throw validate("Name field is empty", "danger");
+    throw await validate("Name field is empty", "danger").catch((error) => console.log(error));
   }
   if ((new_user_name.value as string).length < 3) {
-    throw validate("Name field is smaller than 3 character", "danger");
+    throw await validate("Name field is smaller than 3 character", "danger").catch((error) => console.log(error));
   }
   if (!new_user_email?.value) {
-    throw validate("Email field is empty", "danger");
+    throw await validate("Email field is empty", "danger").catch((error) => console.log(error));
   }
   if (!new_user_access?.value) {
-    throw validate("Access field is empty", "danger");
+    throw await validate("Access field is empty", "danger").catch((error) => console.log(error));
   }
   if (new_user_phone?.value) {
     new_user_phone.value = phoneNumberHandler(new_user_phone.value as string);
   }
 
-  const [user_exists] = await account.run.listUsers({
+  const [user_exists] = await Resources.run.listUsers({
     page: 1,
     amount: 1,
     filter: { email: new_user_email.value as string },
   });
 
   if (user_exists) {
-    throw validate("#VAL.USER_ALREADY_EXISTS#", "danger");
+    throw await validate("#VAL.USER_ALREADY_EXISTS#", "danger").catch((error) => console.log(error));
   }
 
   //creating user
-  const { timezone } = await account.info();
+  const resources_with_account_token = new Resources({ token: environment.ACCOUNT_TOKEN });
+  const { timezone } = await resources_with_account_token.account.info();
 
   const new_user_data: UserData = {
     name: new_user_name.value as string,
@@ -104,17 +110,21 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
         key: "access",
         value: new_user_access.value as string,
       },
+      {
+        key: "active",
+        value: "true",
+      },
     ],
   };
 
-  const { url: run_url } = await account.run.info();
+  const { url: run_url } = await resources_with_account_token.run.info();
 
   //registering user
-  const new_user_id = await registerUser(context, account, new_user_data, run_url).catch((msg) => {
-    throw validate(msg, "danger");
+  const new_user_id = await inviteUser(resources_with_account_token, context, new_user_data, run_url).catch(async (error) => {
+    throw await validate(error, "danger").catch((error) => console.log(error));
   });
 
-  let user_access_label: string | undefined= "";
+  let user_access_label: string | undefined = "";
 
   if (new_user_access.value === "admin") {
     user_access_label = "Administrator";
@@ -128,7 +138,7 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
 
   let user_data = parseTagoObject(
     {
-      user_id: { value: new_user_id as string, metadata: { label: `${new_user_name.value} (${new_user_email.value})` } },
+      user_id: { value: new_user_id, metadata: { label: `${new_user_name.value} (${new_user_email.value})` } },
       user_name: new_user_name.value as string,
       user_email: (new_user_email.value as string).trim(),
       user_phone: (new_user_phone?.value as string) || "",
@@ -138,14 +148,16 @@ export default async ({ config_dev, context, scope, account, environment }: Rout
   );
 
   if (new_user_access.value === "admin") {
-    user_data = user_data.concat([{ variable: "user_admin", value: new_user_id as string, group: new_user_id, metadata: { label: new_user_name.value as string } }]);
+    user_data = user_data.concat([{ variable: "user_admin", value: new_user_id, group: new_user_id, metadata: { label: new_user_name.value as string } }]);
   }
 
   //sending to org device
-  org_dev.sendData(user_data);
+  await Resources.devices.sendDeviceData(org_id, user_data);
 
   //sending to admin device (settings_device)
-  config_dev.sendData(user_data);
+  await Resources.devices.sendDeviceData(config_id, user_data);
 
   return validate("#VAL.USER_SUCCESSFULLY_INVITED_AN_EMAIL_WILL_BE_SENT_WITH_THE_CREDENTIALS_TO_THE_NEW_USER#", "success");
-};
+}
+
+export { userAdd };

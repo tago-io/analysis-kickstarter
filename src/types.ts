@@ -3,9 +3,9 @@
 // * This file is global types, it's used to remove "implicitly has an 'any' type" errors.
 // ? ====================================================================================
 
-import { Types, Device, Account } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/out/common/common.types";
-import { RouterConstructor } from "@tago-io/sdk/out/modules/Utils/router/router";
+import { Device } from "@tago-io/sdk";
+import { RouterConstructor } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
+import { Data } from "@tago-io/sdk/lib/types";
 
 interface DeviceCreated {
   bucket_id: string;
