@@ -49,6 +49,7 @@
     "uuid": "9.0.1"
   },
   "dependencies": {
+    "@tago-io/cli": "1.6.0",
     "@tago-io/sdk": "11.0.7",
     "async": "3.2.4",
     "axios": "1.4.0",
