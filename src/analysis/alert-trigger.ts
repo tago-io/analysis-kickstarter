@@ -5,7 +5,7 @@
  * The analysis runs every time a device uplink matches an alert and must send an email, sms or notification.
  */
 import { Analysis, Resources, Services, Utils } from "@tago-io/sdk";
-import { Data, DeviceInfo, TagoContext, UserInfo } from "@tago-io/sdk/lib/types";
+import { Conditionals, Data, DeviceInfo, TagoContext, UserInfo } from "@tago-io/sdk/lib/types";
 
 import { checkAndChargeUsage } from "../services/plan/check-and-charge-usage";
 
@@ -16,6 +16,17 @@ interface IMessageDetail {
   value: string;
   variable: string;
 }
+
+type triggerType = {
+  device: string;
+  variable: string;
+  is: Conditionals;
+  value: string;
+  second_value?: string;
+  value_type: "string" | "number" | "boolean" | "*";
+  unlock?: boolean;
+};
+
 /**
  * Notification messages to be sent
  * @param type Type of message to be sent
@@ -31,10 +42,12 @@ async function notificationMessages(type: string[], context: TagoContext, org_id
 
     if (has_service_limit) {
       for (const user of users_info) {
-        void Resources.run.notificationCreate(user.id, {
-          message,
-          title: "Alert Trigger",
-        });
+        void Resources.run
+          .notificationCreate(user.id, {
+            message,
+            title: "Alert Trigger",
+          })
+          .then(() => console.debug("Notification sent"));
       }
     } else {
       await Resources.devices.sendDeviceData(org_id, {
@@ -62,16 +75,18 @@ async function emailMessages(type: string[], context: TagoContext, org_id: strin
     if (has_service_limit) {
       const email = new Services({ token: context.token }).email;
 
-      void email.send({
-        to: users_info.map((x) => x.email).join(","),
-        template: {
-          name: "email_alert",
-          params: {
-            device_name: device_info.name,
-            alert_message: message,
+      void email
+        .send({
+          to: users_info.map((x) => x.email).join(","),
+          template: {
+            name: "email_alert",
+            params: {
+              device_name: device_info.name,
+              alert_message: message,
+            },
           },
-        },
-      });
+        })
+        .then((msg) => console.debug(msg));
     } else {
       await Resources.devices.sendDeviceData(org_id, {
         variable: "plan_status",
@@ -215,9 +230,12 @@ async function analysisAlert(context: TagoContext, scope: Data[]): Promise<void>
   }
   const [message_var] = await Resources.devices.getDeviceData(org_id, { variables: ["action_list_message", "action_group_message"], groups: alert_id, qty: 1 });
 
-  // @ts-ignore
-  const trigger_variable = scope.find((x) => x.variable === (action_info?.trigger[0] as any)?.variable) ?? null;
-  if (!trigger_variable?.value) {
+  // Get the triggered variable
+  const trigger = action_info.trigger as unknown as triggerType[];
+  const trigger_variables = trigger?.filter((x) => !x.unlock).map((x) => x.variable);
+  const trigger_variable = scope.find((x) => trigger_variables.includes(x.variable));
+
+  if (!trigger_variable) {
     throw "trigger_variable.value not found";
   }
 
