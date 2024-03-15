@@ -3,7 +3,7 @@ import { Data, DataToSend, DeviceListItem } from "@tago-io/sdk/lib/types";
 
 import { parseTagoObject } from "../../lib/data.logic";
 import { fetchDeviceList } from "../../lib/fetch-device-list";
-import { getDashboardByTagID } from "../../lib/find-resource";
+import { getAnalysisByTagID } from "../../lib/find-resource";
 import { RouterConstructorData } from "../../types";
 import { checkInAlertSet } from "./check-in-alerts";
 import { geofenceAlertCreate } from "./geofence-alert";
@@ -154,6 +154,7 @@ async function createAlert({ environment, scope }: RouterConstructorData) {
   if (!environment || !scope) {
     throw new Error("Missing parameters");
   }
+  const resources = new Resources({ token: environment.ACCOUNT_TOKEN });
   const organization_id = scope[0].device;
   await Resources.devices.sendDeviceData(organization_id, { variable: "action_validation", value: "#VAL.CREATING_ALERT#", metadata: { type: "warning" } });
 
@@ -221,7 +222,7 @@ async function createAlert({ environment, scope }: RouterConstructorData) {
     device_list = await getGroupDevices(group_id, groupKey);
   }
 
-  const script_id = await getDashboardByTagID("alertTrigger");
+  const script_id = await getAnalysisByTagID(resources, "alertTrigger");
 
   if (!action_sendto?.value) {
     throw "Missing action_sendto";
