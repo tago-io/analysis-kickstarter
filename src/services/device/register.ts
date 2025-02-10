@@ -4,7 +4,7 @@ import { DeviceCreateInfo } from "@tago-io/sdk/lib/types";
 import { createDashURL } from "../../lib/create-dash-url";
 import { parseTagoObject } from "../../lib/data.logic";
 import { fetchDeviceList } from "../../lib/fetch-device-list";
-import { getDashboardByTagID } from "../../lib/find-resource";
+import { getDashboardByConnectorID } from "../../lib/find-resource";
 import { initializeValidation } from "../../lib/validation";
 import { DeviceCreated, RouterConstructorData } from "../../types";
 
@@ -122,7 +122,12 @@ async function sensorAdd({ context, scope, environment }: RouterConstructorData)
 
   const connector_id = new_dev_type.value as string;
 
-  const dash_id = await getDashboardByTagID("hum_dashboard");
+  let dash_id = "";
+  try {
+    ({ id: dash_id } = await getDashboardByConnectorID(connector_id));
+  } catch (error) {
+    return validate("#VAL.ERROR__NO_DASHBOARD_FOUND#", "danger");
+  }
 
   const dash_info = await Resources.dashboards.info(dash_id);
   const type = dash_info.blueprint_devices.find((bp) => bp.conditions[0].key === "sensor");
