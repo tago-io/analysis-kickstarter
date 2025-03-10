@@ -23,6 +23,7 @@ You can quickly install the application in your account by using the Import tool
 * Copy the Token.
 * Access the Import tool by [clicking here](https://import-application.tago.run/dashboards/info/63e698562df1360009606d71?anonymousToken=00000000-5bbc-b03b-667d-7a002e56664b).
 * Keep all entities selected, paste your token in the account token field.
+* Add you account token to a new secret named: ACCOUNT_TOKEN, it is needed to allow Analysis to work.
 * Press Import Application and you should receive notification in your account when it's done.
 * To access the application using TagoRUN. Make sure to create a user using your TagoIO Developer account, adding the tag key **access** with the tag value **admin**.
 
