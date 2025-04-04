@@ -23,7 +23,6 @@ function insidePolygon(point: [number, number], geofence: Data["metadata"]) {
     const yi = geofence[i][1];
     const xj = geofence[j][0];
     const yj = geofence[j][1];
-    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
     const intersect = yi > y != yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
     if (intersect) {
       inside = !inside;

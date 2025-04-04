@@ -102,7 +102,7 @@ async function reportEdit({ context, scope, environment }: RouterConstructorData
 
   const user_info = await Resources.run.userInfo(environment._user_id);
   const timezone = user_info?.timezone || "America/Sao_Paulo";
-  const action_model = await actionModel(action_object, timezone);
+  const action_model = await actionModel(action_object, timezone, environment);
 
   await Resources.actions
     .edit(action_registered.id, action_model)

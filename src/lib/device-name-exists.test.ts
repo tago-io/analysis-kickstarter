@@ -1,8 +1,8 @@
 import { deviceNameExists } from "./device-name-exists";
 
-jest.mock("../lib/fetch-device-list", () => {
+vitest.mock("../lib/fetch-device-list", () => {
   return {
-    fetchDeviceList: jest
+    fetchDeviceList: vitest
       .fn()
       .mockImplementationOnce(() => Promise.resolve([]))
       .mockImplementationOnce(() => Promise.resolve([{ id: "orgOne" }]))

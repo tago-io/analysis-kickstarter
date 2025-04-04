@@ -9,7 +9,7 @@
  * - When setting a scheduled report, an action will trigger this script.
  */
 
-import dayjs from "dayjs";
+import { DateTime } from "luxon";
 
 import { Analysis, Resources } from "@tago-io/sdk";
 import { ActionInfo, TagoContext, UserInfo } from "@tago-io/sdk/lib/types";
@@ -93,7 +93,7 @@ async function resolveReport(context: TagoContext, action_info: ActionInfo, org_
       status: status_history,
       battery: `${(battery?.value as string) ?? "N/A"}${battery?.unit ?? ""}`,
       rssi: (rssi?.value as string) ?? "N/A",
-      date: dayjs(String(sensor_info.last_input)).format("YYYY-MM-DD HH:mm:ss"),
+      date: DateTime.fromISO(String(sensor_info.last_input)).toFormat("yyyy-MM-dd HH:mm:ss"),
     });
   }
 

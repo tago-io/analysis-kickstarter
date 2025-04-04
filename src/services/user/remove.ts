@@ -1,4 +1,5 @@
 import { Resources } from "@tago-io/sdk";
+import { UserListScope } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
 
 import { RouterConstructorData } from "../../types";
 
@@ -7,7 +8,7 @@ import { RouterConstructorData } from "../../types";
  * @param scope Scope is a variable sent by the analysis
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function userDel({ scope, environment }: RouterConstructorData) {
+async function userDel({ scope, environment }: RouterConstructorData & { scope: UserListScope[] }) {
   if (!environment || !scope) {
     throw new Error("Missing parameters");
   }
@@ -17,7 +18,6 @@ async function userDel({ scope, environment }: RouterConstructorData) {
     throw "[Error] No config device ID: config_id.";
   }
 
-  // @ts-expect-error user is not defined on sdk types
   const user_id = scope[0].user;
   if (!user_id) {
     throw new Error("User id not found");

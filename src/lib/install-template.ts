@@ -22,7 +22,7 @@ async function InstallTemplate(templates: string[], replaceObj: any) {
   }
 
   for (const dashboard of dash_list) {
-    let dash_info = (await Resources.dashboards.info(dashboard)) as Writeable<DashboardInfo> & { setup: {} };
+    let dash_info = (await Resources.dashboards.info(dashboard)) as Writeable<DashboardInfo> & { setup: Record<string, unknown> };
     const hidden_var = dash_info.tags?.find((x) => x.key === "hidden");
     dash_info.visible = !hidden_var;
     dash_info = replaceJSON(dash_info, replaceObj);
