@@ -19,7 +19,6 @@ async function undoDeviceChanges({ scope, deviceInfo }: { scope: DeviceListScope
   for (const key of Object.keys(deviceScope)) {
     if (key === "name") {
       const oldName = deviceScope?.old?.[key] as string;
-      // eslint-disable-next-line no-undef
       await Resources.devices.edit(deviceInfo.id, { name: oldName });
     } else if (key.includes("param.")) {
       const paramKey = key.replace("param.", "");

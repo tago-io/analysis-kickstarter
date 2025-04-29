@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { DateTime } from "luxon";
 
 import { Resources } from "@tago-io/sdk";
 import { TagoContext } from "@tago-io/sdk/lib/types";
@@ -18,7 +18,7 @@ interface ICheckInParam {
  */
 async function checkInTrigger(context: TagoContext, org_id: string, params: ICheckInParam) {
   const { last_input, device_id } = params;
-  const checkin_date = dayjs(last_input);
+  const checkin_date = last_input ? DateTime.fromJSDate(last_input) : null;
   if (!checkin_date) {
     return "no data";
   }
@@ -28,7 +28,7 @@ async function checkInTrigger(context: TagoContext, org_id: string, params: IChe
   const actionList = paramList.filter((param) => param.key.startsWith("checkin"));
   for (const param of actionList) {
     const [interval] = param.value.split(",");
-    const diff_hours: string | number = dayjs().diff(checkin_date, "hours");
+    const diff_hours: number = DateTime.now().diff(checkin_date, "hours").hours;
 
     if (diff_hours >= Number(interval) && !param.sent) {
       const action_id = param.key.replace("checkin", "");

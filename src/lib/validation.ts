@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 
 import { Resources } from "@tago-io/sdk";
 
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 type validation_type = "success" | "danger" | "warning" | string;
 interface IValidateOptions {
   show_markdown?: boolean;

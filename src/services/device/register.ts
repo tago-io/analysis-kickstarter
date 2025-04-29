@@ -125,7 +125,7 @@ async function sensorAdd({ context, scope, environment }: RouterConstructorData)
   let dash_id = "";
   try {
     ({ id: dash_id } = await getDashboardByConnectorID(connector_id));
-  } catch (error) {
+  } catch (_error) {
     return validate("#VAL.ERROR__NO_DASHBOARD_FOUND#", "danger");
   }
 
