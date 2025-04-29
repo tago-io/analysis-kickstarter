@@ -1,6 +1,7 @@
 import { Resources } from "@tago-io/sdk";
 import { ActionQuery, Data } from "@tago-io/sdk/lib/types";
 
+import { getAnalysisByTagID } from "../../lib/find-resource";
 import { sendNotificationFeedback } from "../../lib/send-notification";
 import { RouterConstructorData } from "../../types";
 import { checkInAlertSet } from "./check-in-alerts";
@@ -82,6 +83,8 @@ async function editAlert({ environment, scope }: RouterConstructorData) {
     throw "Organization device not found";
   }
 
+  console.debug("Scope: ", scope);
+  const resources = new Resources({ token: environment.ACCOUNT_TOKEN });
   const organization_id = scope[0].device;
   if (!organization_id) {
     throw "Organization device not found";
@@ -104,6 +107,12 @@ async function editAlert({ environment, scope }: RouterConstructorData) {
   const action_type = scope.find((x) => ["action_list_type", "action_group_type"].includes(x.variable));
   const action_sendto = scope.find((x) => ["action_list_sendto", "action_group_sendto"].includes(x.variable));
 
+  const action_info = await Resources.actions.info(action_id);
+
+  if (!action_info || !action_info.tags) {
+    throw "Action not found";
+  }
+
   if (!action_variable) {
     [action_variable] = await Resources.devices.getDeviceData(organization_id, { variables: ["action_list_variable", "action_group_variable"], qty: 1, groups: action_id });
   }
@@ -120,7 +129,6 @@ async function editAlert({ environment, scope }: RouterConstructorData) {
   } else if (action_group) {
     device_list = await getGroupDevices(action_group.value as string);
   } else {
-    const action_info = await Resources.actions.info(action_id);
     if (!action_info.tags) {
       throw "Action tags not found";
     }
@@ -132,8 +140,23 @@ async function editAlert({ environment, scope }: RouterConstructorData) {
     }
   }
 
+  console.log("action_variable value:", action_variable.value);
+
   const structure: ActionStructureParams = action_variable.metadata as any;
   structure.variable = action_variable.value as string;
+
+  console.debug("action_type: ", action_type);
+
+  if (!action_type) {
+    // get it from the action_info tags
+    console.debug("Action Info: ", "hi");
+    structure.type = action_info.tags.find((tag) => tag.key === "action_type")?.value as string;
+  }
+
+  if (!action_sendto) {
+    // get it from the action_info tags
+    structure.send_to = action_info.tags.find((tag) => tag.key === "send_to")?.value as string;
+  }
 
   if (action_condition) {
     structure.condition = action_condition.value as string;
@@ -160,6 +183,18 @@ async function editAlert({ environment, scope }: RouterConstructorData) {
     void sendNotificationFeedback({ environment, message: "Invalid between condition, you must enter the value such as: 2;15" });
     throw `[Error] Invalid between value: ${action_value.value}`;
   }
+
+  if (!action_devices) {
+    structure.device = action_info.tags.find((tag) => tag.key === "device")?.value as string;
+  }
+  structure.org_id = organization_id;
+
+  const script_id = await getAnalysisByTagID(resources, "alertTrigger");
+
+  structure.script = script_id;
+
+  console.debug("Action structure: ", structure);
+  console.debug("devie list", device_list);
 
   const action_structure = generateActionStructure(structure, device_list);
 

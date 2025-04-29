@@ -74,7 +74,7 @@ async function deleteAlert({ environment, scope }: RouterConstructorData) {
     const params = await Resources.devices.paramList(device_id);
     const paramToDelete = params.find((x) => x.key.includes(group));
     if (!paramToDelete?.id) {
-      throw new Error("Param not found");
+      return new Error("Param not found");
     }
     if (paramToDelete) {
       await Resources.devices.paramRemove(device_id, paramToDelete?.id);

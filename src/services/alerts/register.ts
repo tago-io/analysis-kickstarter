@@ -83,13 +83,18 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
     },
   };
 
+  let value_type = "number";
+  if (structure.variable === "door" || structure.variable === "compressor") {
+    value_type = "string";
+  }
+
   const variables = structure.variable.split(",");
   for (const device_id of device_ids) {
     for (const variable of variables) {
       action_structure.trigger.push({
         is: structure.condition,
         value: String(structure.trigger_value),
-        value_type: "number",
+        value_type: value_type,
         variable,
         device: device_id,
         second_value: structure.trigger_value2,
@@ -100,7 +105,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
           is: reverseCondition(structure.condition),
           unlock: true,
           value: String(structure.trigger_value),
-          value_type: "number",
+          value_type: value_type,
           variable,
           device: device_id,
           second_value: structure.trigger_value2 || "",
@@ -110,7 +115,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
           is: "<",
           unlock: true,
           value: String(structure.trigger_value),
-          value_type: "number",
+          value_type: value_type,
           variable,
           device: device_id,
           second_value: "",
@@ -120,7 +125,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
           is: ">",
           unlock: true,
           value: String(structure.trigger_value2),
-          value_type: "number",
+          value_type: value_type,
           variable,
           device: device_id,
           second_value: "",
@@ -134,7 +139,7 @@ function generateActionStructure(structure: ActionStructureParams, device_ids: s
     action_structure.trigger.push({
       is: "=",
       value: String(structure.trigger_value),
-      value_type: "number",
+      value_type: value_type,
       variable: "not_used_and_doesnt_exist",
       tag_key: "tag_not_used_and_doesnt_exist",
       tag_value: "temp_value",
@@ -165,7 +170,7 @@ async function createAlert({ environment, scope }: RouterConstructorData) {
 
   const action_variable = scope.find((x) => x.variable === "action_variable");
   let action_condition: Data | DataToSend | undefined = scope.find((x) => x.variable === "action_condition");
-  let action_value = scope.find((x) => x.variable === "action_value");
+  let action_value = scope.find((x) => x.variable === "action_value")?.value as string;
   const action_value2 = scope.find((x) => x.variable === "action_value2");
 
   const action_type = scope.find((x) => x.variable === "action_type");
@@ -184,15 +189,14 @@ async function createAlert({ environment, scope }: RouterConstructorData) {
 
   const action_value_unit = scope.find((x) => x.variable === "action_value_unit");
 
-  if (action_value_unit?.value === "F" && action_value?.value) {
-    action_value.value = (((Number(action_value?.value) - 32) * 5) / 9).toFixed(2);
+  if (action_value_unit?.value === "F" && action_value) {
+    action_value = (((Number(action_value) - 32) * 5) / 9).toFixed(2) || "==";
     if (action_value2?.value) {
       action_value2.value = (((Number(action_value2?.value) - 32) * 5) / 9).toFixed(2);
     }
   }
 
   if (!action_condition?.value) {
-    action_value = scope.find((x) => x.variable === "action_binary_value");
     action_condition = { device: scope[0].device, time: new Date(), variable: "action_condition", value: "=" };
   }
 
@@ -205,7 +209,7 @@ async function createAlert({ environment, scope }: RouterConstructorData) {
     throw 'Missing "action_type" in the data scope.';
   } else if (!action_message || !action_message.value) {
     throw 'Missing "action_message" in the data scope.';
-  } else if (!action_value || !action_value.value) {
+  } else if (!action_value) {
     throw 'Missing "action_value" in the data scope.';
   }
 
@@ -234,7 +238,7 @@ async function createAlert({ environment, scope }: RouterConstructorData) {
     group_id: action_group?.value as string,
     script: script_id,
 
-    trigger_value: action_value?.value as string,
+    trigger_value: action_value,
     trigger_value2: action_value2?.value as string,
 
     send_to: action_sendto.value as string,
@@ -256,7 +260,7 @@ async function createAlert({ environment, scope }: RouterConstructorData) {
     {
       action_list_variable: { value: action_variable.value, metadata: structure },
       action_list_condition: action_condition.value,
-      action_list_value: !action_value2 ? action_value.value : `${action_value.value},${action_value2.value}`,
+      action_list_value: !action_value2 ? action_value : `${action_value},${action_value2.value}`,
       action_list_type: { value: action_type.value, metadata: action_type.metadata },
       action_list_sendto: { value: action_sendto.value, metadata: action_sendto.metadata },
       action_list_message: action_message.value,
