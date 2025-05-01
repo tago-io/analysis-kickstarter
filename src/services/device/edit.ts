@@ -2,7 +2,6 @@ import { Resources } from "@tago-io/sdk";
 
 import { parseTagoObject } from "../../lib/data.logic";
 import { getDashboardByConnectorID } from "../../lib/find-resource";
-import { RouterConstructorDevice } from "../../types";
 import { sensor_status_false } from "./device-info";
 
 /**

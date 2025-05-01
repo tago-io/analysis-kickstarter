@@ -17,8 +17,17 @@ interface RouterConstructorData extends Omit<RouterConstructor, "scope"> {
   scope: Data[];
 }
 
+interface EntityData {
+  entity: string;
+  [key: string]: string | number | boolean;
+}
+
+interface RouterConstructorEntity extends Omit<RouterConstructor, "scope"> {
+  scope: EntityData[];
+}
+
 interface RouterConstructorDevice extends Omit<RouterConstructor, "scope"> {
   scope: { device: string; [key: string]: string }[];
 }
 
-export { DeviceCreated, RouterConstructorData, RouterConstructorDevice };
+export { DeviceCreated, RouterConstructorData, RouterConstructorEntity, RouterConstructorDevice, EntityData };

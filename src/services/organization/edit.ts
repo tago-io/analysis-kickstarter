@@ -1,23 +1,23 @@
 import { Resources } from "@tago-io/sdk";
 import { DeviceListScope } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
 import { AnalysisEnvironment, ConfigurationParams } from "@tago-io/sdk/lib/types";
-
-import { deviceNameExists } from "../../lib/device-name-exists";
 import { sendNotificationFeedback } from "../../lib/send-notification";
-import { undoDeviceChanges } from "../../lib/undo-device-changes";
-import { RouterConstructorDevice } from "../../types";
+import { EntityData, RouterConstructorEntity } from "../../types";
+import { TagResolver } from "../../lib/edit.tag";
+import { entityNameExists } from "../../lib/entity-name-exists";
+import { undoEntityChanges } from "../../lib/undo-entity-changes";
 
 /**
  * Function that handle organization name change
  */
-async function handleOrgNameChange(config_id: string, scope: DeviceListScope[], environment: AnalysisEnvironment, org_id: string) {
+async function handleOrgNameChange(config_id: string, scope: EntityData[], environment: AnalysisEnvironment, org_id: string) {
   const new_org_name = scope[0]["name"];
   if (new_org_name) {
-    const is_device_name_exists = await deviceNameExists({ name: new_org_name, tags: [{ key: "device_type", value: "organization" }], isEdit: true });
+    const is_device_name_exists = await entityNameExists({ name: new_org_name as string, tags: [{ key: "device_type", value: "organization" }], isEdit: true });
 
     if (is_device_name_exists) {
-      const orgInfo = await Resources.devices.info(org_id);
-      await undoDeviceChanges({ deviceInfo: orgInfo, scope });
+      const orgInfo = await Resources.entities.info(org_id);
+      await undoEntityChanges({ entityInfo: orgInfo, scope });
       await sendNotificationFeedback({ environment, message: `The organization with name ${new_org_name} already exists.` });
       throw `The organization with name ${new_org_name} already exists.`;
     }
@@ -44,35 +44,30 @@ async function handleAuthTokenChange(config_id: string, org_id: string, org_auth
 /**
  * Function that handle plan name change
  */
-async function handlePlanNameChange(config_id: string, scope: DeviceListScope[], org_id: string) {
-  const new_plan_name = scope[0]["param.plan_name"];
+async function handlePlanNameChange(scope: EntityData[], org_id: string) {
+  const new_plan_name = scope[0]["tags.plan_name"];
   if (new_plan_name) {
-    const [plan_data] = await Resources.devices.getDeviceData(config_id, { variables: "plan_data", values: new_plan_name, qty: 1 });
-    await Resources.devices.deleteDeviceData(org_id, { variables: "plan_data", qty: 9999 });
-    await Resources.devices.sendDeviceData(org_id, { ...plan_data });
+    const [plan_data] = await Resources.entities.getEntityData(org_id, {
+      filter: {
+        name: new_plan_name as string,
+      },
+      index: "name_index",
+      amount: 1,
+     });
 
-    const org_params = await Resources.devices.paramList(org_id);
-
-    const plan_name = org_params.find((x) => x.key === "plan_name") || { key: "plan_name", value: "", sent: false };
-    const plan_email_limit = org_params.find((x) => x.key === "plan_email_limit") || { key: "plan_email_limit", value: "", sent: false };
-    const plan_sms_limit = org_params.find((x) => x.key === "plan_sms_limit") || { key: "plan_sms_limit", value: "", sent: false };
-    const plan_notif_limit = org_params.find((x) => x.key === "plan_notif_limit") || { key: "plan_notif_limit", value: "", sent: false };
-    const plan_data_retention = org_params.find((x) => x.key === "plan_data_retention") || { key: "plan_data_retention", value: "", sent: false };
-
-    if (!plan_data.metadata) {
+    if (!plan_data) {
       throw "Plan not found";
     }
 
-    const org_info = await Resources.devices.info(org_id);
-    const org_tags = org_info.tags;
-    const new_org_tags = org_tags.filter((tag) => tag.key !== "plan_group");
-    await Resources.devices.edit(org_id, { tags: [...new_org_tags, { key: "plan_group", value: plan_data.group as string }] });
-
-    await Resources.devices.paramSet(org_id, { ...plan_name, value: plan_data.value as string });
-    await Resources.devices.paramSet(org_id, { ...plan_email_limit, value: String(plan_data.metadata.email_limit) });
-    await Resources.devices.paramSet(org_id, { ...plan_sms_limit, value: String(plan_data.metadata.sms_limit) });
-    await Resources.devices.paramSet(org_id, { ...plan_notif_limit, value: String(plan_data.metadata.notif_limit) });
-    await Resources.devices.paramSet(org_id, { ...plan_data_retention, value: String(plan_data.metadata.data_retention) });
+    const org_info = await Resources.entities.info(org_id);
+    const tagResolver = TagResolver(org_info.tags);
+    tagResolver.setTag("plan_group", plan_data.id as string);
+    tagResolver.setTag("plan_name", plan_data.value as string);
+    tagResolver.setTag("plan_email_limit", String(plan_data.email_limit));
+    tagResolver.setTag("plan_sms_limit", String(plan_data.sms_limit));
+    tagResolver.setTag("plan_notif_limit", String(plan_data.notif_limit));
+    tagResolver.setTag("plan_data_retention", String(plan_data.data_retention));
+    await tagResolver.apply(org_id);
   }
 }
 
@@ -98,7 +93,7 @@ async function handleOrgAddressChange(config_id: string, scope: DeviceListScope[
  * @param scope Scope is a variable sent by the analysis
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function orgEdit({ scope, environment }: RouterConstructorDevice & { scope: DeviceListScope[] }) {
+async function orgEdit({ scope, environment }: RouterConstructorEntity & { scope: EntityData[] }) {
   if (!scope || !environment) {
     throw "Missing Router parameter";
   }
@@ -112,13 +107,13 @@ async function orgEdit({ scope, environment }: RouterConstructorDevice & { scope
     return console.error("Not a valid TagoIO Data");
   }
 
-  const org_id = scope[0].device;
-  const org_params = await Resources.devices.paramList(org_id);
-  const org_auth_token_param = org_params.find((x) => x.key === "org_auth_token") as ConfigurationParams;
+  const org_id = scope[0].entity;
+  const orgInfo = await Resources.entities.info(org_id);
+  const org_auth_token_param = orgInfo.tags.find((x) => x.key === "org_auth_token") as ConfigurationParams;
 
   await handleOrgNameChange(config_id, scope, environment, org_id);
   await handleAuthTokenChange(config_id, org_id, org_auth_token_param);
-  await handlePlanNameChange(config_id, scope, org_id);
+  await handlePlanNameChange(scope, org_id);
   await handleOrgAddressChange(config_id, scope, org_id);
 
   return console.debug("edited!");

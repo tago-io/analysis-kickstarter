@@ -1,15 +1,15 @@
 import { Resources } from "@tago-io/sdk";
-import { DeviceListScope, RouterConstructor } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
-
 import { fetchDeviceList } from "../../lib/fetch-device-list";
 import { fetchUserList } from "../../lib/fetch-user-list";
+import { RouterConstructorEntity } from "../../types";
+import { fetchEntityList } from "../../lib/fetch-entity-list";
 
 /**
  * Main function of deleting organizations
  * @param scope Scope is a variable sent by the analysis
  * @param environment Environment is a variable sent by the analysis
  */
-async function orgDel({ scope, environment }: RouterConstructor & { scope: DeviceListScope[] }) {
+async function orgDel({ scope, environment }: RouterConstructorEntity) {
   if (!scope[0]) {
     return console.error("Not a valid TagoIO Data");
   }
@@ -20,11 +20,11 @@ async function orgDel({ scope, environment }: RouterConstructor & { scope: Devic
   }
 
   //id of the org device
-  const org_id = scope[0].device;
+  const org_id = scope[0].entity;
 
-  const params = await Resources.devices.paramList(org_id);
+  const orgInfo = await Resources.entities.info(org_id);
 
-  const org_auth_token = params.find((x) => x.key === "org_auth_token");
+  const org_auth_token = orgInfo.tags.find((x) => x.key === "org_auth_token");
   //deleting token
   // const [org_auth_token] = await Resources.devices.getDeviceData(config_id, { variables: "org_auth_token", qty: 1, groups: org_id });
   if (org_auth_token?.value) {
@@ -45,12 +45,18 @@ async function orgDel({ scope, environment }: RouterConstructor & { scope: Devic
   }
 
   //deleting organization's device
-
   const devices = await fetchDeviceList({ tags: [{ key: "organization_id", value: org_id }] });
-
   if (devices) {
     for (const x of devices) {
       await Resources.devices.delete(x.id); /*passing the device id*/
+    }
+  }
+
+  //deleting organization's entity
+  const entities = await fetchEntityList({ tags: [{ key: "organization_id", value: org_id }] });
+  if (entities) {
+    for (const x of entities) {
+      await Resources.entities.delete(x.id); /*passing the device id*/
     }
   }
 
