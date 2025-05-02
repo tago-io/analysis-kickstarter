@@ -36,7 +36,7 @@ describe("userModel", () => {
   });
 
   it("should fail if access is not allowed", () => {
-    const result = userModel.safeParse({ ...validUser, access: "admin" });
+    const result = userModel.safeParse({ ...validUser, access: "not-allowed" });
     expect(result.success).toBe(false);
   });
 
