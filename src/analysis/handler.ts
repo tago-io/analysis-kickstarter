@@ -39,6 +39,13 @@ import { userDel } from "../services/user/remove";
 // import { deleteAlert } from "../services/alerts/remove";
 // import { editAlert } from "../services/alerts/edit";
 
+function _fixDashCustomBtnID(environment: { [key: string]: any }, scope: Data[]) {
+  const data = (scope as any).find((x: any) => x.entity_table_button_id);
+  if (data) {
+    environment._widget_exec = data.entity_table_button_id;
+  }
+}
+
 /**
  * This function is the main function of the analysis.
  * @param context The context of the analysis, containing the environment variables and parameters.
@@ -91,8 +98,9 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   //Plan routing
   router.register(planAdd).whenInputFormID("create-plan");
-  router.register(planDel).whenVariableLike("plan_").whenWidgetExec("delete");
-  router.register(planEdit).whenVariableLike("plan_").whenWidgetExec("edit");
+  _fixDashCustomBtnID(environment, scope);
+  router.register(planDel).whenCustomBtnID("delete-plan");;
+  router.register(planEdit).whenCustomBtnID("edit-plan");;
 
   // //Alert routing
   // router.register(createAlert).whenInputFormID("create-alert");

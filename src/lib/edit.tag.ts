@@ -14,7 +14,7 @@ import { TagsObj } from "@tago-io/sdk/lib/types";
  * @param debug
  * @returns
  */
-function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
+function TagResolver(rawTags: TagsObj[], debug: boolean = false, type: "device" | "entity" = "device") {
   const tags = JSON.parse(JSON.stringify(rawTags)) as TagsObj[];
   const newTags: TagsObj[] = [];
 
@@ -58,7 +58,11 @@ function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
         }
       }
 
-      await Resources.devices.edit(deviceID, { tags });
+      if (type === "device") {
+        await Resources.devices.edit(deviceID, { tags });
+      } else {
+        await Resources.entities.edit(deviceID, { tags });
+      }
     },
 
     /**

@@ -19,7 +19,7 @@ interface RouterConstructorData extends Omit<RouterConstructor, "scope"> {
 
 interface EntityData {
   entity: string;
-  [key: string]: string | number | boolean;
+  [key: string]: string | any;
 }
 
 interface RouterConstructorEntity extends Omit<RouterConstructor, "scope"> {

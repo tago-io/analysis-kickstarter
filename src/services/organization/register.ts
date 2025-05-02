@@ -9,6 +9,7 @@ import { getZodError } from "../../lib/get-zod-error";
 import { entityNameExists } from "../../lib/entity-name-exists";
 import { createURL } from "../../lib/url-creator";
 import { TagResolver } from "../../lib/edit.tag";
+import { getPlanEntity } from "../plan/register";
 interface installEntityParam {
   new_org_name: string;
   new_org_plan_id: string;
@@ -32,7 +33,7 @@ async function installEntity({ new_org_name, new_org_plan_id }: installEntityPar
     tags: [
       { key: "organization_id", value: new_org.id },
       { key: "user_org_id", value: new_org.id },
-      { key: "device_type", value: "organization" },
+      { key: "entity_type", value: "organization" },
       { key: "plan_group", value: new_org_plan_id },
     ],
   });
@@ -92,30 +93,32 @@ async function orgAdd({ scope, environment }: RouterConstructorEntity) {
     throw new Error(error);
   }
 
-  const [entity] = await Resources.entities.list({
-    filter: {
-      name: "Plan",
-    },
-    amount: 1,
+  const entity = await getPlanEntity().catch(async (error) => {
+    await validate(error, "danger").catch((error) => console.log(error));
+    throw new Error(error);
   });
 
   const [plan_data] = await Resources.entities.getEntityData(entity.id, {
     filter: {
-      name: formFields.plan,
+      id: formFields.plan,
     },
-    index: "name_index",
+    index: "id_idx",
     amount: 1,
    });
 
   if (!plan_data) {
-    throw await validate("Plan error, internal problem.", "danger").catch((error) => console.log(error));
+    const error = "Plan error, internal problem.";
+    await validate(error, "danger").catch((error) => console.log(error));
+    throw new Error(error);
   }
-  const plan_name = plan_data.value as string;
+  const plan_name = plan_data.name as string;
 
-  const is_device_name_exists = await entityNameExists({ name: formFields.name, tags: [{ key: "device_type", value: "organization" }] });
+  const is_device_name_exists = await entityNameExists({ name: formFields.name, tags: [{ key: "entity_type", value: "organization" }] });
 
   if (is_device_name_exists) {
-    throw await validate(`The Organization with name ${formFields.name} already exists.`, "danger").catch(console.log);
+    const error = `The Organization with name ${formFields.name} already exists.`;
+    await validate(error, "danger").catch((error) => console.log(error));
+    throw new Error(error);
   }
 
   const service_authorization = new Resources({ token: environment.ACCOUNT_TOKEN }).serviceAuthorization;
@@ -128,7 +131,10 @@ async function orgAdd({ scope, environment }: RouterConstructorEntity) {
   //creating new device
   const entity_id = await installEntity({ new_org_name: formFields.name, new_org_plan_id: plan_data.id as string });
 
-  const dash_organization_id = await getDashboardByTagID("dash_sensor_list");
+  const dash_organization_id = await getDashboardByTagID("dash_sensor_list").catch(async (error) => {
+    await validate(error, "danger").catch((error) => console.log(error));
+    throw new Error(error);
+  });
 
   const dashUrl = createURL()
     .setBase(`/dashboards/info/${dash_organization_id}`)
@@ -143,26 +149,27 @@ async function orgAdd({ scope, environment }: RouterConstructorEntity) {
     throw new Error("Organization not found.");
   }
 
-  const tagResolver = TagResolver(orgEntity.tags);
+  const tagResolver = TagResolver(orgEntity.tags, false, "entity");
   tagResolver.setTag("dashboard_url", dashUrl);
   tagResolver.setTag("org_address", formFields.address as string);
   tagResolver.setTag("org_auth_token", user_auth_token.token);
   tagResolver.setTag("_param", "");
   tagResolver.setTag("plan_name", plan_name);
-  tagResolver.setTag("plan_email_limit", String(plan_data.metadata.email_limit));
-  tagResolver.setTag("plan_sms_limit", String(plan_data.metadata.sms_limit));
-  tagResolver.setTag("plan_notif_limit", String(plan_data.metadata.notif_limit));
-  tagResolver.setTag("plan_data_retention", String(plan_data.metadata.data_retention));
+  tagResolver.setTag("plan_email_limit", String(plan_data.email_usg_limit_qty_m));
+  tagResolver.setTag("plan_sms_limit", String(plan_data.sms_usg_limit_qty_m));
+  tagResolver.setTag("plan_notif_limit", String(plan_data.push_notification_usg_limit_qty_m));
+  tagResolver.setTag("plan_data_retention", String(plan_data.data_retention_m));
   tagResolver.setTag("plan_email_limit_usage", "0");
   tagResolver.setTag("plan_sms_limit_usage", "0");
   tagResolver.setTag("plan_notif_limit_usage", "0");
   await tagResolver.apply(entity_id);
 
-  const org_data = {
-    org_id: { value: entity_id, metadata: { label: formFields.name }, location: formFields.address },
-  };
+  //TODO: Await front end fix to send data to settings with the correct location
+  // const org_data = {
+  //   org_id: { value: entity_id, metadata: { label: formFields.name }, location: formFields.address },
+  // };
 
-  await Resources.devices.sendDeviceData(config_id, parseTagoObject(org_data, entity_id));
+  // await Resources.devices.sendDeviceData(config_id, parseTagoObject(org_data, entity_id));
 
   //TODO: Verify if this is needed
   // await Resources.devices.sendDeviceData(config_id, { ...plan_data });

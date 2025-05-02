@@ -1,5 +1,5 @@
 import { Resources } from "@tago-io/sdk";
-import { DeviceListScope } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
+import { DeviceListScope, RouterConstructor } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
 import { AnalysisEnvironment, ConfigurationParams } from "@tago-io/sdk/lib/types";
 import { sendNotificationFeedback } from "../../lib/send-notification";
 import { EntityData, RouterConstructorEntity } from "../../types";
@@ -10,7 +10,7 @@ import { undoEntityChanges } from "../../lib/undo-entity-changes";
 /**
  * Function that handle organization name change
  */
-async function handleOrgNameChange(config_id: string, scope: EntityData[], environment: AnalysisEnvironment, org_id: string) {
+async function handleOrgNameChange(config_id: string, scope: DeviceListScope[], environment: AnalysisEnvironment, org_id: string) {
   const new_org_name = scope[0]["name"];
   if (new_org_name) {
     const is_device_name_exists = await entityNameExists({ name: new_org_name as string, tags: [{ key: "device_type", value: "organization" }], isEdit: true });
@@ -93,7 +93,7 @@ async function handleOrgAddressChange(config_id: string, scope: DeviceListScope[
  * @param scope Scope is a variable sent by the analysis
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function orgEdit({ scope, environment }: RouterConstructorEntity & { scope: EntityData[] }) {
+async function orgEdit({ scope, environment }: RouterConstructor & { scope: DeviceListScope[] }) {
   if (!scope || !environment) {
     throw "Missing Router parameter";
   }

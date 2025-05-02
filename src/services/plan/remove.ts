@@ -1,14 +1,15 @@
 import { Resources } from "@tago-io/sdk";
-
-import { fetchDeviceList } from "../../lib/fetch-device-list";
-import { RouterConstructorData } from "../../types";
+import { fetchEntityList } from "../../lib/fetch-entity-list";
+import { RouterConstructor } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
+import { getPlanEntity } from "./register";
+import { sendNotificationFeedback } from "../../lib/send-notification";
 
 /**
  * Main function of deleting plan by admin account
  * @param scope Scope is a variable sent by the analysis
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function planDel({ scope, environment }: RouterConstructorData) {
+async function planDel({ scope, environment }: RouterConstructor) {
   if (!scope || !environment) {
     throw new Error("Missing parameters");
   }
@@ -18,22 +19,33 @@ async function planDel({ scope, environment }: RouterConstructorData) {
     throw "[Error] No config device ID: config_id.";
   }
 
-  const plan_name = scope.find((x) => x.variable === "plan_data");
-  if (!plan_name?.group) {
-    throw new Error("Missing plan name to delete plan data from settings device");
+  const plan_id = scope[0].id;
+  if (!plan_id) {
+    const error = "Missing plan name to delete plan data from settings device";
+    await sendNotificationFeedback({ environment, message: error });
+    throw new Error(error);
   }
 
-  const org_dev_list = await fetchDeviceList({
+  const org_dev_list = await fetchEntityList({
     tags: [
-      { key: "device_type", value: "organization" },
-      { key: "plan_group", value: plan_name?.group },
+      { key: "entity_type", value: "organization" },
+      { key: "plan_group", value: plan_id },
     ],
   });
 
   //do not let the user delete the plan if there's an organization assigned to it.
   if (org_dev_list.length > 0) {
-    await Resources.devices.sendDeviceData(config_id, scope);
+    const error = "Plan is assigned to an organization and cannot be deleted.";
+    await sendNotificationFeedback({ environment, message: error });
+    throw new Error(error);
   }
+
+  const entity = await getPlanEntity().catch(async (error) => {
+    await sendNotificationFeedback({ environment, message: error });
+    throw new Error(error);
+  });
+
+  await Resources.entities.deleteEntityData(entity.id, { ids: [plan_id] });
 
   return console.debug("Plan deleted");
 }
