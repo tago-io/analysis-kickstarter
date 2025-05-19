@@ -8,9 +8,56 @@ import { entityNameExists } from "../../lib/entity-name-exists";
 import { createURL } from "../../lib/url-creator";
 import { TagResolver } from "../../lib/edit.tag";
 import { getPlanEntity } from "../plan/register";
+
 interface installEntityParam {
   new_org_name: string;
   new_org_plan_id: string;
+}
+
+/**
+ * Creates a group entity for an organization to store group-related data
+ * @param organization_id ID of the organization to create the group for
+ * @param organization_name Name of the organization, will be used as prefix for group name
+ * @returns Promise that resolves when group entity is created and configured
+ */
+async function createGroupOrganization(organization_id: string, organization_name: string) {
+  const entity = {
+    name: organization_name.concat(" - Group"),
+    schema: {
+      group_id: {
+        type: "string",
+        required: true,
+      },
+      group_name: {
+        type: "string",
+        required: true,
+      },
+      group_address: {
+        type: "text",
+        required: false,
+      },
+      dashboard_url: {
+        type: "text",
+        required: true,
+      },
+    },
+    index: {
+      group_name_index: {
+        action: "create",
+        fields: ["group_name"]
+      }
+    }
+  };
+
+  const newOrgGroup = await Resources.entities.create(entity);
+
+  await Resources.entities.edit(newOrgGroup.id, {
+    tags: [
+      { key: "organization_id", value: organization_id },
+      { key: "entity_type", value: "organization_group" },
+      { key: "organization_group_id", value: newOrgGroup.id },
+    ],
+  });
 }
 /**
  * Function that create organizations
@@ -55,7 +102,7 @@ async function installEntity({ new_org_name, new_org_plan_id }: installEntityPar
     }
   };
 
-  //creating new device
+  //creating new entity
   const new_org = await Resources.entities.create(entity);
 
   //inserting device id -> so we can reference this later
@@ -67,6 +114,8 @@ async function installEntity({ new_org_name, new_org_plan_id }: installEntityPar
       { key: "plan_group", value: new_org_plan_id },
     ],
   });
+
+  await createGroupOrganization(new_org.id, new_org_name);
 
   return new_org.id;
 }

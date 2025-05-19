@@ -88,7 +88,8 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   // group routing
   router.register(groupAdd).whenInputFormID("create-group");
-  router.register(groupDel).whenDeviceListIdentifier("delete-group");
+  _fixDashCustomBtnID(environment, scope);
+  router.register(groupDel).whenCustomBtnID("delete-group");
   router.register(groupEdit).whenCustomBtnID("edit-group");
 
   // User routing
@@ -98,7 +99,6 @@ async function startAnalysis(context: TagoContext, scope: Data[]): Promise<void>
 
   //Plan routing
   router.register(planAdd).whenInputFormID("create-plan");
-  _fixDashCustomBtnID(environment, scope);
   router.register(planDel).whenCustomBtnID("delete-plan");;
   router.register(planEdit).whenCustomBtnID("edit-plan");;
 
