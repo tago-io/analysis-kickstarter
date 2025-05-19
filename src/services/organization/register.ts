@@ -47,6 +47,12 @@ async function installEntity({ new_org_name, new_org_plan_id }: installEntityPar
         required: true,
       },
     },
+    index: {
+      user_id_index: {
+        action: "create",
+        fields: ["user_id"]
+      }
+    }
   };
 
   //creating new device

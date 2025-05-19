@@ -19,6 +19,27 @@ interface UserData {
 }
 
 /**
+ * Determines the display label for a user's access level based on their access type
+ *
+ * @param formFields - Object containing user form data
+ * @param formFields.name - User's full name
+ * @param formFields.email - User's email address
+ * @param formFields.access - User's access level, one of: "admin", "orgadmin", or "guest"
+ * @param formFields.phone - Optional user phone number
+ * @param user_access_label - Current access label value to be updated
+ * @returns The display label string for the user's access level
+ */
+function getAccessLabel(access: string) {
+  if (access === "admin") {
+    return "Administrator";
+  } else if (access === "orgadmin") {
+    return "Organization Admin";
+  }
+
+  return "Guest";
+}
+
+/**
  * Function that handle phone number
  * @param phone_number Phone number
  */
@@ -152,15 +173,7 @@ async function userAdd({ context, scope, environment }: RouterConstructor) {
     throw await validate(error, "danger").catch((error) => console.log(error));
   });
 
-  let user_access_label: string | undefined = "";
-
-  if (formFields.access === "admin") {
-    user_access_label = "Administrator";
-  } else if (formFields.access === "orgadmin") {
-    user_access_label = "Organization Admin";
-  } else if (formFields.access === "guest") {
-    user_access_label = "Guest";
-  }
+  const user_access_label = getAccessLabel(formFields.access);
 
   const userDataEntity = {
     user_id: new_user_id,
@@ -196,4 +209,4 @@ async function userAdd({ context, scope, environment }: RouterConstructor) {
   return validate("#VAL.USER_SUCCESSFULLY_INVITED_AN_EMAIL_WILL_BE_SENT_WITH_THE_CREDENTIALS_TO_THE_NEW_USER#", "success");
 }
 
-export { userAdd };
+export { userAdd, getAccessLabel };
