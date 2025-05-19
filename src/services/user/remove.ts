@@ -28,25 +28,33 @@ async function userDel({ scope, environment }: RouterConstructorData & { scope: 
     throw "User does not exist";
   }
 
-  const org_id = user_exists.tags.find((x) => ["user_org_id", "organization_id"].includes(x.key))?.value;
-  if (!org_id) {
+  const organization_id = user_exists.tags.find((x) => ["user_org_id", "organization_id"].includes(x.key))?.value;
+  if (!organization_id) {
     throw "Organization id not found";
   }
-
-  //collecting org id
-  const group_id = user_exists.tags.find((x) => x.key === "group_id")?.value;
 
   // block the user from deleting himself
   if (environment._user_id === user_id) {
     throw "User tried to delete himself";
   }
 
-  if (group_id) {
-    await Resources.devices.deleteDeviceData(group_id, { groups: user_id, qty: 9999 });
+  await Resources.devices.deleteDeviceData(config_id, { groups: user_id, qty: 9999 });
+
+  const [userData] = await Resources.entities.getEntityData(organization_id, {
+    filter: {
+      user_id: user_id,
+    },
+    index: "user_id_index",
+    amount: 1,
+  });
+
+  if (!userData) {
+    throw "User does not exist";
   }
 
-  await Resources.devices.deleteDeviceData(config_id, { groups: user_id, qty: 9999 });
-  await Resources.devices.deleteDeviceData(org_id, { groups: user_id, qty: 9999 });
+  // deleting user data from organization
+  await Resources.entities.deleteEntityData(organization_id, { ids: [userData.id] });
+
   //deleting user
   await Resources.run.userDelete(user_id).then((msg) => console.debug(msg));
   return;

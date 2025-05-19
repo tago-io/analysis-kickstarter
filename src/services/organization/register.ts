@@ -1,6 +1,4 @@
 import { Resources } from "@tago-io/sdk";
-import { DeviceCreateInfo } from "@tago-io/sdk/lib/types";
-import { parseTagoObject } from "../../lib/data.logic";
 import { getDashboardByTagID } from "../../lib/find-resource";
 import { initializeValidation } from "../../lib/validation";
 import { EntityData, RouterConstructorEntity } from "../../types";
@@ -23,7 +21,39 @@ async function installEntity({ new_org_name, new_org_plan_id }: installEntityPar
   //structuring data
   const entity = {
     name: new_org_name,
-  }
+    schema: {
+      user_id: {
+        type: "string",
+        required: true,
+      },
+      user_name: {
+        type: "string",
+        required: true,
+      },
+      user_email: {
+        type: "string",
+        required: true,
+      },
+      user_phone: {
+        type: "string",
+        required: false,
+      },
+      user_access: {
+        type: "string",
+        required: true,
+      },
+      user_access_label: {
+        type: "string",
+        required: true,
+      },
+    },
+    index: {
+      user_id_index: {
+        action: "create",
+        fields: ["user_id"]
+      }
+    }
+  };
 
   //creating new device
   const new_org = await Resources.entities.create(entity);

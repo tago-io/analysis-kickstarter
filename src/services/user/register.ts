@@ -4,8 +4,10 @@ import { TagsObj } from "@tago-io/sdk/lib/types";
 import { parseTagoObject } from "../../lib/data.logic";
 import { inviteUser } from "../../lib/register-user";
 import { initializeValidation } from "../../lib/validation";
-import { RouterConstructorData } from "../../types";
-
+import { EntityData } from "../../types";
+import { RouterConstructor } from "@tago-io/sdk/lib/modules/Utils/router/router.types";
+import { userModel } from "./user.model";
+import { getZodError } from "../../lib/get-zod-error";
 interface UserData {
   name: string;
   email: string;
@@ -14,6 +16,27 @@ interface UserData {
   tags?: TagsObj[];
   password?: string;
   id?: string;
+}
+
+/**
+ * Determines the display label for a user's access level based on their access type
+ *
+ * @param formFields - Object containing user form data
+ * @param formFields.name - User's full name
+ * @param formFields.email - User's email address
+ * @param formFields.access - User's access level, one of: "admin", "orgadmin", or "guest"
+ * @param formFields.phone - Optional user phone number
+ * @param user_access_label - Current access label value to be updated
+ * @returns The display label string for the user's access level
+ */
+function getAccessLabel(access: string) {
+  if (access === "admin") {
+    return "Administrator";
+  } else if (access === "orgadmin") {
+    return "Organization Admin";
+  }
+
+  return "Guest";
 }
 
 /**
@@ -37,6 +60,40 @@ function phoneNumberHandler(phone_number: string) {
   return resulted_phone_number;
 }
 
+/**
+ * Retrieves and validates user form fields from the provided data scope.
+ *
+ * @param {EntityData[]} scope - An array of data objects containing user form field information
+ * @returns {Promise<IUser>} A promise that resolves to the validated user data
+ *
+ * @throws {ZodError} If validation of the form fields fails
+ *
+ * @example
+ * const scope = [
+ *   { new_user_name: "John Doe" },
+ *   { new_user_email: "john@example.com" },
+ *   { new_user_phone: "+1234567890" },
+ *   { new_user_access: "admin" }
+ * ];
+ * const userData = await getFormFields(scope);
+ */
+async function getFormFields(scope: EntityData[]) {
+  //Collecting data
+  const name = scope.find((x) => x.new_user_name)?.new_user_name as string;
+  const email = scope.find((x) => x.new_user_email)?.new_user_email as string;
+  const phone = scope.find((x) => x.new_user_phone)?.new_user_phone as string;
+  const access = scope.find((x) => x.new_user_access)?.new_user_access as string;
+
+  const result = await userModel.parseAsync({
+    name: name,
+    email: email,
+    phone: phoneNumberHandler(phone),
+    access: access,
+  });
+
+  return result;
+}
+
 //registered by admin Resources.
 
 /**
@@ -45,7 +102,7 @@ function phoneNumberHandler(phone_number: string) {
  * @param scope Scope is a variable sent by the analysis
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function userAdd({ context, scope, environment }: RouterConstructorData) {
+async function userAdd({ context, scope, environment }: RouterConstructor) {
   if (!environment || !scope || !context) {
     throw new Error("Missing parameters");
   }
@@ -55,37 +112,29 @@ async function userAdd({ context, scope, environment }: RouterConstructorData) {
     throw "[Error] No config device ID: config_id.";
   }
 
-  const org_id = scope[0].device;
-
-  //Collecting data
-  const new_user_name = scope.find((x) => x.variable === "new_user_name" || x.variable === "new_orgadmin_name");
-  const new_user_email = scope.find((x) => x.variable === "new_user_email" || x.variable === "new_orgadmin_email");
-  const new_user_access = scope.find((x) => x.variable === "new_user_access" || x.variable === "new_orgadmin_access");
-  const new_user_phone = scope.find((x) => x.variable === "new_user_phone" || x.variable === "new_orgadmin_phone");
+  const org_id = scope[0].entity;
 
   //validation
-  const validate = initializeValidation("user_validation", org_id);
+  const validate = initializeValidation("user_validation", config_id);
+  await validate("#VAL.RESGISTERING#", "warning").catch((error) => console.log(error));
 
-  if (!new_user_name?.value) {
-    throw await validate("Name field is empty", "danger").catch((error) => console.log(error));
-  }
-  if ((new_user_name.value as string).length < 3) {
-    throw await validate("Name field is smaller than 3 character", "danger").catch((error) => console.log(error));
-  }
-  if (!new_user_email?.value) {
-    throw await validate("Email field is empty", "danger").catch((error) => console.log(error));
-  }
-  if (!new_user_access?.value) {
-    throw await validate("Access field is empty", "danger").catch((error) => console.log(error));
-  }
-  if (new_user_phone?.value) {
-    new_user_phone.value = phoneNumberHandler(new_user_phone.value as string);
+  const formFields = await getFormFields(scope)
+    .catch(getZodError)
+    .catch(async (error) => {
+      await validate(error, "danger");
+      throw error;
+    });
+
+  if (!formFields) {
+    const error = "Form fields are required.";
+    await validate(error, "danger").catch((error) => console.log(error));
+    throw new Error(error);
   }
 
   const [user_exists] = await Resources.run.listUsers({
     page: 1,
     amount: 1,
-    filter: { email: new_user_email.value as string },
+    filter: { email: formFields.email },
   });
 
   if (user_exists) {
@@ -97,9 +146,9 @@ async function userAdd({ context, scope, environment }: RouterConstructorData) {
   const { timezone } = await resources_with_account_token.account.info();
 
   const new_user_data: UserData = {
-    name: new_user_name.value as string,
-    email: (new_user_email.value as string).trim(),
-    phone: (new_user_phone?.value as string) || "",
+    name: formFields.name,
+    email: formFields.email,
+    phone: formFields.phone,
     timezone: timezone,
     tags: [
       {
@@ -108,7 +157,7 @@ async function userAdd({ context, scope, environment }: RouterConstructorData) {
       },
       {
         key: "access",
-        value: new_user_access.value as string,
+        value: formFields.access,
       },
       {
         key: "active",
@@ -124,40 +173,40 @@ async function userAdd({ context, scope, environment }: RouterConstructorData) {
     throw await validate(error, "danger").catch((error) => console.log(error));
   });
 
-  let user_access_label: string | undefined = "";
+  const user_access_label = getAccessLabel(formFields.access);
 
-  if (new_user_access.value === "admin") {
-    user_access_label = "Administrator";
-  } else if (new_user_access.value === "orgadmin") {
-    user_access_label = "Organization Admin";
-  } else if (new_user_access.value === "guest") {
-    user_access_label = "Guest";
-  } else {
-    user_access_label = new_user_access?.metadata?.label;
-  }
+  const userDataEntity = {
+    user_id: new_user_id,
+    user_name: formFields.name,
+    user_email: formFields.email,
+    user_phone: formFields.phone,
+    user_access: formFields.access,
+    user_access_label: user_access_label,
+  };
 
-  let user_data = parseTagoObject(
+  let userData = parseTagoObject(
     {
-      user_id: { value: new_user_id, metadata: { label: `${new_user_name.value} (${new_user_email.value})` } },
-      user_name: new_user_name.value as string,
-      user_email: (new_user_email.value as string).trim(),
-      user_phone: (new_user_phone?.value as string) || "",
-      user_access: { value: new_user_access.value as string, metadata: { label: user_access_label } },
+      user_id: new_user_id,
+      user_name: formFields.name,
+      user_email: formFields.email,
+      user_phone: formFields.phone,
+      user_access: formFields.access,
+      user_access_label: user_access_label,
     },
     new_user_id
   );
 
-  if (new_user_access.value === "admin") {
-    user_data = user_data.concat([{ variable: "user_admin", value: new_user_id, group: new_user_id, metadata: { label: new_user_name.value as string } }]);
-  }
+  // if (new_user_access.value === "admin") {
+  //   user_data = user_data.concat([{ variable: "user_admin", value: new_user_id, group: new_user_id, metadata: { label: new_user_name.value as string } }]);
+  // }
 
   //sending to org device
-  await Resources.devices.sendDeviceData(org_id, user_data);
+  await Resources.entities.sendEntityData(org_id, [userDataEntity]);
 
   //sending to admin device (settings_device)
-  await Resources.devices.sendDeviceData(config_id, user_data);
+  await Resources.devices.sendDeviceData(config_id, userData);
 
   return validate("#VAL.USER_SUCCESSFULLY_INVITED_AN_EMAIL_WILL_BE_SENT_WITH_THE_CREDENTIALS_TO_THE_NEW_USER#", "success");
 }
 
-export { userAdd };
+export { userAdd, getAccessLabel };
