@@ -5,57 +5,35 @@
   "license": "Copyright",
   "private": true,
   "scripts": {
-    "test": "jest .",
-    "test:watch": "jest . --watch",
-    "test:coverage": "jest . --coverage",
-    "linter": "eslint .",
-    "build": "analysis-builder src/analysis/handler.ts ./build/handler.tago.js && analysis-builder src/analysis/status-updater.ts ./build/status-updater.tago.js && analysis-builder src/analysis/send-report.ts ./build/send-report.tago.js && analysis-builder src/analysis/data-retention.ts ./build/data-retention.tago.js  && analysis-builder src/analysis/uplink-handler.ts ./build/uplink-handler.tago.js && analysis-builder src/analysis/alert-handler.ts ./build/alert-handler.tago.js && analysis-builder src/analysis/alert-trigger.ts ./build/alert-trigger.tago.js && analysis-builder src/analysis/monthly-usage-reset.ts ./build/monthly-usage-reset.tago.js && analysis-builder src/analysis/user-sign-up.ts ./build/user-sign-up.tago.js && analysis-builder src/analysis/battery-updater.ts ./build/battery-updater.tago.js",
-    "start": "ts-node-dev --inspect -- src/analysis/handler.ts",
-    "inspect": "node --inspect ./node_modules/.bin/ts-node --files ./src/start.ts"
-  },
-  "jest": {
-    "preset": "ts-jest"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run test",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
+    "test": "vitest .",
+    "test:single": "vitest --",
+    "linter": "biome lint ./src --no-errors-on-unmatched --diagnostic-level=error",
+    "linter-fix": "biome lint --apply ./src",
+    "build": "rm -rf ./build; tsc --build",
+    "deploy-analysis": "tsnd ./.github/scripts/deploy-analysis.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@tago-io/builder": "3.1.3",
-    "@types/async": "3.2.20",
-    "@types/jest": "29.5.1",
-    "@types/luxon": "3.3.8",
-    "@types/uuid": "9.0.7",
-    "@typescript-eslint/eslint-plugin": "5.59.7",
-    "@typescript-eslint/parser": "5.59.7",
-    "commitlint": "17.6.3",
-    "eslint": "8.56.0",
-    "eslint-config-prettier": "8.8.0",
-    "eslint-import-resolver-typescript": "3.5.5",
-    "eslint-plugin-functional": "6.0.0",
-    "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-jest": "27.2.1",
-    "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-unicorn": "50.0.1",
-    "husky": "8.0.3",
-    "jest": "29.5.0",
-    "prettier": "2.8.8",
-    "ts-jest": "29.1.0",
-    "ts-node": "10.9.1",
+    "@types/async": "3.2.24",
+    "@types/luxon": "3.6.2",
+    "@types/uuid": "10.0.0",
+    "husky": "9.1.7",
+    "prettier": "3.5.3",
+    "ts-node": "10.9.2",
     "ts-node-dev": "2.0.0",
-    "typescript": "5.0.4",
-    "uuid": "9.0.1"
+    "typescript": "5.8.2",
+    "unplugin-swc": "1.5.1",
+    "uuid": "11.1.0",
+    "vitest": "3.1.1"
   },
   "dependencies": {
-    "@tago-io/sdk": "11.0.7",
-    "async": "3.2.4",
-    "axios": "1.4.0",
+    "@tago-io/sdk": "11.3.9",
+    "async": "3.2.6",
+    "axios": "1.8.4",
     "bson-objectid": "2.0.4",
-    "dayjs": "1.11.7",
-    "geolib": "3.3.3",
-    "luxon": "3.4.4",
-    "puppeteer": "20.3.0"
+    "geolib": "3.3.4",
+    "luxon": "3.6.1",
+    "puppeteer": "24.6.0"
   }
 }

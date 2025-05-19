@@ -26,8 +26,7 @@ async function actionModel(action_object: ReportActionStructure, timezone: strin
     name: `SENSOR REPORT ACTION / VAR. GROUP: ${action_object.group}`,
     active: action_object.active,
     type: "schedule",
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    tags: [{ key: "organization_id", value: action_object.org_id }, ...action_object?.tags],
+    tags: [{ key: "organization_id", value: action_object.org_id }, ...action_object.tags],
     trigger: [
       {
         cron: action_object.cron, //"00 08 */1 * Fri,Mon,Sat,Sun,Thu,Tue,Wed"

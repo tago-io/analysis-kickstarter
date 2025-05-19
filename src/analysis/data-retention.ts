@@ -23,17 +23,12 @@ async function resolveDataRetentionByOrg(org_id: string) {
   });
 
   for (const device_obj of device_list) {
-    // @ts-ignore: Unreachable code error
-    if (!device_obj.bucket) {
+    const variables = await Resources.devices.getDeviceData(device_obj.id, { qty: 9999 });
+    if (!variables[0]) {
       return;
     }
 
-    const bucket_variables = await Resources.buckets.listVariables(device_obj.bucket.id);
-    if (!bucket_variables[0]) {
-      return;
-    }
-
-    const bucket_vars = bucket_variables.map((v) => v.variable);
+    const bucket_vars = variables.map((v) => v.variable);
     const data_retention_ignore = bucket_vars
       .map((r) => {
         if (!r.includes("action")) {

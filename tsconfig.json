@@ -1,17 +1,26 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "types": [
+      "vitest/importMeta",
+      "vitest/globals"
+    ],
+    "target": "ES2022",
     "module": "CommonJS",
     "lib": [
-      "ES2021"
+      "ES2023"
     ],
     "allowJs": true,
+    "outDir": "./build",
     "noImplicitAny": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./build/.tsbuildinfo",
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
     "removeComments": true,
     "strictNullChecks": true,
     "skipLibCheck": true,
@@ -20,8 +29,6 @@
   },
   "exclude": [
     "node_modules",
-    "jest.config.js",
-    ".eslintrc.js",
     "packages/payload-parser-runtime/**/*"
   ],
   "include": [

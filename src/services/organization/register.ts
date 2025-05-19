@@ -152,8 +152,7 @@ async function orgAdd({ context, scope, environment }: RouterConstructorData) {
   if (new_user_name?.value) {
     scope = scope.map((data) => ({ ...data, device: device_id }));
     await userAdd({ context, scope, environment }).catch(async (error) => {
-      // @ts-expect-error - expected error.
-      await orgDel({ scope: [{ device: device_id }] }).catch((error) => console.log(error));
+      await orgDel({ scope: [{ device: device_id }], environment }).catch((error) => console.log(error));
       throw await validate(error, "danger").catch((error) => console.log(error));
     });
   }

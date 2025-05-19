@@ -1,10 +1,10 @@
-import dayjs from "dayjs";
+import { DateTime } from "luxon";
 
 const headerTemplate = `
 <div class="header" style="background-color: rgba(47, 48, 101, 0.1); align-items: center; padding: 0px 30px; font-size: 30px; width: 100%; color:black !important; margin:0px 20px 80px 20px; border-radius: 8px 8px 0 0; -webkit-print-color-adjust: exact; height: 60rem;">
   <div style="display: inline-block; margin: 0 2rem; vertical-align: top; text-align: start; width: 70%;">
     <h1 style="font-weight: 400; color:black !important; font-size: 18px;">$ORG_NAME$ - Sensor Report</h1>
-    <h1 style="font-weight: 400; font-size: 10px;">${dayjs().format("YYYY-MM-DD HH:mm:ss")}</h1>
+    <h1 style="font-weight: 400; font-size: 10px;">${DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss")}</h1>
   </div>
   <div style="display: inline-block; width: 25%; margin-top:15px;">
     <img

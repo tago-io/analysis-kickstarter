@@ -41,8 +41,7 @@ async function createPDF(context: TagoContext, htmlBody: string, users_info_list
   const report = await pdf.generate({ base64, options }).catch((error) => console.debug(error));
 
   // Send the email.
-  // eslint-disable-next-line unicorn/no-array-for-each
-  users_info_list.forEach(async (user_info) => {
+  for (const user_info of users_info_list) {
     if (user_info?.email) {
       await email
         .send({
@@ -60,7 +59,7 @@ async function createPDF(context: TagoContext, htmlBody: string, users_info_list
     } else {
       console.debug("Error - couldnt find user");
     }
-  });
+  }
 
   const filename = `/reports/${org_id}/sensor_report_${uuidv4()}.pdf`;
 

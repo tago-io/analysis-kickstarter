@@ -53,7 +53,7 @@ const checkTagoPlan = async (type: CommunicationMean, environment: AnalysisEnvir
  * @param current_sms_usage Current sms usage of the organization
  * @param service_type Type of service that will be checked
  */
-const sendLimitAlert = async (context: TagoContext, org_id: string, current_email_usage: string, current_sms_usage: string, service_type: string) => {
+const sendLimitAlert = async (_context: TagoContext, org_id: string, _current_email_usage: string, _current_sms_usage: string, service_type: string) => {
   //guest will not receive the notification/email
   const users_list = await Resources.run.listUsers({ amount: 9999, fields: ["id", "name", "email"], filter: { tags: [{ key: "organization_id", value: org_id }] } });
 

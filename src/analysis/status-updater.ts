@@ -11,7 +11,7 @@
  */
 
 import async from "async";
-import dayjs from "dayjs";
+import { DateTime } from "luxon";
 
 import { Analysis, Resources, Utils } from "@tago-io/sdk";
 import { DeviceInfo, DeviceListItem, TagoContext } from "@tago-io/sdk/lib/types";
@@ -38,9 +38,9 @@ async function resolveOrg(org: DeviceListItem) {
   });
 
   for (const sensor of sensorList) {
-    const last_input = dayjs(sensor.last_input);
-    const now = dayjs();
-    const diff_time = now.diff(last_input, "hours");
+    const last_input = DateTime.fromISO(String(sensor.last_input || ""));
+    const now = DateTime.now();
+    const diff_time = now.diff(last_input, "hours").hours;
     total_qty++;
     if (diff_time < 24) {
       active_qty++;
@@ -136,15 +136,15 @@ async function resolveDevice(context: TagoContext, org_id: string, device_id: st
     return Promise.reject("Device not found");
   }
 
-  const checkin_date = dayjs(device_info.last_input);
+  const checkin_date = DateTime.fromISO(device_info.last_input.toString());
 
-  if (!checkin_date) {
+  if (!checkin_date.isValid) {
     return "no data";
   }
 
-  let diff_hours: string | number = dayjs().diff(checkin_date, "hours");
+  let diff_hours: string | number = DateTime.now().diff(checkin_date, "hours").hours;
 
-  if (diff_hours !== diff_hours) {
+  if (isNaN(diff_hours)) {
     diff_hours = "-";
   } //checking for NaN
 
