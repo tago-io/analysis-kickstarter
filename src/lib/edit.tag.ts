@@ -14,7 +14,7 @@ import { TagsObj } from "@tago-io/sdk/lib/types";
  * @param debug
  * @returns
  */
-function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
+function TagResolver(rawTags: TagsObj[], debug: boolean = false, type: "device" | "entity" = "device") {
   const tags = JSON.parse(JSON.stringify(rawTags)) as TagsObj[];
   const newTags: TagsObj[] = [];
 
@@ -25,7 +25,7 @@ function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
      * @param {string} value value of the Tag
      * @returns
      */
-    setTag: function (key: string, value: string) {
+    setTag: (key: string, value: string) => {
       if (typeof key !== "string") {
         throw "[TagResolver] key is not a string";
       }
@@ -36,7 +36,7 @@ function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
       if (!tagExist || tagExist.value !== value) {
         newTags.push({ key, value });
       }
-      return this;
+      return tagResolver;
     },
 
     /**
@@ -44,7 +44,7 @@ function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
      * @param {string} deviceID Device ID to apply the changes
      * @returns
      */
-    apply: async function (deviceID: string) {
+    apply: async (deviceID: string) => {
       if (debug) {
         return newTags;
       }
@@ -58,7 +58,11 @@ function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
         }
       }
 
-      await Resources.devices.edit(deviceID, { tags });
+      if (type === "device") {
+        await Resources.devices.edit(deviceID, { tags });
+      } else {
+        await Resources.entities.edit(deviceID, { tags });
+      }
     },
 
     /**
@@ -66,9 +70,7 @@ function TagResolver(rawTags: TagsObj[], debug: boolean = false) {
      * @returns {boolean} true if there is any change to be applied.
      * @memberof TagResolver
      */
-    hasChanged: function () {
-      return newTags.length > 0;
-    },
+    hasChanged: () => newTags.length > 0,
   };
 
   return tagResolver;

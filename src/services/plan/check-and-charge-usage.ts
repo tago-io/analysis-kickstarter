@@ -1,5 +1,6 @@
 import { Resources, Utils } from "@tago-io/sdk";
-import { AnalysisEnvironment, ConfigurationParams, TagoContext } from "@tago-io/sdk/lib/types";
+import { AnalysisEnvironment, TagoContext, TagsObj } from "@tago-io/sdk/lib/types";
+import { TagResolver } from "../../lib/edit.tag";
 
 type CommunicationMean = "email" | "sms" | "notification_run";
 /**
@@ -110,14 +111,14 @@ const orgHasLimit = (plan_sms_limit: string, current_plan_count: number): boolea
  */
 async function checkAndChargeUsage(context: TagoContext, org_id: string, to_dispatch_qty: number, type: CommunicationMean) {
   //id of the org device
-  const org_params = await Resources.devices.paramList(org_id);
+  const { tags } = await Resources.entities.info(org_id);
 
-  const plan_email_limit = org_params.find((x) => x.key === "plan_email_limit") as ConfigurationParams;
-  const plan_sms_limit = org_params.find((x) => x.key === "plan_sms_limit") as ConfigurationParams;
-  const plan_notif_limit = org_params.find((x) => x.key === "plan_notif_limit") as ConfigurationParams;
-  const plan_sms_limit_usage = org_params.find((x) => x.key === "plan_sms_limit_usage") || { key: "plan_sms_limit_usage", value: "0", sent: false };
-  const plan_email_limit_usage = org_params.find((x) => x.key === "plan_email_limit_usage") || { key: "plan_email_limit_usage", value: "0", sent: false };
-  const plan_notif_limit_usage = org_params.find((x) => x.key === "plan_notif_limit_usage") || { key: "plan_notif_limit_usage", value: "0", sent: false };
+  const plan_email_limit = tags.find((x) => x.key === "plan_email_limit") as TagsObj;
+  const plan_sms_limit = tags.find((x) => x.key === "plan_sms_limit") as TagsObj;
+  const plan_notif_limit = tags.find((x) => x.key === "plan_notif_limit") as TagsObj;
+  const plan_sms_limit_usage = tags.find((x) => x.key === "plan_sms_limit_usage") as TagsObj;
+  const plan_email_limit_usage = tags.find((x) => x.key === "plan_email_limit_usage") as TagsObj;
+  const plan_notif_limit_usage = (tags.find((x) => x.key === "plan_notif_limit_usage") || { key: "plan_notif_limit_usage", value: "0", sent: false }) as TagsObj;
 
   const environment = Utils.envToJson(context.environment);
 
@@ -125,19 +126,17 @@ async function checkAndChargeUsage(context: TagoContext, org_id: string, to_disp
   if (!(await checkTagoPlan(type, environment))) {
     return false;
   }
+  const tagResolver = TagResolver(tags);
   if (type === "email") {
     const current_plan_count = Number(plan_email_limit_usage.value) + to_dispatch_qty;
-
     const org_has_limit = orgHasLimit(plan_email_limit.value, current_plan_count);
 
     if (org_has_limit) {
-      await Resources.devices.paramSet(org_id, { ...plan_email_limit_usage, value: String(current_plan_count), sent: false }); //SET NEW SERVICE USAGE
+      tagResolver.setTag("plan_email_limit_usage", String(current_plan_count));
       return true;
-    } else if (!org_has_limit && !plan_email_limit_usage.sent) {
+    } else if (!org_has_limit) {
       await sendLimitAlert(context, org_id, plan_email_limit_usage.value, plan_sms_limit_usage.value, "email");
-
-      await Resources.devices.paramSet(org_id, { ...plan_email_limit_usage, sent: true });
-
+      tagResolver.setTag("plan_email_limit_usage", String(current_plan_count));
       return false;
     }
 
@@ -148,12 +147,11 @@ async function checkAndChargeUsage(context: TagoContext, org_id: string, to_disp
     const org_has_limit = orgHasLimit(plan_sms_limit.value, current_plan_count);
 
     if (org_has_limit) {
-      await Resources.devices.paramSet(org_id, { ...plan_sms_limit_usage, value: String(current_plan_count), sent: false }); //SET NEW SERVICE USAGE
+      tagResolver.setTag("plan_sms_limit_usage", String(current_plan_count));
       return true;
-    } else if (!org_has_limit && !plan_sms_limit_usage.sent) {
+    } else if (!org_has_limit) {
       await sendLimitAlert(context, org_id, plan_sms_limit_usage.value, plan_sms_limit_usage.value, "SMS");
-
-      await Resources.devices.paramSet(org_id, { ...plan_sms_limit_usage, sent: true });
+      tagResolver.setTag("plan_sms_limit_usage", String(current_plan_count));
 
       return false;
     }
@@ -165,12 +163,12 @@ async function checkAndChargeUsage(context: TagoContext, org_id: string, to_disp
     const org_has_limit = orgHasLimit(plan_notif_limit.value, current_plan_count);
 
     if (org_has_limit) {
-      await Resources.devices.paramSet(org_id, { ...plan_notif_limit_usage, value: String(current_plan_count), sent: false }); //SET NEW SERVICE USAGE
+      tagResolver.setTag("plan_notif_limit_usage", String(current_plan_count));
       return true;
-    } else if (!org_has_limit && !plan_notif_limit_usage.sent) {
+    } else if (!org_has_limit) {
       await sendLimitAlert(context, org_id, plan_notif_limit_usage.value, plan_notif_limit_usage.value, "notification_run");
 
-      await Resources.devices.paramSet(org_id, { ...plan_notif_limit_usage, sent: true });
+      tagResolver.setTag("plan_notif_limit_usage", String(current_plan_count));
 
       return false;
     }

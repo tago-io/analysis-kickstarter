@@ -63,5 +63,19 @@
         "id": "61b2f46e561da800197a9c43",
         "profileName": "Kickstarter Application [TEMPLATE]",
         "email": "mateus.silva@tago.io"
+    },
+    "tagoDeployUrl": "",
+    "tagoDeploySse": "",
+    "dev": {
+        "analysisList": [
+            {
+                "fileName": "handler.ts",
+                "name": "[TagoIO] - Handler",
+                "id": "67f02465b005d7000ad5633e"
+            }
+        ],
+        "id": "67f014aed58d79000ad0b2ce",
+        "profileName": "Kickstarter Entity Application",
+        "email": "bruno.gelatti@tago.io"
     }
 }

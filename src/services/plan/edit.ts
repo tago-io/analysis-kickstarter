@@ -1,75 +1,79 @@
 import { Resources } from "@tago-io/sdk";
-import { Data } from "@tago-io/sdk/lib/types";
-
-import { fetchDeviceList, FetchDeviceResponse } from "../../lib/fetch-device-list";
 import { sendNotificationFeedback } from "../../lib/send-notification";
-import { RouterConstructorData } from "../../types";
+import { RouterConstructor } from "@tago-io/sdk/lib/modules/Utils/router/router";
+import { IPlanModelEdit, planModelEdit } from "./plan.model";
+import { EntityData } from "../../types";
+import { getZodError } from "../../lib/get-zod-error";
+import { getPlanEntity } from "./register";
+import { fetchEntityList, FetchEntityResponse } from "../../lib/fetch-entity-list";
+import { TagResolver } from "../../lib/edit.tag";
 
 /**
  * Function that resolves the report of the organization and send it to the user
  */
-const resolveOrg = async (org: FetchDeviceResponse, plan_data: Data) => {
-  if (!org || !plan_data || !plan_data.metadata) {
+const resolveOrg = async (org: FetchEntityResponse, plan_data: IPlanModelEdit) => {
+  if (!org || !plan_data) {
     throw new Error("Missing parameters");
   }
-  //changing plan_data variable
-  const org_id = org.id;
-
-  const old_plan_data = await Resources.devices.getDeviceData(org_id, { variables: "plan_data", query: "last_item" });
-
-  await Resources.devices.editDeviceData(org_id, { ...old_plan_data, ...plan_data });
-
-  //changing params
-  const org_params = await Resources.devices.paramList(org_id);
-  const plan_name = org_params.find((x) => x.key === "plan_name");
-  const plan_email_limit = org_params.find((x) => x.key === "plan_email_limit") || { key: "plan_email_limit", value: "", sent: false };
-  const plan_sms_limit = org_params.find((x) => x.key === "plan_sms_limit") || { key: "plan_sms_limit", value: "", sent: false };
-  const plan_notif_limit = org_params.find((x) => x.key === "plan_notif_limit") || { key: "plan_notif_limit", value: "", sent: false };
-  const plan_data_retention = org_params.find((x) => x.key === "plan_data_retention") || { key: "plan_data_retention", value: "", sent: false };
-
-  await Resources.devices.paramSet(org_id, { ...plan_name, value: plan_data.value as string });
-  await Resources.devices.paramSet(org_id, { ...plan_email_limit, value: String(plan_data.metadata.email_limit) });
-  await Resources.devices.paramSet(org_id, { ...plan_sms_limit, value: String(plan_data.metadata.sms_limit) });
-  await Resources.devices.paramSet(org_id, { ...plan_notif_limit, value: String(plan_data.metadata.notif_limit) });
-  await Resources.devices.paramSet(org_id, { ...plan_data_retention, value: String(plan_data.metadata.data_retention) });
+  //changing tags
+  const orgInfo = await Resources.entities.info(org.id);
+  const tagResolver = TagResolver(orgInfo.tags, false, "entity");
+  tagResolver.setTag("plan_name", plan_data.name as string);
+  tagResolver.setTag("plan_email_limit", String(plan_data.email_usg_limit_qty_m));
+  tagResolver.setTag("plan_sms_limit", String(plan_data.sms_usg_limit_qty_m));
+  tagResolver.setTag("plan_notif_limit", String(plan_data.push_notification_usg_limit_qty_m));
+  tagResolver.setTag("plan_data_retention", String(plan_data.data_retention_m));
+  await tagResolver.apply(org.id);
 };
 
 /**
- * Function that validates the limit values of the plan variables and throws an error if the value is invalid or negative integer
+ * Undo Plan changes
  */
-async function _validateLimitValues(
-  plan_email_limit: Data | undefined,
-  plan_sms_limit: Data | undefined,
-  plan_notif_limit: Data | undefined,
-  plan_data_retention: Data | undefined
-) {
-  if (plan_email_limit && ((plan_email_limit.value as number) < 0 || !Number.isInteger(plan_email_limit.value))) {
-    return Promise.reject("Email Limit must be a non-negative integer value");
+async function _undoPlanChanges(scope: EntityData[]) {
+  if (!scope || scope.length === 0) {
+    throw new Error("Missing parameters");
   }
-  if (plan_sms_limit && ((plan_sms_limit.value as number) < 0 || !Number.isInteger(plan_sms_limit.value))) {
-    return Promise.reject("SMS Limit must be a non-negative integer value");
+
+  const dataId = scope[0].id as string;
+  const entityPlan = await getPlanEntity();
+  let [plan_data] = await Resources.entities.getEntityData(entityPlan.id, {
+    filter: {
+      id: dataId,
+    },
+    index: "id_idx",
+    amount: 1,
+   });
+
+  if (!plan_data) {
+    throw new Error("Plan data not found.");
   }
-  if (plan_notif_limit && ((plan_notif_limit.value as number) < 0 || !Number.isInteger(plan_notif_limit.value))) {
-    return Promise.reject("Push Notification Limit must be a non-negative integer value");
-  }
-  if (plan_data_retention && ((plan_data_retention.value as number) < 0 || !Number.isInteger(plan_data_retention.value))) {
-    return Promise.reject("Data Retention must be a non-negative integer value");
-  }
+
+  plan_data.name = scope.find((x) => x.old?.name)?.old.name as string;
+  plan_data.email_usg_limit_qty_m = scope.find((x) => x.old?.email_usg_limit_qty_m)?.old.email_usg_limit_qty_m as number;
+  plan_data.sms_usg_limit_qty_m = scope.find((x) => x.old?.sms_usg_limit_qty_m)?.old.sms_usg_limit_qty_m as number;
+  plan_data.push_notification_usg_limit_qty_m = scope.find((x) => x.old?.push_notification_usg_limit_qty_m)?.old.push_notification_usg_limit_qty_m as number;
+  plan_data.data_retention_m = scope.find((x) => x.old?.data_retention_m)?.old.data_retention_m as number;
+
+  await Resources.entities.editEntityData(entityPlan.id, [plan_data]);
 }
 
-/**
- * Undo Plan changes in the settings device.
- */
-async function _undoPlanChanges(scope: Data[], config_id: string) {
-  const groups = scope[0].group;
-  const variables = await Resources.devices.getDeviceData(config_id, { variables: ["plan_email_limit", "plan_sms_limit", "plan_notif_limit", "plan_data_retention"], groups });
-  for (const variable of variables) {
-    const variableValue = variable.variable.replace(new RegExp("plan_" + "_?"), "");
-    if (variable.variable === `plan_${variableValue}`) {
-      variable.value = scope.find((x) => x.variable === `plan_${variableValue}`)?.metadata?.old_value ?? variable.value;
-    }
-  }
-  await Resources.devices.editDeviceData(config_id, variables);
+async function getFormFields(scope: EntityData[]) {
+  //Collecting data
+  const newPlanName = scope.find((x) => x.name)?.name as string;
+  const newPlanEmailLimit = scope.find((x) => x.email_usg_limit_qty_m)?.email_usg_limit_qty_m as number;
+  const newPlanSmsLimit = scope.find((x) => x.sms_usg_limit_qty_m)?.sms_usg_limit_qty_m as number;
+  const newPlanNotifLimit = scope.find((x) => x.push_notification_usg_limit_qty_m)?.push_notification_usg_limit_qty_m as number;
+  const newPlanDataRetention = scope.find((x) => x.data_retention_m)?.data_retention_m as number;
+
+  const result = await planModelEdit.parseAsync({
+    name: newPlanName,
+    email_usg_limit_qty_m: newPlanEmailLimit,
+    sms_usg_limit_qty_m: newPlanSmsLimit,
+    push_notification_usg_limit_qty_m: newPlanNotifLimit,
+    data_retention_m: newPlanDataRetention,
+  });
+
+  return result;
 }
 
 /**
@@ -78,68 +82,56 @@ async function _undoPlanChanges(scope: Data[], config_id: string) {
  * @param scope Scope is a variable sent by the analysis
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function planEdit({ context, scope, environment }: RouterConstructorData) {
+async function planEdit({ context, scope, environment }: RouterConstructor) {
   if (!environment || !scope || !context) {
     throw new Error("Missing parameters");
   }
 
-  const config_id = environment.config_id;
-  if (!config_id) {
-    throw "[Error] No config device ID: config_id.";
-  }
+  const dataId = scope[0].id as string;
 
-  const plan_name = scope.find((x) => x.variable === "plan_data");
-  const plan_email_limit = scope.find((x) => x.variable === "plan_email_limit");
-  const plan_sms_limit = scope.find((x) => x.variable === "plan_sms_limit");
-  const plan_notif_limit = scope.find((x) => x.variable === "plan_notif_limit");
-  const plan_data_retention = scope.find((x) => x.variable === "plan_data_retention");
+  const formFields = await getFormFields(scope)
+    .catch(getZodError)
+    .catch(async (error) => {
+      await _undoPlanChanges(scope);
+      await sendNotificationFeedback({ environment, message: error });
+      throw error;
+    });
 
-  await _validateLimitValues(plan_email_limit, plan_sms_limit, plan_notif_limit, plan_data_retention).catch(async (error) => {
-    await _undoPlanChanges(scope, config_id);
+  if (!formFields) {
+    const error = "Form fields are required.";
     await sendNotificationFeedback({ environment, message: error });
-    throw error;
-  });
-
-  const plan_group = scope[0].group;
-
-  const [plan_data] = await Resources.devices.getDeviceData(config_id, { variables: "plan_data", groups: plan_group, qty: 1 });
-
-  if (!plan_data.value || !plan_data.metadata) {
-    throw new Error("Plan not found");
+    throw new Error(error);
   }
 
-  const org_dev_list = await fetchDeviceList({
+  const orgEntityList = await fetchEntityList({
     tags: [
-      { key: "device_type", value: "organization" },
-      { key: "plan_group", value: plan_data.group as string },
+      { key: "entity_type", value: "organization" },
+      { key: "plan_group", value: dataId },
     ],
   });
 
-  //change plan_data
-  if (plan_name) {
-    plan_data.value = plan_name.value;
-  }
-  if (plan_email_limit) {
-    plan_data.metadata.email_limit = plan_email_limit.value;
-  }
-  if (plan_sms_limit) {
-    plan_data.metadata.sms_limit = plan_sms_limit.value;
-  }
-  if (plan_notif_limit) {
-    plan_data.metadata.notif_limit = plan_notif_limit.value;
-  }
-  if (plan_data_retention) {
-    plan_data.metadata.data_retention = plan_data_retention.value;
+  const entityPlan = await getPlanEntity();
+  let [plan_data] = await Resources.entities.getEntityData(entityPlan.id, {
+    filter: {
+      id: dataId,
+    },
+    index: "id_idx",
+    amount: 1,
+   });
+
+  if (!plan_data) {
+    throw new Error("Plan data not found.");
   }
 
-  for (const org of org_dev_list) {
-    await resolveOrg(org, plan_data);
+  for (const org of orgEntityList) {
+    await resolveOrg(org, {
+      name: plan_data.name,
+      email_usg_limit_qty_m: plan_data.email_usg_limit_qty_m,
+      sms_usg_limit_qty_m: plan_data.sms_usg_limit_qty_m,
+      push_notification_usg_limit_qty_m: plan_data.push_notification_usg_limit_qty_m,
+      data_retention_m: plan_data.data_retention_m
+    });
   }
-
-  //this line must always work synchronously
-  await Resources.devices.deleteDeviceData(config_id, { variables: "plan_data", groups: plan_group, qty: 1 });
-
-  await Resources.devices.sendDeviceData(config_id, plan_data);
 
   return console.debug("Plan edited!");
 }

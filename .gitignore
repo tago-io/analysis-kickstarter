@@ -55,3 +55,4 @@ yarn.lock
 .tagoio
 .tago-lock.tagoio init.lock
 tagoconfig
+.tago-lock.dev.lock
