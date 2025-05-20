@@ -6,7 +6,7 @@ import { parseTagoObject } from "../../lib/data.logic";
 import { fetchDeviceList } from "../../lib/fetch-device-list";
 import { getDashboardByConnectorID } from "../../lib/find-resource";
 import { initializeValidation } from "../../lib/validation";
-import { DeviceCreated, RouterConstructorData } from "../../types";
+import { DeviceCreated, RouterConstructorData, RouterConstructorEntity } from "../../types";
 
 interface installDeviceParam {
   new_dev_name: string;
@@ -70,14 +70,19 @@ async function installDevice({ new_dev_name, org_id, network_id, connector, new_
  * @param scope Number of devices that will be listed
  * @param environment Environment Variable is a resource to send variables values to the context of your script
  */
-async function sensorAdd({ context, scope, environment }: RouterConstructorData) {
+async function sensorAdd({ context, scope, environment }: RouterConstructorEntity) {
   if (!environment || !scope || !context) {
     throw new Error("Missing parameters");
   }
 
-  const org_id = scope[0].device;
+  const config_id = environment.config_id;
+  if (!config_id) {
+    throw "[Error] No config device ID: config_id.";
+  }
 
-  const validate = initializeValidation("dev_validation", org_id);
+  const org_id = scope[0].entity;
+
+  const validate = initializeValidation("dev_validation", config_id);
   await validate("#VAL.REGISTERING#", "warning").catch((error) => console.error(error));
 
   const sensor_qty = await fetchDeviceList({

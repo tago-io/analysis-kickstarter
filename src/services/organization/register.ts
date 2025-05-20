@@ -15,6 +15,34 @@ interface installEntityParam {
 }
 
 /**
+ * Creates a device entity for an organization to store device-related data
+ * @param organization_id ID of the organization to create the device entity for
+ * @param organization_name Name of the organization, will be used as prefix for device name
+ * @returns Promise that resolves when device entity is created and configured
+ */
+async function createDeviceOrganization(organization_id: string, organization_name: string) {
+  const entity = {
+    name: organization_name.concat(" - Device"),
+    schema: {
+      device_qty: {
+        type: "json",
+        required: true,
+      },
+    },
+  };
+
+  const newOrgDevice = await Resources.entities.create(entity);
+
+  await Resources.entities.edit(newOrgDevice.id, {
+    tags: [
+      { key: "organization_id", value: organization_id },
+      { key: "entity_type", value: "organization_device" },
+      { key: "organization_device_id", value: newOrgDevice.id },
+    ],
+  });
+}
+
+/**
  * Creates a group entity for an organization to store group-related data
  * @param organization_id ID of the organization to create the group for
  * @param organization_name Name of the organization, will be used as prefix for group name
@@ -116,6 +144,7 @@ async function installEntity({ new_org_name, new_org_plan_id }: installEntityPar
   });
 
   await createGroupOrganization(new_org.id, new_org_name);
+  await createDeviceOrganization(new_org.id, new_org_name);
 
   return new_org.id;
 }
