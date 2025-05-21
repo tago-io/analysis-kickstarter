@@ -1,13 +1,13 @@
 import { Device, Resources } from "@tago-io/sdk";
 import { DeviceCreateInfo } from "@tago-io/sdk/lib/types";
-
-import { createDashURL } from "../../lib/create-dash-url";
 import { parseTagoObject } from "../../lib/data.logic";
 import { fetchDeviceList } from "../../lib/fetch-device-list";
 import { getDashboardByConnectorID } from "../../lib/find-resource";
 import { initializeValidation } from "../../lib/validation";
-import { DeviceCreated, RouterConstructorData, RouterConstructorEntity } from "../../types";
-
+import { DeviceCreated, EntityData, RouterConstructorEntity } from "../../types";
+import { deviceModel } from "./device.model";
+import { getZodError } from "../../lib/get-zod-error";
+import { createURL } from "../../lib/url-creator";
 interface installDeviceParam {
   new_dev_name: string;
   org_id: string;
@@ -64,6 +64,25 @@ async function installDevice({ new_dev_name, org_id, network_id, connector, new_
   return { ...new_dev, device: new_org_dev } as DeviceCreated;
 }
 
+async function getFormFields(scope: EntityData[]) {
+  //Collecting data
+  const name = scope.find((x) => x.new_dev_name)?.new_dev_name as string;
+  const eui = scope.find((x) => x.new_dev_eui)?.new_dev_eui as string;
+  const group = scope.find((x) => x.new_dev_group)?.new_dev_group as string;
+  const type = scope.find((x) => x.new_dev_type)?.new_dev_type as string;
+  const network = scope.find((x) => x.new_dev_network)?.new_dev_network as string;
+
+  const result = await deviceModel.parseAsync({
+    name: name,
+    eui: eui,
+    group: group,
+    type: type,
+    network: network,
+  });
+
+  return result;
+}
+
 /**
  * Main function of creating devices
  * @param context Context is a variable sent by the analysis
@@ -93,79 +112,70 @@ async function sensorAdd({ context, scope, environment }: RouterConstructorEntit
   });
 
   if (sensor_qty.length >= 5) {
-    return validate("#VAL.LIMIT_OF_5_DEVICES_REACHED#", "danger");
-  }
-  //Collecting data
-  const new_dev_name = scope.find((x) => x.variable === "new_dev_name");
-  const new_dev_eui = scope.find((x) => x.variable === "new_dev_eui");
-  const new_dev_group = scope.find((x) => x.variable === "new_dev_group");
-  const new_dev_type = scope.find((x) => x.variable === "new_dev_type");
-  const new_dev_network = scope.find((x) => x.variable === "new_dev_network");
-
-  if (!new_dev_name || !new_dev_group || !new_dev_type || !new_dev_network) {
-    throw new Error("Missing variables");
-  }
-  if ((new_dev_name?.value as string).length < 3) {
-    throw validate("#VAL.NAME_FIELD_IS_SMALLER_THAN_3_CHAR#", "danger");
+    const error = "Limit of 5 devices reached";
+    await validate(error, "danger").catch((error) => console.error(error));
+    throw new Error(error);
   }
 
-  if (!new_dev_type?.value) {
-    throw validate("#VAL.DEVICE_TYPE_NOT_FOUND_PLEASE_SELECT_AGAIN_THE_DEVICE_TYPE#", "danger");
-  }
+  const formFields = await getFormFields(scope)
+    .catch(getZodError)
+    .catch(async (error) => {
+      await validate(error, "danger");
+      throw error;
+    });
 
+  if (!formFields) {
+    const error = "Form fields are required.";
+    await validate(error, "danger").catch((error) => console.log(error));
+    throw new Error(error);
+  }
   //If choosing for the simulator, we generate a random EUI
-  const dev_eui = (new_dev_eui?.value as string)?.toUpperCase() || String(Math.ceil(Math.random() * 10_000_000));
+  const dev_eui = (formFields.eui as string)?.toUpperCase() || String(Math.ceil(Math.random() * 10_000_000));
 
   const dev_exists = await fetchDeviceList({ tags: [{ key: "dev_eui", value: dev_eui }] });
 
   if (dev_exists.length > 0) {
-    console.debug("Sensor EUI already in use.");
-    return validate("Sensor EUI already in use.", "danger");
+    const error = "Sensor EUI already in use.";
+    await validate(error, "danger").catch((error) => console.error(error));
+    throw new Error(error);
   }
 
-  const group_id = new_dev_group?.value as string;
+  const group_id = formFields.group as string;
 
-  const connector_id = new_dev_type.value as string;
+  const connector_id = formFields.type as string;
 
   let dash_id = "";
   try {
     ({ id: dash_id } = await getDashboardByConnectorID(connector_id));
   } catch (_error) {
-    return validate("#VAL.ERROR__NO_DASHBOARD_FOUND#", "danger");
+    const error = "No dashboard found";
+    await validate(error, "danger").catch((error) => console.error(error));
+    throw new Error(error);
   }
 
   const dash_info = await Resources.dashboards.info(dash_id);
   const type = dash_info.blueprint_devices.find((bp) => bp.conditions[0].key === "sensor");
   if (!type) {
-    return validate("#VAL.ERROR__DASHBOARD_IS_MISSING_THE_BLUEPRINT_DEVICE_SENSOR#", "danger");
+    const error = "Dashboard is missing the blueprint device sensor";
+    await validate(error, "danger").catch((error) => console.error(error));
+    throw new Error(error);
   }
 
   const { device_id } = await installDevice({
-    new_dev_name: new_dev_name.value as string,
+    new_dev_name: formFields.name,
     org_id,
-    network_id: new_dev_network.value as string,
+    network_id: formFields.network,
     connector: connector_id,
     new_device_eui: dev_eui,
     type: type.conditions[0].value,
     group_id,
   });
 
-  const url = createDashURL(dash_id, { org_dev: org_id, sensor: device_id });
-
-  const dev_data = parseTagoObject(
-    {
-      dev_id: {
-        value: device_id,
-        metadata: {
-          label: new_dev_name.value,
-          url,
-          status: "unknwon",
-          type: dash_info.type,
-        },
-      },
-    },
-    device_id
-  );
+  const url = createURL()
+    .setBase(`/dashboards/info/${dash_id}`)
+    .addParam("org_dev", org_id)
+    .addParam("sensor", device_id)
+    .build();
 
   await Resources.devices.paramSet(device_id, {
     key: "dashboard_url",
@@ -174,16 +184,34 @@ async function sensorAdd({ context, scope, environment }: RouterConstructorEntit
   });
 
   await Resources.devices.paramSet(device_id, { key: "dev_eui", value: dev_eui, sent: false });
-  await Resources.devices.paramSet(device_id, { key: "dev_group", value: (new_dev_group?.metadata?.label as string) || "", sent: false });
+  await Resources.devices.paramSet(device_id, { key: "dev_group", value: (group_id || "") || "", sent: false });
   await Resources.devices.paramSet(device_id, { key: "dev_lastcheckin", value: "-", sent: false });
   await Resources.devices.paramSet(device_id, { key: "dev_battery", value: "-", sent: false });
 
-  const add_to_dropdown_list = parseTagoObject({ asset_list: new_dev_name.value }, device_id);
-  await Resources.devices.sendDeviceData(org_id, dev_data.concat(add_to_dropdown_list));
+  const dataToSend = [
+    {
+      dev_id: {
+        value: device_id,
+        metadata: {
+          label: formFields.name,
+          url,
+          status: "unknwon",
+          type: dash_info.type,
+        },
+      },
+    },
+    {
+      asset_list: {
+        value: formFields.name,
+      },
+    },
+  ];
+  await Resources.entities.sendEntityData(org_id, dataToSend);
 
-  if (group_id) {
-    await Resources.devices.sendDeviceData(new_dev_group.value as string, dev_data);
-  }
+  //TODO: verify if this is needed
+  // if (group_id) {
+  //   await Resources.entities.sendEntityData(group_id, dataToSend);
+  // }
 
   return validate("#VAL.DEVICE_CREATED_SUCCESSFULLY#", "success");
 }
