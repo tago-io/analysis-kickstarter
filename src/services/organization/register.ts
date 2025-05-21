@@ -15,6 +15,12 @@ interface installEntityParam {
 }
 
 
+/**
+ * Creates a device entity for an organization to track device information
+ * @param organization_id ID of the organization to create the device entity for
+ * @param organization_name Name of the organization, will be used as prefix for entity name
+ * @returns Promise that resolves when device entity is created and configured
+ */
 async function createDeviceOrganization(organization_id: string, organization_name: string) {
   const entity = {
     name: organization_name.concat(" - Device"),
@@ -41,6 +47,12 @@ async function createDeviceOrganization(organization_id: string, organization_na
   });
 }
 
+/**
+ * Creates a device quantity entity for an organization to track device counts
+ * @param organization_id ID of the organization to create the device quantity entity for
+ * @param organization_name Name of the organization, will be used as prefix for entity name
+ * @returns Promise that resolves when device quantity entity is created and configured
+ */
 async function createDeviceQtyOrganization(organization_id: string, organization_name: string) {
   const entity = {
     name: organization_name.concat(" - Device Qty"),
