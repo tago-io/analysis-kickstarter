@@ -1,0 +1,50 @@
+{
+  "name": "@app/root",
+  "version": "1.0.0",
+  "exports": "./app/mod.ts",
+  "nodeModulesDir": "auto",
+  "workspace": ["./app", "./widgets", "./widgets/sensor-status", "./widgets/cold-room-monitor", "./widgets/cold-room-card-data"],
+  "tasks": {
+    "test:app": "cd app && deno task test",
+    "test:all": "deno test --allow-all --ignore=build/,_dist/,node_modules/",
+    "lint:app": "cd app && deno task linter",
+    "lint:widgets": "deno lint widgets/",
+    "lint:all": "deno lint --ignore=build/,_dist/,node_modules/,.github/",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "build:app": "deno check app/",
+    "build:widgets": "deno check widgets/ &&cd widgets && deno task build",
+    "dev:widgets": "cd widgets && deno task dev"
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 180,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "exclude": ["build/", "_dist/", "node_modules/", ".github/", ".superpowers/"]
+  },
+  "imports": {
+    "@tago-io/sdk": "npm:@tago-io/sdk@^12.2.1",
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/testing": "jsr:@std/testing@^1.0.18"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "lib": ["ES2023", "DOM", "Deno.NS"]
+  },
+  "lint": {
+    "plugins": [
+      "jsr:@hugoalh/deno-lint-rules@^0.14.1"
+    ],
+    "rules": {
+      "exclude": ["no-explicit-any", "hugoalh/fmt-jsdoc", "hugoalh/no-duplicate-import-sources", "no-unversioned-import", "no-import-prefix"]
+    }
+  },
+  "exclude": ["build/", "node_modules/", "_dist/", "**/.vite/", ".claude/"],
+  "lock": false
+}
