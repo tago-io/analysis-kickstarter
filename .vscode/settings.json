@@ -1,0 +1,27 @@
+{
+  // Deno LSP across the workspace (root deno.json lists all members)
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.codeLens.test": true,
+  "deno.codeLens.references": true,
+  // e2e/ is a Node project (Playwright + npm); let the built-in TS server handle it.
+  "deno.disablePaths": ["e2e"],
+
+  // deno fmt as the default formatter — stays in sync with CI's lint/fmt checks
+  "editor.formatOnSave": true,
+  "[typescript]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  "[typescriptreact]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  "[javascript]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  "[json]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  "[jsonc]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+
+  // Tailwind v4 is CSS-first — point IntelliSense at each widget's styles.css.
+  // Add a new key per widget as you create them.
+  "tailwindCSS.experimental.configFile": {
+    "widgets/line-chart/styles.css": "widgets/line-chart/**"
+  },
+  "cSpell.words": [
+    "CHECKIN",
+    "sendgrid"
+  ]
+}
