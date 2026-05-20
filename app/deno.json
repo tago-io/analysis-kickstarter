@@ -1,0 +1,25 @@
+{
+  "name": "@app/application",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {},
+  "tasks": {
+    "test": "deno test --allow-all .",
+    "test:single": "deno test --allow-all",
+    "linter": "deno lint --rules-exclude=no-explicit-any,hugoalh/fmt-jsdoc --ignore='**/*.test.ts' .",
+    "linter-fix": "deno lint --fix .",
+    "build": "deno run --allow-read --allow-write --allow-run bundle.ts"
+  },
+  "imports": {
+    "json-2-csv": "npm:json-2-csv@^5.5.10",
+    "luxon": "npm:luxon@^3.7.2",
+    "phone": "npm:phone@^3.1.50",
+    "zod": "npm:zod@^4.3.6",
+    "@std/fs": "jsr:@std/fs@^1.0.23",
+    "@std/path": "jsr:@std/path@^1.1.4"
+  },
+  "test": {
+    "include": ["**/*.test.ts"],
+    "exclude": ["build/"]
+  }
+}
