@@ -12,10 +12,10 @@ focused on the right scope.
 
 This dashboard shows every group that belongs to the organization selected at the top. It is split into three tabs:
 
-- ❄️ **Cold Rooms tab** — A live-monitoring view showing every sensor in the organization grouped by its parent group. Each group is rendered as a section header with a count
-  (e.g: _"5 SENSORS"_) followed by one card per sensor. Every card surfaces the sensor name, time since the last uplink, current temperature (°F), compressor status (ON/OFF), and door
-  status (OPEN/CLOSED). A search button in the top-right filters the cards by sensor name, which is handy when an organization has many sensors. This is the tab to open first
-  when a user wants to know the current state of their cold rooms.
+- ❄️ **Cold Rooms tab** — A live-monitoring view showing every sensor in the organization grouped by its parent group. Each group is rendered as a section header with a count (e.g:
+  _"5 SENSORS"_) followed by one card per sensor. Every card surfaces the sensor name, time since the last uplink, current temperature (°F), compressor status (ON/OFF), and door
+  status (OPEN/CLOSED). A search button in the top-right filters the cards by sensor name, which is handy when an organization has many sensors. This is the tab to open first when
+  a user wants to know the current state of their cold rooms.
 - 🏢 **Organization selector** — The dropdown at the top lets you switch between organizations without leaving this dashboard. It uses TagoIO's Blueprint feature: changing the
   organization rewrites every widget in place to show that organization's groups.
 - 📋 **Overview tab — Group List** — A table with the name and address of every group inside the current organization. From here, you can:
@@ -39,8 +39,8 @@ When you create a group, the `createGroup` analysis function runs and:
 Sensors that you create later carry the matching `group_id` tag, which is how this dashboard's Sensors view knows what to display.
 
 The **Cold Rooms tab** is powered by a TagoIO **custom widget** that reads the `cold_room_card_data` variable from the organization device. That variable is written by the
-`uplink-handler` analysis on every sensor uplink: one record per sensor, grouped by sensor id, with metadata for the sensor name, parent group name, temperature, compressor
-status, and door status. The widget uses the `group_name` field to cluster the cards by group at render time — no extra query is needed.
+`uplink-handler` analysis on every sensor uplink: one record per sensor, grouped by sensor id, with metadata for the sensor name, parent group name, temperature, compressor status,
+and door status. The widget uses the `group_name` field to cluster the cards by group at render time — no extra query is needed.
 
 ## ❓ Common questions
 
@@ -56,8 +56,8 @@ irreversible, so make sure you are deleting the right one. If you only want to m
 **Why does a sensor card on the Cold Rooms tab show stale data or `— Xh ago`?** The card mirrors whatever the sensor last reported. If the time-since-last-uplink keeps climbing,
 the device is likely offline or out of battery — open the Sensors view for that group to investigate.
 
-**A new sensor doesn't appear on the Cold Rooms tab. Why?** The card only shows up after the sensor produces its first uplink (the `uplink-handler` writes the
-`cold_room_card_data` record on the organization device the first time it sees a value from that sensor). Once the device sends data, the card appears automatically.
+**A new sensor doesn't appear on the Cold Rooms tab. Why?** The card only shows up after the sensor produces its first uplink (the `uplink-handler` writes the `cold_room_card_data`
+record on the organization device the first time it sees a value from that sensor). Once the device sends data, the card appears automatically.
 
 ## 💎 Tips
 

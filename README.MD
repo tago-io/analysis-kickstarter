@@ -1,10 +1,10 @@
 # Kickstarter
 
-Multi-tenant IoT template that runs on TagoIO. It ships the three things a complete TagoIO application needs: **Analyses** (Deno serverless handlers), **custom Dashboard
-Widgets** (React iframes), and **dashboard helper docs** (the markdown rendered inside each dashboard's `Helper` tab in the application).
+Multi-tenant IoT template that runs on TagoIO. It ships the three things a complete TagoIO application needs: **Analyses** (Deno serverless handlers), **custom Dashboard Widgets**
+(React iframes), and **dashboard helper docs** (the markdown rendered inside each dashboard's `Helper` tab in the application).
 
-The runtime is Deno end-to-end. Widgets add a Vite/React toolchain on top for the browser bundle. Everything is wired as a Deno workspace so analyses and widgets can share
-types without a publish step.
+The runtime is Deno end-to-end. Widgets add a Vite/React toolchain on top for the browser bundle. Everything is wired as a Deno workspace so analyses and widgets can share types
+without a publish step.
 
 ## Layout
 
@@ -47,24 +47,24 @@ The hierarchy is enforced through device tags: `organization_id` and `group_id` 
 
 Six dashboards, every one with a `Helper` tab that renders the matching file in [`dashboard-helpers/`](./dashboard-helpers).
 
-| Dashboard       | Tabs                                       | CRUD analysis (in [`app/analysis/dashboard/`](./app/analysis/dashboard/)) | Custom widget                                                                |
-| --------------- | ------------------------------------------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Organizations   | Overview (List + Map) · Helper             | `crud-organization.ts`                                                    | —                                                                            |
-| Groups          | Cold Rooms · Overview · Helper             | `crud-group.ts`                                                           | [`cold-room-card-data`](./widgets/cold-room-card-data) on the Cold Rooms tab |
-| Sensors         | Overview · All Devices (Admin) · Helper    | `crud-sensor.ts`                                                          | [`sensor-status`](./widgets/sensor-status) on Overview                       |
-| Sensor Detail   | Overview · Helper                          | —                                                                         | [`cold-room-monitor`](./widgets/cold-room-monitor) on Overview               |
-| Alerts          | Overview · Global Alerts · Helper          | `crud-alert.ts`                                                           | —                                                                            |
-| Users           | Overview · All Users (Admin) · Helper      | `crud-user.ts`                                                            | —                                                                            |
+| Dashboard     | Tabs                                    | CRUD analysis (in [`app/analysis/dashboard/`](./app/analysis/dashboard/)) | Custom widget                                                                |
+| ------------- | --------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Organizations | Overview (List + Map) · Helper          | `crud-organization.ts`                                                    | —                                                                            |
+| Groups        | Cold Rooms · Overview · Helper          | `crud-group.ts`                                                           | [`cold-room-card-data`](./widgets/cold-room-card-data) on the Cold Rooms tab |
+| Sensors       | Overview · All Devices (Admin) · Helper | `crud-sensor.ts`                                                          | [`sensor-status`](./widgets/sensor-status) on Overview                       |
+| Sensor Detail | Overview · Helper                       | —                                                                         | [`cold-room-monitor`](./widgets/cold-room-monitor) on Overview               |
+| Alerts        | Overview · Global Alerts · Helper       | `crud-alert.ts`                                                           | —                                                                            |
+| Users         | Overview · All Users (Admin) · Helper   | `crud-user.ts`                                                            | —                                                                            |
 
-Each CRUD analysis is dispatched by the SDK's `AnalysisRouter` based on the widget that fired the call (input form, custom button, or device-list action). The full mapping
-is documented in [`app/README.md`](./app/README.md).
+Each CRUD analysis is dispatched by the SDK's `AnalysisRouter` based on the widget that fired the call (input form, custom button, or device-list action). The full mapping is
+documented in [`app/README.md`](./app/README.md).
 
 Three more analyses run outside of any dashboard:
 
 - `actions/uplink-handler.ts` — Action-triggered. Turns each sensor uplink into the `cold_room_card_data` row that powers the Cold Rooms widget.
 - `actions/alert-dispatcher.ts` — Action-triggered. Called by the per-alert Action created by `crud-alert.ts` whenever a condition is met.
-- `scheduled/check-inactive-sensors.ts` — Scheduled (hourly). Flags sensors that haven't reported within the configured threshold and refreshes the connectivity summary
-  shown on the Sensors dashboard.
+- `scheduled/check-inactive-sensors.ts` — Scheduled (hourly). Flags sensors that haven't reported within the configured threshold and refreshes the connectivity summary shown on
+  the Sensors dashboard.
 
 ## Top-level tasks
 

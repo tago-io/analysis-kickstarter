@@ -194,7 +194,17 @@ function generatePassword(): string {
   const symbols = "@!&";
   const all = upper + lower + digits + symbols;
 
-  const pick = (chars: string) => chars[Math.floor(Math.random() * chars.length)];
+  const randomIndex = (max: number): number => {
+    const bytes = new Uint32Array(1);
+    const limit = Math.floor(0x100000000 / max) * max;
+    let value = 0;
+    do {
+      globalThis.crypto.getRandomValues(bytes);
+      value = bytes[0];
+    } while (value >= limit);
+    return value % max;
+  };
+  const pick = (chars: string) => chars[randomIndex(chars.length)];
 
   const out = Array.from({ length: 12 }, () => pick(all));
   // Force the first four characters to one of each pool so the password

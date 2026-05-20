@@ -46,8 +46,8 @@ These four files live at the widget's root — no exceptions:
 | `App.tsx`    | Widget root. Uses SDK hooks to read config/data.         |
 | `styles.css` | `@import "tailwindcss";` only.                           |
 
-Add `components/`, `hooks/`, `lib/`, or `features/` **only** when code actually needs to move out of `App.tsx`. Cross-widget helpers go in [`widgets/shared/`](./shared)
-(imported as `@/shared/...`), never inside another widget.
+Add `components/`, `hooks/`, `lib/`, or `features/` **only** when code actually needs to move out of `App.tsx`. Cross-widget helpers go in [`widgets/shared/`](./shared) (imported
+as `@/shared/...`), never inside another widget.
 
 ## Data access: hooks only
 
