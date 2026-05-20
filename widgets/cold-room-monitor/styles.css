@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/* Widget-local CSS only.
+   Do NOT set background on html or body — the TagoIO dashboard
+   supplies the iframe background. */
+
+@keyframes crm-pulse-blue {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(91, 141, 238, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(91, 141, 238, 0);
+  }
+}
+
+@keyframes crm-pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(52, 196, 124, 0.75);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(52, 196, 124, 0);
+  }
+}
+
+@keyframes crm-pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.75);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(231, 76, 60, 0);
+  }
+}
+
+@keyframes crm-pulse-orange {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.75);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(245, 166, 35, 0);
+  }
+}
+
+@keyframes crm-shimmer {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.crm-dot-blue {
+  animation: crm-pulse-blue 1.8s ease-out infinite;
+}
+.crm-dot-green {
+  animation: crm-pulse-green 1.8s ease-out infinite;
+}
+.crm-dot-red {
+  animation: crm-pulse-red 1.8s ease-out infinite;
+}
+.crm-dot-orange {
+  animation: crm-pulse-orange 1.8s ease-out infinite;
+}
+
+.crm-shimmer {
+  animation: crm-shimmer 1.4s ease-in-out infinite;
+}
+
+.crm-arc-value {
+  transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.crm-arc-dot {
+  transition: cx 0.8s cubic-bezier(0.4, 0, 0.2, 1), cy 0.8s cubic-bezier(0.4, 0, 0.2, 1), fill 0.4s ease;
+}

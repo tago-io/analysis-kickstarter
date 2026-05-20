@@ -1,0 +1,16 @@
+{
+  "name": "@widgets/sensor-status",
+  "version": "1.0.0",
+  "exports": "./main.tsx",
+  "imports": {
+    "@/": "./",
+    "@/components/": "./components/"
+  },
+  "_compilerOptions_note": "Required for Deno LSP (IDE), deno check, and deno lint. Vite ignores this. Deno doesn't inherit compilerOptions from parent deno.json, only imports.",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsxImportSourceTypes": "@types/react"
+  }
+}
