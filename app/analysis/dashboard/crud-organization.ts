@@ -215,7 +215,7 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
   // No user context — notify the developer via the Analysis token.
   if (!userID) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
@@ -223,12 +223,12 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
   const user = await Resources.run.userInfo(userID).catch(() => null);
   if (!user) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
   await Resources.run.notificationCreate(userID, {
-    title: title || "Operation error",
+    title: title || "#VAL.OPERATION_ERROR#",
     message,
   });
 }
@@ -369,7 +369,7 @@ async function createOrganization({ environment, scope }: RouterConstructor & { 
   const validate = initializeValidation({ validationVariable: "create_organization_validation", deviceID: configDevID, sessionID });
 
   // Friendly "working on it" message while we hit the TagoIO API.
-  await validate("Adding organization, please wait...", "warning").catch(console.log);
+  await validate("#VAL.ADDING_ORGANIZATION_WAIT#", "warning").catch(console.log);
 
   // Validate the form. If Zod fails, surface the first issue to the user
   // and abort the run. The double `.catch` keeps the happy path readable.
@@ -387,7 +387,7 @@ async function createOrganization({ environment, scope }: RouterConstructor & { 
   });
 
   if (isNameInUse) {
-    throw await validate(`An organization with name ${formFields.name} already exists.`, "danger");
+    throw await validate(`#VAL.AN_ORGANIZATION# #VAL.WITH_NAME# ${formFields.name} #VAL.ALREADY_EXISTS#`, "danger");
   }
 
   // Create the device and tag it as an organization.
@@ -412,7 +412,7 @@ async function createOrganization({ environment, scope }: RouterConstructor & { 
   };
   await Resources.devices.sendDeviceData(configDevID, organizationAddressData);
 
-  return validate(`Organization ${formFields.name} successfully added!`, "success");
+  return validate("#VAL.ORGANIZATION_SUCCESSFULLY_CREATED#", "success");
 }
 
 // ============================================================================
@@ -505,9 +505,9 @@ async function editOrganization({ scope, environment }: RouterConstructor & { sc
       await undoOrganizationChanges(organizationID, scope);
       await sendNotificationFeedback({
         environment,
-        message: `An organization with name ${newName} already exists.`,
+        message: `#VAL.AN_ORGANIZATION# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS#`,
       });
-      throw `An organization with name ${newName} already exists.`;
+      throw `#VAL.AN_ORGANIZATION# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS#`;
     }
   }
 
@@ -603,10 +603,6 @@ async function deleteOrganization({ scope, environment }: RouterConstructor & { 
     throw "[Error] Missing organization ID in scope.";
   }
 
-  // Capture the name now — the device will be gone before we send the
-  // notification at the end of the flow.
-  const organizationInfo = await Resources.devices.info(organizationID);
-
   // Remove the organization's row from the config device storage.
   await Resources.devices.deleteDeviceData(configDevID, { groups: organizationID, qty: 9999 });
 
@@ -619,8 +615,8 @@ async function deleteOrganization({ scope, environment }: RouterConstructor & { 
 
   await sendNotificationFeedback({
     environment,
-    title: "Organization removed",
-    message: `Organization ${organizationInfo.name} successfully removed!`,
+    title: "#VAL.ORGANIZATION_REMOVED_TITLE#",
+    message: "#VAL.ORGANIZATION_SUCCESSFULLY_REMOVED#",
   });
 }
 

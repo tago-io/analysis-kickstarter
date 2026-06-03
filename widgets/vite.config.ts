@@ -22,6 +22,28 @@ export default defineConfig({
   // Relative base so a widget works wherever it's hosted (TagoIO file storage, CDN, etc.).
   base: "./",
   plugins: [react(), tailwindcss()],
+  // @tago-io/sdk imports `node:path` at the top of its bundle for the
+  // `uploadFile` helper — code our widgets never reach. Without an alias
+  // Vite externalises `node:path` to `undefined`, which is harmless until
+  // someone changes a code path. Map it to `path-browserify` so the
+  // import resolves cleanly in the browser bundle.
+  resolve: {
+    alias: {
+      "node:path": "path-browserify",
+    },
+  },
+  // @tago-io/sdk is published as a Node bundle and reads `process.env.*`
+  // and `process.versions` at module load. Browsers have no `process`,
+  // so we shim it to an empty object — the SDK falls back to its defaults
+  // (TagoIO production endpoints) when those env vars are absent.
+  define: {
+    "process.env.TAGOIO_API": "undefined",
+    "process.env.TAGOIO_SSE": "undefined",
+    "process.env.TAGOIO_REQUEST_ATTEMPTS": "undefined",
+    "process.env": "{}",
+    "process.versions": "{}",
+    "process.platform": '"browser"',
+  },
   build: {
     outDir: resolve(__dirname, "_dist", widget),
     emptyOutDir: true,

@@ -60,7 +60,7 @@ const VAR_MODEL = "alert_management_type";
 const TAG_SENSOR_TYPE = "sensor_type";
 
 /** Title used on every in-app notification dispatched by this Analysis. */
-const NOTIFICATION_TITLE = "Alert triggered";
+const NOTIFICATION_TITLE = "#VAL.ALERT_TRIGGERED_TITLE#";
 
 // ============================================================================
 // Validation schema

@@ -214,7 +214,7 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
   // No user context — notify the developer via the Analysis token.
   if (!userID) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
@@ -222,12 +222,12 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
   const user = await Resources.run.userInfo(userID).catch(() => null);
   if (!user) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
   await Resources.run.notificationCreate(userID, {
-    title: title || "Operation error",
+    title: title || "#VAL.OPERATION_ERROR#",
     message,
   });
 }
@@ -380,7 +380,7 @@ async function createGroup({ environment, scope }: RouterConstructor & { scope: 
   const validate = initializeValidation({ validationVariable: "create_group_validation", deviceID: configDevID, sessionID });
 
   // Friendly "working on it" message now that validation passed.
-  await validate("Adding group, please wait...", "warning").catch(console.log);
+  await validate("#VAL.ADDING_GROUP_WAIT#", "warning").catch(console.log);
 
   // Validate the form. If Zod fails, surface the first issue to the user
   // and abort the run. The double `.catch` keeps the happy path readable.
@@ -402,7 +402,7 @@ async function createGroup({ environment, scope }: RouterConstructor & { scope: 
 
   if (isNameInUse) {
     throw await validate(
-      `A group with name ${formFields.name} already exists within this organization.`,
+      `#VAL.A_GROUP# #VAL.WITH_NAME# ${formFields.name} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_ORGANIZATION#`,
       "danger",
     );
   }
@@ -420,7 +420,7 @@ async function createGroup({ environment, scope }: RouterConstructor & { scope: 
     { key: "group_address", value: formFields.address, sent: true },
   ]);
 
-  await validate(`Group ${formFields.name} successfully added!`, "success");
+  await validate("#VAL.GROUP_SUCCESSFULLY_CREATED#", "success");
 }
 
 // ============================================================================
@@ -517,9 +517,9 @@ async function editGroup({ scope, environment }: RouterConstructor & { scope: De
       await undoGroupChanges(groupID, scope);
       await sendNotificationFeedback({
         environment,
-        message: `A group with name ${newName} already exists within this organization.`,
+        message: `#VAL.A_GROUP# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_ORGANIZATION#`,
       });
-      throw `A group with name ${newName} already exists within this organization.`;
+      throw `#VAL.A_GROUP# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_ORGANIZATION#`;
     }
   }
 }
@@ -567,10 +567,6 @@ async function deleteGroup({ scope, environment }: RouterConstructor & { scope: 
     throw "[Error] Missing group ID in scope.";
   }
 
-  // Capture the name now — the device will be gone before we send the
-  // notification at the end of the flow.
-  const groupInfo = await Resources.devices.info(groupID);
-
   // Remove the group's row from the config device storage.
   await Resources.devices.deleteDeviceData(configDevID, { groups: groupID, qty: 9999 });
 
@@ -584,8 +580,8 @@ async function deleteGroup({ scope, environment }: RouterConstructor & { scope: 
 
   await sendNotificationFeedback({
     environment,
-    title: "Group removed",
-    message: `Group ${groupInfo.name} successfully removed!`,
+    title: "#VAL.GROUP_REMOVED_TITLE#",
+    message: "#VAL.GROUP_SUCCESSFULLY_REMOVED#",
   });
 }
 

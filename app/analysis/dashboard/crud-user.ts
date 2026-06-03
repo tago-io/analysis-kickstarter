@@ -161,19 +161,19 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
 
   if (!userID) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
   const user = await Resources.run.userInfo(userID).catch(() => null);
   if (!user) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
   await Resources.run.notificationCreate(userID, {
-    title: title || "Operation error",
+    title: title || "#VAL.OPERATION_ERROR#",
     message,
   });
 }
@@ -383,7 +383,7 @@ async function createUser({ context, environment, scope }: RouterConstructor & {
   const validate = initializeValidation({ validationVariable: "create_user_validation", deviceID: configDevID, sessionID });
 
   // Friendly "working on it" message now that we have the session id.
-  await validate("Adding user, please wait...", "warning").catch(console.log);
+  await validate("#VAL.ADDING_USER_WAIT#", "warning").catch(console.log);
 
   // Validate the form. If Zod fails, surface the first issue to the user
   // and abort the run.
@@ -401,7 +401,7 @@ async function createUser({ context, environment, scope }: RouterConstructor & {
     filter: { email: formFields.email.toLowerCase() },
   });
   if (existingUsers.length > 0) {
-    throw await validate("This email address is already in use.", "danger");
+    throw await validate("#VAL.EMAIL_ALREADY_IN_USE#", "danger");
   }
 
   // Build the tag list. Application admins span every organization so
@@ -428,11 +428,11 @@ async function createUser({ context, environment, scope }: RouterConstructor & {
     tags,
     runURL,
   }).catch(async (error: unknown) => {
-    const message = error instanceof Error ? error.message : String(error);
-    throw await validate(message, "danger");
+    console.error("Failed to invite user:", error);
+    throw await validate("#VAL.OPERATION_ERROR#", "danger");
   });
 
-  await validate(`User ${formFields.name} successfully added!`, "success");
+  await validate("#VAL.USER_SUCCESSFULLY_CREATED#", "success");
 }
 
 // ============================================================================
@@ -538,8 +538,6 @@ async function deleteUser({ scope, environment }: RouterConstructor & { scope: U
     throw "[Error] Missing config_id environment variable.";
   }
 
-  const userInfo = await Resources.run.userInfo(userID);
-
   await Resources.devices
     .deleteDeviceData(configDevID, { groups: userID, qty: 9999 })
     .catch(console.error);
@@ -548,8 +546,8 @@ async function deleteUser({ scope, environment }: RouterConstructor & { scope: U
 
   await sendNotificationFeedback({
     environment,
-    title: "User removed",
-    message: `User ${userInfo.email} successfully removed!`,
+    title: "#VAL.USER_REMOVED_TITLE#",
+    message: "#VAL.USER_SUCCESSFULLY_REMOVED#",
   });
 }
 

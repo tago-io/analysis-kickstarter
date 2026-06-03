@@ -170,19 +170,19 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
 
   if (!userID) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
   const user = await Resources.run.userInfo(userID).catch(() => null);
   if (!user) {
     const services = new Services({ token: Deno.env.get("T_ANALYSIS_TOKEN") });
-    await services.notification.send({ title: title || "Operation error", message });
+    await services.notification.send({ title: title || "#VAL.OPERATION_ERROR#", message });
     return;
   }
 
   await Resources.run.notificationCreate(userID, {
-    title: title || "Operation error",
+    title: title || "#VAL.OPERATION_ERROR#",
     message,
   });
 }
@@ -408,7 +408,7 @@ async function createSensor({ environment, scope }: RouterConstructor & { scope:
   const validate = initializeValidation({ validationVariable: "create_sensor_validation", deviceID: configDevID, sessionID });
 
   // Friendly "working on it" message now that validation passed.
-  await validate("Adding sensor, please wait...", "warning").catch(console.log);
+  await validate("#VAL.ADDING_SENSOR_WAIT#", "warning").catch(console.log);
 
   // Validate the form. If Zod fails, surface the first issue to the user
   // and abort the run.
@@ -430,7 +430,7 @@ async function createSensor({ environment, scope }: RouterConstructor & { scope:
 
   if (isNameInUse) {
     throw await validate(
-      `A sensor with name ${formFields.name} already exists within this group.`,
+      `#VAL.A_SENSOR# #VAL.WITH_NAME# ${formFields.name} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_GROUP#`,
       "danger",
     );
   }
@@ -441,7 +441,7 @@ async function createSensor({ environment, scope }: RouterConstructor & { scope:
   });
 
   if (isEuiInUse) {
-    throw await validate(`A sensor with EUI ${formFields.eui} already exists.`, "danger");
+    throw await validate(`#VAL.A_SENSOR# #VAL.WITH_EUI# ${formFields.eui} #VAL.ALREADY_EXISTS#`, "danger");
   }
 
   // The organization id lives on the parent group device's tags. We
@@ -478,7 +478,7 @@ async function createSensor({ environment, scope }: RouterConstructor & { scope:
   // reflect the new total.
   await updateSensorSummary(groupID);
 
-  await validate(`Sensor ${formFields.name} successfully added!`, "success");
+  await validate("#VAL.SENSOR_SUCCESSFULLY_CREATED#", "success");
 }
 
 // ============================================================================
@@ -569,9 +569,9 @@ async function editSensor({ scope, environment }: RouterConstructor & { scope: D
       await undoSensorChanges(sensorID, scope);
       await sendNotificationFeedback({
         environment,
-        message: `A sensor with name ${newName} already exists within this group.`,
+        message: `#VAL.A_SENSOR# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_GROUP#`,
       });
-      throw `A sensor with name ${newName} already exists within this group.`;
+      throw `#VAL.A_SENSOR# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_GROUP#`;
     }
   }
 }
@@ -621,8 +621,8 @@ async function deleteSensor({ scope, environment }: RouterConstructor & { scope:
 
   await sendNotificationFeedback({
     environment,
-    title: "Sensor removed",
-    message: `Sensor ${sensorInfo.name} successfully removed!`,
+    title: "#VAL.SENSOR_REMOVED_TITLE#",
+    message: "#VAL.SENSOR_SUCCESSFULLY_REMOVED#",
   });
 }
 

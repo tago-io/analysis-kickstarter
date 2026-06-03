@@ -295,7 +295,7 @@ async function parseFormFields(scope: Data[]): Promise<AlertFields> {
   });
 
   if (common.setupAlertsBy === "sensors" && (!common.sensors || common.sensors.length === 0)) {
-    throw new Error("Select at least one sensor");
+    throw new Error("#VAL.SELECT_AT_LEAST_ONE_SENSOR#");
   }
 
   let modelFields: ModelFields;
@@ -307,7 +307,7 @@ async function parseFormFields(scope: Data[]): Promise<AlertFields> {
       secondValue: condition === "><" ? tempValueBetween : undefined,
     });
     if (modelFields.condition === "><" && modelFields.secondValue === undefined) {
-      throw new Error("Second value is required for the 'between' condition");
+      throw new Error("#VAL.SECOND_VALUE_REQUIRED_BETWEEN#");
     }
   } else if (model === "door") {
     modelFields = await doorModel.parseAsync({ model, value: door });
@@ -316,7 +316,7 @@ async function parseFormFields(scope: Data[]): Promise<AlertFields> {
   } else if (model === "inactivity") {
     modelFields = await inactivityModel.parseAsync({ model, inactivityHours: inactivity });
   } else {
-    throw new Error("Model is required");
+    throw new Error("#VAL.MODEL_REQUIRED#");
   }
 
   return { ...common, ...modelFields };
@@ -372,7 +372,7 @@ async function resolveTargetSensors(organizationID: string, fields: AlertFields)
 
   if (fields.setupAlertsBy === "all_sensors") {
     if (orgSensors.length === 0) {
-      throw new Error("This organization has no sensors yet");
+      throw new Error("#VAL.ORG_HAS_NO_SENSORS#");
     }
     return orgSensors;
   }
@@ -380,7 +380,7 @@ async function resolveTargetSensors(organizationID: string, fields: AlertFields)
   const wanted = new Set(fields.sensors ?? []);
   const matched = orgSensors.filter((sensor) => wanted.has(sensor.id));
   if (matched.length !== wanted.size) {
-    throw new Error("One or more selected sensors do not belong to this organization");
+    throw new Error("#VAL.SENSORS_NOT_IN_ORGANIZATION#");
   }
   return matched;
 }
@@ -409,7 +409,7 @@ async function resolveRecipients(organizationID: string, recipientIDs: string[])
   }
 
   if (matched.length !== wanted.size) {
-    throw new Error("One or more recipients do not belong to this organization");
+    throw new Error("#VAL.RECIPIENTS_NOT_IN_ORGANIZATION#");
   }
   return matched;
 }
@@ -725,7 +725,7 @@ async function createAlert({ context, environment, scope }: RouterConstructor & 
   const sessionID = z.string().parse(scope.find((item) => item.variable === "create_alert_session_id")?.value);
   const validate = initializeValidation({ validationVariable: "create_alert_validation", deviceID: configDevID, sessionID });
 
-  await validate("Creating alert, please wait...", "warning").catch(console.log);
+  await validate("#VAL.CREATING_ALERT_WAIT#", "warning").catch(console.log);
 
   const fields = await parseFormFields(scope)
     .catch(getZodErrorMessage)
@@ -773,11 +773,12 @@ async function createAlert({ context, environment, scope }: RouterConstructor & 
     if (fields.setupAlertsBy === "sensors") {
       await untagSensorsForAlert(alertID).catch(console.error);
     }
-    await validate(`Failed to create alert action: ${error.message}`, "danger");
+    console.error("Failed to create alert action:", error);
+    await validate("#VAL.FAILED_TO_CREATE_ALERT_ACTION#", "danger");
     throw error;
   });
 
-  await validate("Alert created successfully!", "success");
+  await validate("#VAL.ALERT_SUCCESSFULLY_CREATED#", "success");
 }
 
 // ============================================================================

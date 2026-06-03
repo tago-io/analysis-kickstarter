@@ -39,7 +39,7 @@
  *   - `global_alert_value` `unit` field — must be `"hour"` today.
  *   - `global_alert_message` (string) — text used in the in-app
  *     notification sent to organization users. Optional; falls back to
- *     `"Device inactivity detected"`.
+ *     the dictionary key `#VAL.DEVICE_INACTIVITY_DETECTED#`.
  *
  * From each organization device (tag `device_type=organization`) WHEN
  * one of its sensors is a candidate this run:
@@ -81,8 +81,8 @@ const CONFIG_GROUP = "global-inactivity";
 const SUMMARY_VARIABLE = "device_connectivity_summary";
 const NOTIFIED_TAG = "inactivity_notified";
 const LAST_UPLINK_PARAM = "last_uplink";
-const DEFAULT_ALERT_MESSAGE = "Device inactivity detected";
-const NOTIFICATION_TITLE = "Device inactivity";
+const DEFAULT_ALERT_MESSAGE = "#VAL.DEVICE_INACTIVITY_DETECTED#";
+const NOTIFICATION_TITLE = "#VAL.DEVICE_INACTIVITY_TITLE#";
 
 const ALERT_VAR_MODEL = "alert_management_type";
 const ALERT_VAR_DEVICES = "alert_management_devices";
