@@ -10,7 +10,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable", "Deno.NS"],
     "jsxImportSourceTypes": "@types/react"
   }
 }

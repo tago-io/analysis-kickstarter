@@ -4,9 +4,26 @@ interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  label?: string;
+  ariaOpenLabel?: string;
+  ariaCloseLabel?: string;
+  ariaInputLabel?: string;
 }
 
-export function SearchBar({ value, onChange, placeholder = "Search sensors or groups..." }: SearchBarProps) {
+/**
+ * Collapsible search input. Starts as a compact pill button and expands to
+ * a full-width input on click. Escape closes it; the close button clears
+ * the value. Shared across every redesign variant.
+ */
+export function SearchBar({
+  value,
+  onChange,
+  placeholder = "Search sensors or groups...",
+  label = "Search",
+  ariaOpenLabel = "Open search",
+  ariaCloseLabel = "Close search",
+  ariaInputLabel = "Search sensors or groups by name",
+}: SearchBarProps) {
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -26,17 +43,17 @@ export function SearchBar({ value, onChange, placeholder = "Search sensors or gr
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-2 rounded-full border border-[#3a3a40] bg-[#2b2b2f] px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-[#9191a4] transition-colors hover:border-[#5b8dee] hover:text-[#e0e0e0]"
-        aria-label="Open search"
+        className="flex items-center gap-2 rounded-full border border-[#3a3a3a] bg-[#252525] px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-[rgb(150,150,150)] transition-colors hover:border-[rgb(91,141,238)] hover:text-[rgb(240,240,240)]"
+        aria-label={ariaOpenLabel}
       >
         <SearchIcon />
-        <span>Search</span>
+        <span>{label}</span>
       </button>
     );
   }
 
   return (
-    <div className="flex w-full max-w-[320px] items-center gap-2 rounded-full border border-[#5b8dee] bg-[#2b2b2f] px-3 py-1.5 transition-all">
+    <div className="flex w-full max-w-[320px] items-center gap-2 rounded-full border border-[rgb(91,141,238)] bg-[#252525] px-3 py-1.5 transition-all">
       <SearchIcon />
       <input
         ref={inputRef}
@@ -49,14 +66,14 @@ export function SearchBar({ value, onChange, placeholder = "Search sensors or gr
           }
         }}
         placeholder={placeholder}
-        className="flex-1 bg-transparent text-[13px] text-[#e0e0e0] placeholder:text-[#62627a] focus:outline-none"
-        aria-label="Search sensors or groups by name"
+        className="flex-1 bg-transparent text-[13px] text-[rgb(240,240,240)] placeholder:text-[rgb(120,120,120)] focus:outline-none"
+        aria-label={ariaInputLabel}
       />
       <button
         type="button"
         onClick={close}
-        className="text-[#9191a4] transition-colors hover:text-[#e74c3c]"
-        aria-label="Close search"
+        className="text-[rgb(150,150,150)] transition-colors hover:text-[rgb(231,76,60)]"
+        aria-label={ariaCloseLabel}
       >
         <CloseIcon />
       </button>

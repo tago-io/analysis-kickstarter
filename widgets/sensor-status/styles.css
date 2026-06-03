@@ -3,31 +3,3 @@
 /* Widget-local CSS only.
    Do NOT set background on html or body — the TagoIO dashboard
    supplies the iframe background. */
-
-@keyframes sensor-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.4);
-  }
-}
-
-@keyframes sensor-shimmer {
-  0%, 100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.animate-sensor-pulse {
-  animation: sensor-pulse 2s infinite;
-}
-
-.animate-sensor-shimmer {
-  animation: sensor-shimmer 1.5s infinite;
-}

@@ -14,9 +14,9 @@
     "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.2.4",
     "tailwindcss": "npm:tailwindcss@^4.2.4",
     "vite": "npm:vite@^8.0.10",
-    "react": "npm:react@^19.2.6",
-    "react-dom": "npm:react-dom@^19.2.6",
-    "react/jsx-runtime": "npm:react@19.2.6/jsx-runtime",
+    "react": "npm:react@^19.2.7",
+    "react-dom": "npm:react-dom@^19.2.7",
+    "react/jsx-runtime": "npm:react@19.2.7/jsx-runtime",
     "@types/react": "npm:@types/react@^19.2.14",
     "@types/react-dom": "npm:@types/react-dom@^19.2.3"
   }

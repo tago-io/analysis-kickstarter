@@ -2,27 +2,25 @@ import type { ReactNode } from "react";
 
 interface GroupSectionProps {
   groupName: string;
-  sensorCount: number;
+  sensorCountLabel: string;
   children: ReactNode;
 }
 
 /**
- * Visual container that wraps every sensor card belonging to the same parent
- * group. The header shows the group name on the left and a discreet sensor
- * count on the right; the body is a generic slot so the caller keeps full
- * control over the cards it renders.
+ * Wraps every sensor card belonging to the same parent group. Header on top
+ * shows the group name and a sensor count; the body is a responsive grid
+ * the caller fills with sensor cards. The count label is pre-computed by
+ * the parent (with the right plural form / translation) and passed in.
  */
-export function GroupSection({ groupName, sensorCount, children }: GroupSectionProps) {
-  const sensorLabel = sensorCount === 1 ? "1 sensor" : `${sensorCount} sensors`;
-
+export function GroupSection({ groupName, sensorCountLabel, children }: GroupSectionProps) {
   return (
-    <section className="mb-4 rounded-lg border border-[#3a3a40] bg-[#2b2b2b]/40 p-3">
+    <section className="mb-4 rounded-md border border-[#3a3a3a] bg-[#252525] p-3">
       <header className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[#e0e0e0]">
+        <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[rgb(240,240,240)]">
           {groupName}
         </h2>
-        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#9191a4]">
-          {sensorLabel}
+        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[rgb(150,150,150)]">
+          {sensorCountLabel}
         </span>
       </header>
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">

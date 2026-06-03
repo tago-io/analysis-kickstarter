@@ -18,9 +18,9 @@ function _fahrenheitToCelsius(f: number): number {
 /**
  * Resolves the temperature unit configured for the current TagoIO Run user.
  *
- * The unit key inside `customPreferences` is admin-defined (it can be named
- * `temperature`, `temp_unit`, `tempUnit`, etc.), so we scan every entry whose
- * key matches `/temp/i` and look at the value. Recognized values:
+ * The unit key inside `customPreferences` is admin-defined and unpredictable
+ * (TagoIO returns the field id and value rather than the field name), so we
+ * ignore the keys and scan every entry's value. Recognized values:
  * - Celsius:    `"c"`, `"°c"`, `"celsius"`
  * - Fahrenheit: `"f"`, `"°f"`, `"fahrenheit"`
  *
@@ -31,10 +31,7 @@ function _fahrenheitToCelsius(f: number): number {
  * @returns The resolved {@link TempUnit}.
  */
 export function resolveTempUnit(customPreferences: Record<string, string>): TempUnit {
-  for (const [key, value] of Object.entries(customPreferences)) {
-    if (!/temp/i.test(key)) {
-      continue;
-    }
+  for (const [_, value] of Object.entries(customPreferences)) {
     const v = String(value).trim().toLowerCase();
     if (v === "c" || v === "°c" || v === "celsius") {
       return "C";

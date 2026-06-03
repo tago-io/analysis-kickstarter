@@ -35,10 +35,6 @@ describe("resolveTempUnit function", () => {
     assertEquals(resolveTempUnit({ TempUnit: "c" }), "C");
   });
 
-  it("should ignore non-temp keys even when value would match", () => {
-    assertEquals(resolveTempUnit({ language: "celsius" }), "F");
-  });
-
   it("should default to Fahrenheit when temp value is unrecognized", () => {
     assertEquals(resolveTempUnit({ temperature: "kelvin" }), "F");
   });

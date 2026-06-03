@@ -23,9 +23,11 @@ widgets/
 
 Current widgets:
 
-- **sensor-status** — Sensors dashboard / Overview tab. Three KPI cards (registered / active / inactive) fed by `device_connectivity_summary`.
+- **sensor-status** — Sensors dashboard / Overview tab. Three KPI cards anchored on circular SVG ring gauges (registered / online / offline), fed by `device_connectivity_summary`.
+  Missing fields render `N/A`.
 - **cold-room-card-data** — Groups dashboard / Cold Rooms tab. One card per sensor (temperature, compressor, door, last seen) grouped by Group.
-- **cold-room-monitor** — Sensor Detail dashboard / Overview tab. Temperature gauge plus compressor and door state for a single sensor.
+- **cold-room-monitor** — Sensor Detail dashboard / Overview tab. Three cards (temperature, compressor, door) with monochrome icons and the last-update timestamp in the header.
+  Missing records render `N/A` in muted grey.
 
 ## The iframe model (why some rules are absolute)
 

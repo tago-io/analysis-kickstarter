@@ -1,65 +1,61 @@
-import { type TDataRecord, useWidgetData } from "@tago-io/custom-widget-react";
-import { SensorCard } from "./components/SensorCard.tsx";
-import { ActiveIcon, InactiveIcon, RegisteredIcon } from "./components/icons.tsx";
+import { useWidgetData } from "@tago-io/custom-widget-react";
+import { useDictionary } from "../shared/use-dictionary.ts";
+import { readCounts } from "./read-counts.ts";
+import { GaugeCard } from "./components/GaugeCard.tsx";
 
-const SUMMARY_VARIABLE = "device_connectivity_summary";
+const WIDGET_KEYS = [
+  "WIDGET_REGISTERED",
+  "WIDGET_TOTAL_DEVICES_REGISTERED",
+  "WIDGET_ONLINE",
+  "WIDGET_SENSORS_REPORTING",
+  "WIDGET_OFFLINE",
+  "WIDGET_SENSORS_SILENT",
+] as const;
 
-interface ConnectivityCounts {
-  registered: number | null;
-  active: number | null;
-  inactive: number | null;
-}
-
-function toNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) {
-    return Number(value);
-  }
-  return null;
-}
-
-function readCounts(records: TDataRecord[]): ConnectivityCounts {
-  const summary = records.find((r) => r.variable === SUMMARY_VARIABLE);
-  const meta = (summary?.metadata ?? {}) as Record<string, unknown>;
-  return {
-    registered: toNumber(meta.total_registered),
-    active: toNumber(meta.online),
-    inactive: toNumber(meta.offline),
-  };
-}
+const EN_BASELINE: Record<string, string> = {
+  WIDGET_REGISTERED: "Registered",
+  WIDGET_TOTAL_DEVICES_REGISTERED: "Total devices registered",
+  WIDGET_ONLINE: "Online",
+  WIDGET_SENSORS_REPORTING: "Sensors reporting",
+  WIDGET_OFFLINE: "Offline",
+  WIDGET_SENSORS_SILENT: "Sensors silent",
+};
 
 export default function App() {
   const { isLoading, records } = useWidgetData();
-  const { registered, active, inactive } = readCounts(records);
+  const { t } = useDictionary(WIDGET_KEYS, { baseline: EN_BASELINE });
+  const counts = readCounts(records);
+  const total = counts.registered ?? 0;
 
   return (
-    <div className="h-dvh w-dvw p-4 text-[#e0e0e0]">
-      <div className="grid h-full w-full grid-cols-1 gap-4 sm:grid-cols-3">
-        <SensorCard
-          variant="registered"
-          label="Registered Sensor(s)"
-          subtitle="Total devices registered"
-          value={registered}
+    <div
+      className="@container/widget h-dvh w-dvw overflow-x-hidden overflow-y-auto bg-[rgb(43,43,43)] p-2"
+      style={{ fontFamily: "-apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" }}
+    >
+      <div className="grid min-h-full w-full grid-cols-1 gap-2 @[400px]/widget:h-full @[400px]/widget:grid-cols-3">
+        <GaugeCard
+          label={t("WIDGET_REGISTERED")}
+          subtitle={t("WIDGET_TOTAL_DEVICES_REGISTERED")}
+          value={counts.registered}
+          ratio={1}
+          color="rgb(91,141,238)"
           isLoading={isLoading}
-          icon={<RegisteredIcon />}
         />
-        <SensorCard
-          variant="active"
-          label="Active Sensor(s)"
-          subtitle="Sending data now"
-          value={active}
+        <GaugeCard
+          label={t("WIDGET_ONLINE")}
+          subtitle={t("WIDGET_SENSORS_REPORTING")}
+          value={counts.online}
+          ratio={total > 0 && counts.online != null ? counts.online / total : 0}
+          color="rgb(82,196,140)"
           isLoading={isLoading}
-          icon={<ActiveIcon />}
         />
-        <SensorCard
-          variant="inactive"
-          label="Inactive Sensor(s)"
-          subtitle="Not sending data"
-          value={inactive}
+        <GaugeCard
+          label={t("WIDGET_OFFLINE")}
+          subtitle={t("WIDGET_SENSORS_SILENT")}
+          value={counts.offline}
+          ratio={total > 0 && counts.offline != null ? counts.offline / total : 0}
+          color="rgb(245,166,35)"
           isLoading={isLoading}
-          icon={<InactiveIcon />}
         />
       </div>
     </div>
