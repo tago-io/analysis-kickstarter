@@ -363,8 +363,8 @@ async function createUser({ context, environment, scope }: RouterConstructor & {
     throw "[Error] Missing analysis context.";
   }
 
-  if (!environment.SENDGRID_API_KEY || !environment.sendgrid_from_email) {
-    throw "[Error] Missing secrets 'SENDGRID_API_KEY' or 'sendgrid_from_email'.";
+  if (!environment.sendgrid_from_email) {
+    throw "[Error] Missing 'sendgrid_from_email' environment variable.";
   }
 
   const configDevID = environment.config_id;
