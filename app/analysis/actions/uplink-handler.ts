@@ -135,6 +135,7 @@ interface SensorContext {
  */
 interface CardMetadata {
   sensor_name: string;
+  group_id: string;
   group_name: string;
   temperature_fahrenheit: number;
   compressor_status: "on" | "off";
@@ -226,7 +227,7 @@ async function buildCardMetadata(scope: Data[], sensor: SensorContext): Promise<
     return null;
   }
 
-  return { sensor_name: sensor.sensorName, group_name: sensor.groupName, ...parsed.data };
+  return { sensor_name: sensor.sensorName, group_id: sensor.groupID, group_name: sensor.groupName, ...parsed.data };
 }
 
 /**
