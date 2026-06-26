@@ -183,6 +183,16 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
 // ============================================================================
 
 /**
+ * Detects the TagoIO "exceeded the maximum limit of Run users" failure,
+ * which happens when the profile reached its Run user quota. TagoIO
+ * reports it as e.g. "You have exceeded the maximum limit of Run users (2)".
+ */
+function isUserLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /maximum limit of run users/i.test(message);
+}
+
+/**
  * Generates a random temporary password used as the initial credential
  * for the invited user. The password always includes at least one
  * uppercase letter, lowercase letter, digit and special character.
@@ -293,6 +303,9 @@ async function inviteUser({ context, email, name, phone, tags, runURL }: InviteU
 
   const created = await Resources.run.userCreate(userPayload).catch((error) => {
     console.error("User creation failed:", error);
+    if (isUserLimitError(error)) {
+      throw error;
+    }
     return null;
   });
 
@@ -429,7 +442,8 @@ async function createUser({ context, environment, scope }: RouterConstructor & {
     runURL,
   }).catch(async (error: unknown) => {
     console.error("Failed to invite user:", error);
-    throw await validate("#VAL.OPERATION_ERROR#", "danger");
+    const feedback = isUserLimitError(error) ? "#VAL.USER_LIMIT_REACHED#" : "#VAL.OPERATION_ERROR#";
+    throw await validate(feedback, "danger");
   });
 
   await validate("#VAL.USER_SUCCESSFULLY_CREATED#", "success");
