@@ -21,6 +21,7 @@ const WIDGET_KEYS = [
   "WIDGET_SEARCH_PLACEHOLDER",
   "WIDGET_SEARCH_OPEN",
   "WIDGET_SEARCH_CLOSE",
+  "WIDGET_SEARCH_INPUT",
   "WIDGET_FILTER_GROUPS",
   "WIDGET_FILTER_BY_GROUP",
   "WIDGET_FILTER_SELECT_ALL",
@@ -48,6 +49,7 @@ const EN_BASELINE: Record<string, string> = {
   WIDGET_SEARCH_PLACEHOLDER: "Search sensors or groups...",
   WIDGET_SEARCH_OPEN: "Open search",
   WIDGET_SEARCH_CLOSE: "Close search",
+  WIDGET_SEARCH_INPUT: "Search sensors or groups by name",
   WIDGET_FILTER_GROUPS: "Groups",
   WIDGET_FILTER_BY_GROUP: "Filter by group",
   WIDGET_FILTER_SELECT_ALL: "Select all",
@@ -213,7 +215,14 @@ export default function App() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [sensorRecords, unknownGroupLabel]);
 
-  const effectiveSelection = selectedGroupIDs ?? new Set(availableGroups.map((g) => g.id));
+  // In the default state (`selectedGroupIDs === null`) every available group
+  // is considered selected. Memoise so the fallback Set is rebuilt only when
+  // the group list changes — not on every render — which is the whole point
+  // of the null sentinel above.
+  const effectiveSelection = useMemo(
+    () => selectedGroupIDs ?? new Set(availableGroups.map((g) => g.id)),
+    [selectedGroupIDs, availableGroups],
+  );
 
   // Step 1.5 — drop records whose group_id is not in the active selection.
   // When selectedGroupIDs is null we're in the default state and pass through.
@@ -299,6 +308,7 @@ export default function App() {
           label={t("WIDGET_SEARCH")}
           ariaOpenLabel={t("WIDGET_SEARCH_OPEN")}
           ariaCloseLabel={t("WIDGET_SEARCH_CLOSE")}
+          ariaInputLabel={t("WIDGET_SEARCH_INPUT")}
         />
       </div>
 
