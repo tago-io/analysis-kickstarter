@@ -66,8 +66,8 @@ const GROUP_DASHBOARD_TAG_VALUE = "sensor-management";
  */
 const addressStringSchema = z
   .string()
-  .min(3, { error: "Address must be at least 3 characters" })
-  .max(200, { error: "Address must be less than 200 characters" });
+  .min(3, { error: "#VAL.ADDRESS_MIN_3#" })
+  .max(200, { error: "#VAL.ADDRESS_MAX_200#" });
 
 /**
  * Address schema for the Create form. The dashboard sends the address as a
@@ -79,13 +79,13 @@ const addressLocationSchema = z
   .object({
     value: z
       .string()
-      .min(3, { error: "Address must be at least 3 characters" })
-      .max(200, { error: "Address must be less than 200 characters" })
+      .min(3, { error: "#VAL.ADDRESS_MIN_3#" })
+      .max(200, { error: "#VAL.ADDRESS_MAX_200#" })
       .optional(),
     location: z.object({
       coordinates: z
-        .array(z.number(), { error: "Address Coordinates are required." })
-        .length(2, { error: "Invalid coordinates" }),
+        .array(z.number(), { error: "#VAL.COORDINATES_REQUIRED#" })
+        .length(2, { error: "#VAL.COORDINATES_INVALID#" }),
     }),
   })
   .optional()
@@ -93,9 +93,9 @@ const addressLocationSchema = z
 
 const groupModel = z.object({
   name: z
-    .string({ error: "Name is required" })
-    .min(1, { error: "Name must be at least 1 character" })
-    .max(40, { error: "Name must be less than 40 characters" }),
+    .string({ error: "#VAL.NAME_REQUIRED#" })
+    .min(1, { error: "#VAL.NAME_MIN_1#" })
+    .max(40, { error: "#VAL.NAME_MAX_40#" }),
   address: z.union([addressStringSchema, addressLocationSchema]).optional(),
 });
 

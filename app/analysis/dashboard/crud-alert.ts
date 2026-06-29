@@ -21,9 +21,12 @@
  * A dashboard sends Data points to this Analysis. The Analysis Router
  * from `@tago-io/sdk` inspects the scope and runs the matching handler:
  *
- *   - Input Form "create-alert"      -> createAlert
- *   - Custom Button "edit-alert"         -> editAlert
- *   - Device List action "delete-alert"  -> deleteAlert
+ *   - Input Form "create-alert"                         -> createAlert
+ *   - "delete" widget action on an "alert_management_*"
+ *     variable                                          -> deleteAlert
+ *
+ * There is no edit handler: alerts are deleted and re-created rather than
+ * edited in place.
  *
  * Required environment variables
  * ------------------------------
@@ -130,38 +133,38 @@ const MODEL_VARIABLE: Record<string, string> = {
  * validated separately inside `parseFormFields`.
  */
 const commonModel = z.object({
-  setupAlertsBy: z.enum(["all_sensors", "sensors"], { error: "Setup alerts by is required" }),
+  setupAlertsBy: z.enum(["all_sensors", "sensors"], { error: "#VAL.SETUP_ALERTS_BY_REQUIRED#" }),
   sensors: z.array(z.string()).optional(),
-  recipients: z.array(z.string()).min(1, { error: "At least one recipient is required" }),
+  recipients: z.array(z.string()).min(1, { error: "#VAL.RECIPIENTS_MIN_1#" }),
   message: z
-    .string({ error: "Message is required" })
-    .min(1, { error: "Message is required" })
-    .max(500, { error: "Message must be 500 characters or fewer" }),
+    .string({ error: "#VAL.MESSAGE_REQUIRED#" })
+    .min(1, { error: "#VAL.MESSAGE_REQUIRED#" })
+    .max(500, { error: "#VAL.MESSAGE_MAX_500#" }),
 });
 
 const temperatureModel = z.object({
   model: z.literal("temperature"),
-  condition: z.enum(["<", ">", "=", "!", "><"], { error: "Condition is required" }),
-  value: z.coerce.number({ error: "Value must be a number" }),
-  secondValue: z.coerce.number({ error: "Second value must be a number" }).optional(),
+  condition: z.enum(["<", ">", "=", "!", "><"], { error: "#VAL.CONDITION_REQUIRED#" }),
+  value: z.coerce.number({ error: "#VAL.VALUE_NUMBER#" }),
+  secondValue: z.coerce.number({ error: "#VAL.SECOND_VALUE_NUMBER#" }).optional(),
 });
 
 const doorModel = z.object({
   model: z.literal("door"),
-  value: z.enum(["open", "closed"], { error: "Door value must be open or closed" }),
+  value: z.enum(["open", "closed"], { error: "#VAL.DOOR_VALUE_INVALID#" }),
 });
 
 const compressorModel = z.object({
   model: z.literal("compressor"),
-  value: z.enum(["on", "off"], { error: "Compressor value must be on or off" }),
+  value: z.enum(["on", "off"], { error: "#VAL.COMPRESSOR_VALUE_INVALID#" }),
 });
 
 const inactivityModel = z.object({
   model: z.literal("inactivity"),
   inactivityHours: z.coerce
-    .number({ error: "Inactivity hours must be a number" })
-    .int({ error: "Inactivity hours must be a whole number" })
-    .positive({ error: "Inactivity hours must be greater than zero" }),
+    .number({ error: "#VAL.INACTIVITY_HOURS_NUMBER#" })
+    .int({ error: "#VAL.INACTIVITY_HOURS_INT#" })
+    .positive({ error: "#VAL.INACTIVITY_HOURS_POSITIVE#" }),
 });
 
 const modelDiscriminator = z.discriminatedUnion("model", [

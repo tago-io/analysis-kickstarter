@@ -58,18 +58,18 @@ const SUMMARY_VARIABLE = "device_connectivity_summary";
 
 const sensorModel = z.object({
   name: z
-    .string({ error: "Name is required" })
-    .min(1, { error: "Name must be at least 1 character" })
-    .max(40, { error: "Name must be less than 40 characters" }),
+    .string({ error: "#VAL.NAME_REQUIRED#" })
+    .min(1, { error: "#VAL.NAME_MIN_1#" })
+    .max(40, { error: "#VAL.NAME_MAX_40#" }),
   eui: z
-    .string({ error: "EUI is required" })
-    .regex(/^[0-9a-fA-F]{16}$/, { error: "EUI must be 16 hexadecimal characters" }),
+    .string({ error: "#VAL.EUI_REQUIRED#" })
+    .regex(/^[0-9a-fA-F]{16}$/, { error: "#VAL.EUI_INVALID#" }),
   network: z
-    .string({ error: "Network is required" })
-    .min(1, { error: "Network is required" }),
+    .string({ error: "#VAL.NETWORK_REQUIRED#" })
+    .min(1, { error: "#VAL.NETWORK_REQUIRED#" }),
   connector: z
-    .string({ error: "Connector is required" })
-    .min(1, { error: "Connector is required" }),
+    .string({ error: "#VAL.CONNECTOR_REQUIRED#" })
+    .min(1, { error: "#VAL.CONNECTOR_REQUIRED#" }),
 });
 
 /**
