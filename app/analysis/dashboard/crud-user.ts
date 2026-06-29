@@ -44,14 +44,14 @@ import z, { ZodError } from "npm:zod";
  * Run, which controls which dashboards, devices and entities the user can
  * see.
  */
-const userAccessModel = z.enum(["admin", "org_admin", "guest"], { error: "Invalid user access level" });
+const userAccessModel = z.enum(["admin", "org_admin", "guest"], { error: "#VAL.USER_ACCESS_INVALID#" });
 
 const userModel = z.object({
   name: z
-    .string({ error: "Name is required" })
-    .min(3, { message: "Name must be at least 3 characters long" })
-    .max(40, { message: "Name must be less than 40 characters long" }),
-  email: z.email({ message: "Invalid email address" }),
+    .string({ error: "#VAL.NAME_REQUIRED#" })
+    .min(3, { message: "#VAL.NAME_MIN_3#" })
+    .max(40, { message: "#VAL.NAME_MAX_40#" }),
+  email: z.email({ message: "#VAL.EMAIL_INVALID#" }),
   // Phone is optional. When present, it must start with the country code
   // and be a valid international number. The transform normalizes the
   // value into the canonical `+CCNNN...` shape returned by `phone`.
@@ -59,8 +59,8 @@ const userModel = z.object({
     (x) => (x === undefined || x === null || x === "" ? undefined : String(x)),
     z
       .string()
-      .refine((x) => x.startsWith("+"), { message: "Phone number should have the country code, e.g. +1 for US" })
-      .refine((x) => parsePhone(x).isValid, { message: "Invalid phone number" })
+      .refine((x) => x.startsWith("+"), { message: "#VAL.PHONE_COUNTRY_CODE#" })
+      .refine((x) => parsePhone(x).isValid, { message: "#VAL.PHONE_INVALID#" })
       .transform((val) => parsePhone(val).phoneNumber ?? val)
       .optional(),
   ),
@@ -274,10 +274,12 @@ interface InviteUserParams {
 }
 
 /**
- * Invites a Run User: sends the welcome email, then creates the account
- * with the temporary password. If creation fails because the user
- * already exists, the existing user's tags are merged with the new ones
- * so the same email can be re-invited into another organization.
+ * Invites a Run User: creates the account with a temporary password and,
+ * once it exists, sends the welcome email carrying that password. If
+ * creation fails because the user already exists, the existing user's
+ * tags are merged with the new ones so the same email can be re-invited
+ * into another organization — no email is sent on that path, since the
+ * existing account keeps its current password.
  */
 async function inviteUser({ context, email, name, phone, tags }: InviteUserParams): Promise<string> {
   const normalizedEmail = email.toLowerCase();
@@ -288,8 +290,6 @@ async function inviteUser({ context, email, name, phone, tags }: InviteUserParam
 
   const tagoRunInfo = await Resources.run.info();
   const customPreferenceTemperature = (tagoRunInfo as any).custom_fields?.find((x: any) => x.name === "Temperature Unit")?.id;
-
-  await sendInviteEmail({ context, toEmail: normalizedEmail, name, password, runURL: tagoRunInfo.url });
 
   const userPayload = {
     active: true,
@@ -313,11 +313,16 @@ async function inviteUser({ context, email, name, phone, tags }: InviteUserParam
   });
 
   if (created?.user) {
+    // The account was created with the temporary password, so the
+    // welcome email is now valid. Send it only on this path.
+    await sendInviteEmail({ context, toEmail: normalizedEmail, name, password, runURL: tagoRunInfo.url });
     return created.user;
   }
 
   // Fallback: the user already exists. Merge the new tags into the
   // existing user so the invite still grants access to the new tenant.
+  // No password is set here, so no credential email is sent — the user
+  // keeps their existing password.
   const existing = (await Resources.run.listUsers({
     amount: 1,
     fields: ["id", "tags"],
@@ -366,7 +371,8 @@ function extractCreateFormFields(scope: Data[]) {
  *   5. Build the access tags. Admins are application-wide and have no
  *      organization scope; org_admin and guest are scoped to the parent
  *      organization.
- *   6. Send the invite email and create (or update) the Run User.
+ *   6. Create (or update) the Run User, sending the invite email only
+ *      when a brand-new account is created.
  *   7. Send a success message back to the dashboard.
  */
 async function createUser({ context, environment, scope }: RouterConstructor & { scope: Data[] }) {
