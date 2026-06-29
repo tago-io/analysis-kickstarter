@@ -11,9 +11,9 @@
  * A dashboard sends Data points to this Analysis. The Analysis Router from
  * `@tago-io/sdk` inspects the scope and runs the matching handler:
  *
- *   - Input Form "create-org"          -> createOrganization
- *   - Custom Button "edit-org"         -> editOrganization
- *   - Device List action "delete-org"  -> deleteOrganization
+ *   - Input Form "create-organization"          -> createOrganization
+ *   - Custom Button "edit-organization"         -> editOrganization
+ *   - Device List action "delete-organization"  -> deleteOrganization
  *
  * Required environment variables
  * ------------------------------
@@ -67,8 +67,8 @@ const ORG_DASHBOARD_TAG_KEY = "export_id";
  */
 const addressStringSchema = z
   .string()
-  .min(3, { error: "Address must be at least 3 characters" })
-  .max(200, { error: "Address must be less than 200 characters" });
+  .min(3, { error: "#VAL.ADDRESS_MIN_3#" })
+  .max(200, { error: "#VAL.ADDRESS_MAX_200#" });
 
 /**
  * Address schema for the Create form. The dashboard sends the address as a
@@ -80,13 +80,13 @@ const addressLocationSchema = z
   .object({
     value: z
       .string()
-      .min(3, { error: "Address must be at least 3 characters" })
-      .max(200, { error: "Address must be less than 200 characters" })
+      .min(3, { error: "#VAL.ADDRESS_MIN_3#" })
+      .max(200, { error: "#VAL.ADDRESS_MAX_200#" })
       .optional(),
     location: z.object({
       coordinates: z
-        .array(z.number(), { error: "Address Coordinates are required." })
-        .length(2, { error: "Invalid coordinates" }),
+        .array(z.number(), { error: "#VAL.COORDINATES_REQUIRED#" })
+        .length(2, { error: "#VAL.COORDINATES_INVALID#" }),
     }),
   })
   .optional()
@@ -94,9 +94,9 @@ const addressLocationSchema = z
 
 const orgModel = z.object({
   name: z
-    .string({ error: "Name is required" })
-    .min(1, { error: "Name must be at least 1 character" })
-    .max(40, { error: "Name must be less than 40 characters" }),
+    .string({ error: "#VAL.NAME_REQUIRED#" })
+    .min(1, { error: "#VAL.NAME_MIN_1#" })
+    .max(40, { error: "#VAL.NAME_MAX_40#" }),
   address: z.union([addressStringSchema, addressLocationSchema]).optional(),
 });
 
@@ -340,7 +340,7 @@ async function installOrganizationDevice(name: string): Promise<string> {
 }
 
 /**
- * Handles the "create-org" Input Form submission.
+ * Handles the "create-organization" Input Form submission.
  *
  * Steps:
  *   1. Confirm the scope is a Data array sent by the form.
@@ -462,7 +462,7 @@ async function undoOrganizationChanges(organizationID: string, scope: DeviceList
 }
 
 /**
- * Handles the "edit-org" Custom Button on the Device List widget.
+ * Handles the "edit-organization" Custom Button on the Device List widget.
  *
  * The Device List sends both the new and the old value for each edited
  * field. We validate the new values, and on any failure we restore the
@@ -523,6 +523,12 @@ async function editOrganization({ scope, environment }: RouterConstructor & { sc
   if (orgAddressData) {
     const [locationValue] = (newAddress ?? "").split(";");
     const [latString, lngString] = locationValue.split(",");
+    const lat = Number(latString);
+    const lng = Number(lngString);
+    // Only overwrite the location when both coordinates parse to finite
+    // numbers. A missing comma (or otherwise malformed address) would
+    // otherwise write `{ lat: NaN, lng: NaN }` and break the Map View.
+    const hasValidLocation = Number.isFinite(lat) && Number.isFinite(lng);
 
     await Resources.devices.editDeviceData(configDevID, {
       ...orgAddressData,
@@ -530,7 +536,7 @@ async function editOrganization({ scope, environment }: RouterConstructor & { sc
         ...orgAddressData.metadata,
         label: newName || orgAddressData.metadata?.label,
       },
-      location: { lat: Number(latString), lng: Number(lngString) },
+      ...(hasValidLocation ? { location: { lat, lng } } : {}),
     });
   }
 }
@@ -583,7 +589,7 @@ async function deleteOrganizationDevices(organizationID: string): Promise<void> 
 }
 
 /**
- * Handles the "delete-org" identifier on the Device List widget.
+ * Handles the "delete-organization" identifier on the Device List widget.
  *
  * Cascades:
  *   1. Wipe the organization's data row in the config device.
