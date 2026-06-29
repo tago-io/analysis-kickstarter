@@ -271,7 +271,6 @@ interface InviteUserParams {
   name: string;
   phone?: string;
   tags: TagsObj[];
-  runURL: string;
 }
 
 /**
@@ -280,14 +279,17 @@ interface InviteUserParams {
  * already exists, the existing user's tags are merged with the new ones
  * so the same email can be re-invited into another organization.
  */
-async function inviteUser({ context, email, name, phone, tags, runURL }: InviteUserParams): Promise<string> {
+async function inviteUser({ context, email, name, phone, tags }: InviteUserParams): Promise<string> {
   const normalizedEmail = email.toLowerCase();
   const password = generatePassword();
 
   const accountInfo = await Resources.account.info();
   const timezone = accountInfo.timezone || "America/New_York";
 
-  await sendInviteEmail({ context, toEmail: normalizedEmail, name, password, runURL });
+  const tagoRunInfo = await Resources.run.info();
+  const customPreferenceTemperature = (tagoRunInfo as any).custom_fields?.find((x: any) => x.name === "Temperature Unit")?.id;
+
+  await sendInviteEmail({ context, toEmail: normalizedEmail, name, password, runURL: tagoRunInfo.url });
 
   const userPayload = {
     active: true,
@@ -299,6 +301,7 @@ async function inviteUser({ context, email, name, phone, tags, runURL }: InviteU
     tags,
     timezone,
     password,
+    ...(customPreferenceTemperature ? { custom_preferences: { [customPreferenceTemperature]: "°F" } } : {}),
   };
 
   const created = await Resources.run.userCreate(userPayload).catch((error) => {
@@ -429,17 +432,12 @@ async function createUser({ context, environment, scope }: RouterConstructor & {
     tags.push({ key: "organization_id", value: organizationID });
   }
 
-  // The invite email links back to the same Run instance the user is
-  // signing up to, so pull the URL from the Run info endpoint.
-  const { url: runURL } = await Resources.run.info();
-
   await inviteUser({
     context,
     email: formFields.email,
     name: formFields.name,
     phone: formFields.phone,
     tags,
-    runURL,
   }).catch(async (error: unknown) => {
     console.error("Failed to invite user:", error);
     const feedback = isUserLimitError(error) ? "#VAL.USER_LIMIT_REACHED#" : "#VAL.OPERATION_ERROR#";
