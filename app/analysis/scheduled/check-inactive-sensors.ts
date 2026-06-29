@@ -110,8 +110,11 @@ const UNIT_MS: Record<string, number> = {
 const thresholdModel = z.object({
   value: z.union([z.number(), z.string()]).transform((rawValue, ctx) => {
     const parsed = typeof rawValue === "number" ? rawValue : Number(rawValue);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      ctx.addIssue({ code: "custom", message: "global_alert_value must be a positive number" });
+    // The short-circuit candidate cutoff in `hasAlertCandidates` is a fixed
+    // 1 hour, so any sub-hour threshold would be silently skipped. Enforce a
+    // 1-hour minimum here to keep the schema and the short-circuit in sync.
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      ctx.addIssue({ code: "custom", message: "global_alert_value must be a number of hours >= 1" });
       return z.NEVER;
     }
     return parsed;
@@ -445,6 +448,8 @@ async function notifyOrganizationUsers(organizationID: string, message: string) 
     await Resources.run.notificationCreate(user.id, {
       title: NOTIFICATION_TITLE,
       message,
+    }).catch((error) => {
+      console.error(`Failed to notify ${user.id}: ${(error as Error).message ?? error}`);
     });
   }
 }
