@@ -185,11 +185,13 @@ async function sendNotificationFeedback(params: { environment: Record<string, st
 /**
  * Detects the TagoIO "exceeded the maximum limit of Run users" failure,
  * which happens when the profile reached its Run user quota. TagoIO
- * reports it as e.g. "You have exceeded the maximum limit of Run users (2)".
+ * reports it with slightly different wording depending on the plan, e.g.
+ * "You have exceeded the maximum limit of Run users (2)" or
+ * "You have exceeded the maximum account limit of Run users (10)".
  */
 function isUserLimitError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /maximum limit of run users/i.test(message);
+  return /maximum (account )?limit of run users/i.test(message);
 }
 
 /**
