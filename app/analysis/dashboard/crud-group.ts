@@ -532,6 +532,8 @@ async function editGroup({ scope, environment }: RouterConstructor & { scope: De
  * Deletes every device tagged with this group (sensors and any dummy
  * device that carries the `group_id` tag of this group, except the group
  * device itself, which has already been removed by the caller).
+ *
+ * For each child device we also wipe its data row from the organization device.
  */
 async function deleteGroupDevices(groupID: string): Promise<void> {
   const devices = await Resources.devices.list({
@@ -543,6 +545,9 @@ async function deleteGroupDevices(groupID: string): Promise<void> {
 
   for (const device of devices) {
     await Resources.devices.delete(device.id).catch(console.log);
+
+    const organizationID = z.string().parse(device.tags.find((tag) => tag.key === "organization_id")?.value);
+    await Resources.devices.deleteDeviceData(organizationID, { groups: device.id, qty: 9999 });
   }
 }
 
@@ -551,10 +556,9 @@ async function deleteGroupDevices(groupID: string): Promise<void> {
  *
  * Cascades:
  *   1. Wipe the group's data row in the config device.
- *   2. Capture the group's name before the device is gone.
- *   3. Delete the group device itself.
- *   4. Delete every sensor (and dummy device) that carried this group_id.
- *   5. Notify the user.
+ *   2. Delete the group device itself.
+ *   3. Delete every sensor (and dummy device) that carried this group_id.
+ *   4. Notify the user.
  */
 async function deleteGroup({ scope, environment }: RouterConstructor & { scope: DeviceListScope[] }) {
   const configDevID = environment.config_id;
