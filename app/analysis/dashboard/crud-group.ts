@@ -539,15 +539,23 @@ async function deleteGroupDevices(groupID: string): Promise<void> {
   const devices = await Resources.devices.list({
     amount: 9999,
     page: 1,
-    fields: ["id"],
+    fields: ["id", "tags"],
     filter: { tags: [{ key: "group_id", value: groupID }] },
   });
 
   for (const device of devices) {
     await Resources.devices.delete(device.id).catch(console.log);
 
-    const organizationID = z.string().parse(device.tags.find((tag) => tag.key === "organization_id")?.value);
-    await Resources.devices.deleteDeviceData(organizationID, { groups: device.id, qty: 9999 });
+    // A child device without an organization_id tag has no org data row to
+    // wipe. Skip it (logged) rather than throwing, so the rest of the
+    // cascade still completes and no devices are left orphaned.
+    const organizationID = device.tags.find((tag) => tag.key === "organization_id")?.value;
+    if (!organizationID) {
+      console.log(`[Warn] Device ${device.id} has no organization_id tag; skipping data wipe.`);
+      continue;
+    }
+
+    await Resources.devices.deleteDeviceData(organizationID, { groups: device.id, qty: 9999 }).catch(console.log);
   }
 }
 
