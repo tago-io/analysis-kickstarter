@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+/* Widget-local CSS only.
+   Do NOT set background on html or body — the TagoIO dashboard
+   supplies the iframe background. */

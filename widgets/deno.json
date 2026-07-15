@@ -1,0 +1,23 @@
+{
+  "name": "@app/custom-widgets",
+  "version": "1.0.0",
+  "exports": {},
+  "tasks": {
+    "dev": "deno run -A npm:vite",
+    "build": "deno run -A ./build.ts",
+    "build:one": "deno run -A npm:vite build",
+    "preview": "deno run -A npm:vite preview"
+  },
+  "imports": {
+    "@tago-io/custom-widget-react": "npm:@tago-io/custom-widget-react@^2.0.1",
+    "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^6.0.1",
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.2.4",
+    "tailwindcss": "npm:tailwindcss@^4.2.4",
+    "vite": "npm:vite@^8.0.10",
+    "react": "npm:react@^19.2.7",
+    "react-dom": "npm:react-dom@^19.2.7",
+    "react/jsx-runtime": "npm:react@19.2.7/jsx-runtime",
+    "@types/react": "npm:@types/react@^19.2.14",
+    "@types/react-dom": "npm:@types/react-dom@^19.2.3"
+  }
+}
