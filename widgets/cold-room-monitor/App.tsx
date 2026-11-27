@@ -95,6 +95,7 @@ export default function App() {
     >
       <div className="grid min-h-full w-full grid-cols-1 gap-2 @[400px]/widget:h-full @[400px]/widget:grid-cols-3">
         <RingCard
+          testId="temperature"
           label={t("WIDGET_TEMPERATURE")}
           value={tempValue}
           subtitle={relativeTime(readings.temperature.recordedAt, now, timeTemplates)}
@@ -105,6 +106,7 @@ export default function App() {
           }
         />
         <RingCard
+          testId="compressor"
           label={t("WIDGET_COMPRESSOR")}
           value={<span style={{ color: compColor }}>{compLabel}</span>}
           subtitle={relativeTime(readings.compressor.recordedAt, now, timeTemplates)}
@@ -115,6 +117,7 @@ export default function App() {
           }
         />
         <RingCard
+          testId="door"
           label={t("WIDGET_DOOR")}
           value={<span style={{ color: doorColor }}>{doorLabel}</span>}
           subtitle={relativeTime(readings.door.recordedAt, now, timeTemplates)}

@@ -125,6 +125,25 @@ Copy the `https://<something>.ngrok-free.app` URL ngrok prints and paste it into
 `build.ts` discovers every folder under `widgets/` that contains an `index.html`, then invokes Vite once per widget with `WIDGET=<name>`. Each build writes to
 `widgets/_dist/<name>/` with a flat layout (`base: "./"`, `assetsDir: ""`) so the whole folder can be uploaded to TagoIO file storage or any static host.
 
+## Deploy
+
+From the repository root, upload each build to TagoIO Files and point the dashboard widget's URL at its `index.html`:
+
+```bash
+deno task build:widgets
+tagoio files-upload ./widgets/_dist/<name> custom-widgets/<name> --public
+tagoio files-url custom-widgets/<name>/index.html
+```
+
+Don't use `tagoio wg-dp` for these widgets yet. The TagoIO bundler rejects them because `@tago-io/sdk` (used by `shared/use-dictionary.ts`) has a dynamic import, which splits the
+bundle into two chunks. The failed deploy still switches the widget to the new source, and the dashboard shows "This widget's source has not been bundled yet".
+
+## Tests
+
+Pure helpers have Deno unit tests (`*.test.ts`, run by `deno task test:all` at the root). The rendered widgets have Playwright tests in `e2e/tests/widgets/`: they load each build
+without TagoRUN and send fixed data through the same `postMessage` bridge the dashboard uses. Run them with `deno task test:e2e:widgets` from the root, which builds the widgets
+first. Elements the tests read carry a `data-testid`; keep it when changing the markup.
+
 ## Stack
 
 - React 19 — declared at the workspace `deno.json` and inherited by every widget

@@ -270,6 +270,20 @@ Common edits:
      `t("NEW_KEY")`.
   3. Redeploy that analysis or widget.
 
+The application export includes the two keys below. Accounts installed from an earlier export need to add them before deploying the current `crud-group` and `crud-sensor`, or
+duplicate-name messages show the raw placeholder:
+
+| Key                                  | en-US                                    | pt-BR                        |
+| ------------------------------------ | ---------------------------------------- | ---------------------------- |
+| `ALREADY_EXISTS_WITHIN_ORGANIZATION` | already exists within this organization. | já existe nesta organização. |
+| `ALREADY_EXISTS_WITHIN_GROUP`        | already exists within this group.        | já existe neste grupo.       |
+
+You can add them from the repo root with the TagoIO CLI, once per language:
+
+```bash
+tagoio dict-lang <VAL dictionary ID> en-US --merge --set ALREADY_EXISTS_WITHIN_ORGANIZATION="already exists within this organization."
+```
+
 ## Adapting to your use case
 
 This template is shaped around cold-room monitoring, but every layer is generic enough to repurpose.

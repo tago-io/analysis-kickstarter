@@ -29,7 +29,7 @@ console.log(`Building ${widgets.length} widget(s): ${widgets.join(", ")}`);
 for (const widget of widgets) {
   console.log(`\n→ ${widget}`);
   const { code } = await new Deno.Command("deno", {
-    args: ["run", "-A", "npm:vite", "build"],
+    args: ["run", "-A", "npm:vite@8.3.8", "build"],
     env: { WIDGET: widget },
     stdout: "inherit",
     stderr: "inherit",

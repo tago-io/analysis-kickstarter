@@ -1,0 +1,16 @@
+{
+  "name": "@app/e2e",
+  "version": "1.0.0",
+  "exports": {},
+  "tasks": {
+    "install:browsers": "node ../node_modules/@playwright/test/cli.js install chromium",
+    "test": "node ../node_modules/@playwright/test/cli.js test --project=chromium",
+    "test:headed": "node ../node_modules/@playwright/test/cli.js test --project=chromium --headed",
+    "test:widgets": "cd ../widgets && deno task build && cd ../e2e && node ../node_modules/@playwright/test/cli.js test --project=widgets",
+    "test:ui": "node ../node_modules/@playwright/test/cli.js test --ui",
+    "report": "node ../node_modules/@playwright/test/cli.js show-report"
+  },
+  "imports": {
+    "@playwright/test": "npm:@playwright/test@1.65.1"
+  }
+}
