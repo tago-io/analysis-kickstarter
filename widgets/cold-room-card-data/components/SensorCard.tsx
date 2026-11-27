@@ -76,7 +76,7 @@ export function SensorCard({
   const doorLabel = doorOpen ? labels.open : labels.closed;
 
   return (
-    <div className="grid min-w-0 grid-rows-[auto_1fr] gap-3 rounded-md border border-[#3a3a3a] bg-[#252525] p-3">
+    <div data-testid="sensor-card" className="grid min-w-0 grid-rows-[auto_1fr] gap-3 rounded-md border border-[#3a3a3a] bg-[#252525] p-3">
       <header className="flex min-w-0 items-baseline justify-between gap-2">
         <h3
           className="truncate text-[rgb(240,240,240)]"
@@ -89,9 +89,10 @@ export function SensorCard({
       </header>
 
       <div className="grid grid-cols-3 gap-2">
-        <Stat icon={<ThermometerIcon />} color={tempColor} label={tempLabel} />
-        <Stat icon={<PowerIcon />} color={compColor} label={compLabel} />
+        <Stat testId="temperature" icon={<ThermometerIcon />} color={tempColor} label={tempLabel} />
+        <Stat testId="compressor" icon={<PowerIcon />} color={compColor} label={compLabel} />
         <Stat
+          testId="door"
           icon={doorOpen ? <DoorOpenIcon /> : <DoorIcon />}
           color={doorColor}
           label={doorLabel}
@@ -101,9 +102,9 @@ export function SensorCard({
   );
 }
 
-function Stat({ icon, color, label }: { icon: ReactNode; color: string; label: string }) {
+function Stat({ testId, icon, color, label }: { testId: string; icon: ReactNode; color: string; label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-1 rounded-sm bg-[#2c2c2c] p-2 text-center">
+    <div data-testid={testId} className="flex flex-col items-center justify-center gap-1 rounded-sm bg-[#2c2c2c] p-2 text-center">
       <span aria-hidden style={{ color, fontSize: "20px", lineHeight: 1 }}>
         {icon}
       </span>

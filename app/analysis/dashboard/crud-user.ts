@@ -29,11 +29,11 @@
  * developer new to TagoIO to read it top-to-bottom and understand every step.
  */
 
-import { Analysis, type Data, type TagoContext, type TagsObj, type UserListScope } from "npm:@tago-io/sdk";
-import { Resources, type RouterConstructor, Services, Utils } from "npm:@tago-io/sdk";
-import { DateTime } from "npm:luxon";
-import { phone as parsePhone } from "npm:phone";
-import z, { ZodError } from "npm:zod";
+import { Analysis, type Data, type TagoContext, type TagsObj, type UserListScope } from "npm:@tago-io/sdk@12.3.6";
+import { Resources, type RouterConstructor, Services, Utils } from "npm:@tago-io/sdk@12.3.6";
+import { DateTime } from "npm:luxon@3.7.2";
+import { phone as parsePhone } from "npm:phone@3.1.74";
+import z, { ZodError } from "npm:zod@4.6.7";
 
 // ============================================================================
 // Validation schema

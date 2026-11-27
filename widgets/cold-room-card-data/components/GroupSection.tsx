@@ -14,7 +14,7 @@ interface GroupSectionProps {
  */
 export function GroupSection({ groupName, sensorCountLabel, children }: GroupSectionProps) {
   return (
-    <section className="mb-4 rounded-md border border-[#3a3a3a] bg-[#252525] p-3">
+    <section data-testid="group-section" className="mb-4 rounded-md border border-[#3a3a3a] bg-[#252525] p-3">
       <header className="mb-3 flex items-baseline justify-between gap-3">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[rgb(240,240,240)]">
           {groupName}

@@ -6,15 +6,20 @@ interface RingCardProps {
   subtitle: string;
   /** Inline content rendered above the value (typically the state icon). */
   ringContent: ReactNode;
+  /** Stable hook for UI tests, independent of layout and translations. */
+  testId: string;
 }
 
 // Despite the file name, this card no longer draws a ring — the team asked
 // to drop the SVG circle in favour of a cleaner icon + value layout.
 // The file/folder name is kept so import paths don't shift.
 
-export function RingCard({ label, value, subtitle, ringContent }: RingCardProps) {
+export function RingCard({ label, value, subtitle, ringContent, testId }: RingCardProps) {
   return (
-    <div className="@max-[400px]/widget:min-h-[140px] grid min-w-0 grid-rows-[auto_1fr] gap-2 rounded-lg border border-[#3a3a3a] bg-[#252525] p-3">
+    <div
+      data-testid={testId}
+      className="@max-[400px]/widget:min-h-[140px] grid min-w-0 grid-rows-[auto_1fr] gap-2 rounded-lg border border-[#3a3a3a] bg-[#252525] p-3"
+    >
       {/* Header — label on the left, last-update timestamp on the right */}
       <div className="flex min-w-0 items-center justify-between gap-2">
         <span
@@ -24,6 +29,7 @@ export function RingCard({ label, value, subtitle, ringContent }: RingCardProps)
           {label}
         </span>
         <span
+          data-testid="ring-time"
           className="shrink-0 truncate text-[rgb(150,150,150)]"
           style={{ fontSize: "clamp(10px, 2.2cqi, 12px)" }}
         >
@@ -37,6 +43,7 @@ export function RingCard({ label, value, subtitle, ringContent }: RingCardProps)
           {ringContent}
         </span>
         <span
+          data-testid="ring-value"
           className="font-semibold tabular-nums leading-none"
           style={{ fontSize: "clamp(18px, 5.5cqi, 28px)" }}
         >

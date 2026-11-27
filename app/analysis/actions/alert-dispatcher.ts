@@ -37,8 +37,8 @@
  * developer new to TagoIO to read it top-to-bottom and understand every step.
  */
 
-import { Analysis, type Data, Resources, type TagoContext, Utils } from "npm:@tago-io/sdk";
-import z from "npm:zod";
+import { Analysis, type Data, Resources, type TagoContext, Utils } from "npm:@tago-io/sdk@12.3.6";
+import z from "npm:zod@4.6.7";
 
 // ============================================================================
 // Constants

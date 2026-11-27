@@ -5,12 +5,14 @@ interface GaugeCardProps {
   ratio: number;
   color: string;
   isLoading: boolean;
+  /** Stable hook for UI tests, independent of layout and translations. */
+  testId: string;
 }
 
 const RADIUS = 22;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function GaugeCard({ label, subtitle, value, ratio, color, isLoading }: GaugeCardProps) {
+export function GaugeCard({ label, subtitle, value, ratio, color, isLoading, testId }: GaugeCardProps) {
   const safeRatio = Math.max(0, Math.min(1, ratio));
   const dashOffset = CIRCUMFERENCE * (1 - safeRatio);
   // Transient "—" while the SDK is fetching; permanent "N/A" once it confirms
@@ -18,7 +20,10 @@ export function GaugeCard({ label, subtitle, value, ratio, color, isLoading }: G
   const display = isLoading ? "—" : (value ?? "N/A");
 
   return (
-    <div className="@max-[400px]/widget:min-h-[140px] relative flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#3a3a3a] bg-[#252525] p-3">
+    <div
+      data-testid={testId}
+      className="@max-[400px]/widget:min-h-[140px] relative flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#3a3a3a] bg-[#252525] p-3"
+    >
       <div className="flex items-center justify-between gap-2">
         <span
           className="truncate uppercase text-[rgb(170,170,170)]"
@@ -45,6 +50,7 @@ export function GaugeCard({ label, subtitle, value, ratio, color, isLoading }: G
             />
           </svg>
           <span
+            data-testid="gauge-value"
             className="absolute inset-0 flex items-center justify-center font-bold tabular-nums text-[rgb(240,240,240)]"
             style={{ fontSize: "clamp(16px, 5cqi, 26px)", lineHeight: 1 }}
           >

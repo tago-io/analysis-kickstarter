@@ -34,6 +34,7 @@ export default function App() {
     >
       <div className="grid min-h-full w-full grid-cols-1 gap-2 @[400px]/widget:h-full @[400px]/widget:grid-cols-3">
         <GaugeCard
+          testId="registered"
           label={t("WIDGET_REGISTERED")}
           subtitle={t("WIDGET_TOTAL_DEVICES_REGISTERED")}
           value={counts.registered}
@@ -42,6 +43,7 @@ export default function App() {
           isLoading={isLoading}
         />
         <GaugeCard
+          testId="online"
           label={t("WIDGET_ONLINE")}
           subtitle={t("WIDGET_SENSORS_REPORTING")}
           value={counts.online}
@@ -50,6 +52,7 @@ export default function App() {
           isLoading={isLoading}
         />
         <GaugeCard
+          testId="offline"
           label={t("WIDGET_OFFLINE")}
           subtitle={t("WIDGET_SENSORS_SILENT")}
           value={counts.offline}

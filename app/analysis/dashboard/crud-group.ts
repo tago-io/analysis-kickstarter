@@ -28,10 +28,10 @@
  * developer new to TagoIO to read it top-to-bottom and understand every step.
  */
 
-import { Analysis, type Data, type DeviceCreateInfo, type DeviceListScope } from "npm:@tago-io/sdk";
-import { Resources, type RouterConstructor, Services, type TagoContext, type TagsObj, Utils } from "npm:@tago-io/sdk";
-import { DateTime } from "npm:luxon";
-import z, { ZodError } from "npm:zod";
+import { Analysis, type Data, type DeviceCreateInfo, type DeviceListScope } from "npm:@tago-io/sdk@12.3.6";
+import { Resources, type RouterConstructor, Services, type TagoContext, type TagsObj, Utils } from "npm:@tago-io/sdk@12.3.6";
+import { DateTime } from "npm:luxon@3.7.2";
+import z, { ZodError } from "npm:zod@4.6.7";
 
 // ============================================================================
 // Constants
@@ -402,7 +402,7 @@ async function createGroup({ environment, scope }: RouterConstructor & { scope: 
 
   if (isNameInUse) {
     throw await validate(
-      `#VAL.A_GROUP# #VAL.WITH_NAME# ${formFields.name} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_ORGANIZATION#`,
+      `#VAL.A_GROUP# #VAL.WITH_NAME# ${formFields.name} #VAL.ALREADY_EXISTS_WITHIN_ORGANIZATION#`,
       "danger",
     );
   }
@@ -517,9 +517,9 @@ async function editGroup({ scope, environment }: RouterConstructor & { scope: De
       await undoGroupChanges(groupID, scope);
       await sendNotificationFeedback({
         environment,
-        message: `#VAL.A_GROUP# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_ORGANIZATION#`,
+        message: `#VAL.A_GROUP# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS_WITHIN_ORGANIZATION#`,
       });
-      throw `#VAL.A_GROUP# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS# #VAL.WITHIN_THIS_ORGANIZATION#`;
+      throw `#VAL.A_GROUP# #VAL.WITH_NAME# ${newName} #VAL.ALREADY_EXISTS_WITHIN_ORGANIZATION#`;
     }
   }
 }

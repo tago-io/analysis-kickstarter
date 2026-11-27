@@ -70,8 +70,19 @@
  *   - T_ANALYSIS_TOKEN   : provided automatically by the TagoIO runtime.
  */
 
-import { Analysis, type Data, type DeviceListItem, type DeviceQuery, Resources, type TagoContext, type TagsObj, type UserInfo, type UserQuery, Utils } from "npm:@tago-io/sdk";
-import z from "npm:zod";
+import {
+  Analysis,
+  type Data,
+  type DeviceListItem,
+  type DeviceQuery,
+  Resources,
+  type TagoContext,
+  type TagsObj,
+  type UserInfo,
+  type UserQuery,
+  Utils,
+} from "npm:@tago-io/sdk@12.3.6";
+import z from "npm:zod@4.6.7";
 
 // ============================================================================
 // Constants
