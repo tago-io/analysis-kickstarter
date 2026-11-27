@@ -270,7 +270,7 @@ Common edits:
      `t("NEW_KEY")`.
   3. Redeploy that analysis or widget.
 
-Keys the analyses use that the application export doesn't include yet. Accounts installed from the export need them before deploying the current `crud-group` and `crud-sensor`, or
+The application export includes the two keys below. Accounts installed from an earlier export need to add them before deploying the current `crud-group` and `crud-sensor`, or
 duplicate-name messages show the raw placeholder:
 
 | Key                                  | en-US                                    | pt-BR                        |
